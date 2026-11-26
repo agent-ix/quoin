@@ -27,6 +27,12 @@ pub(super) struct Disposition<'a> {
     pub(super) refusals: Vec<Refusal>,
 }
 
+struct SuiteDisposition<'a> {
+    candidates: Vec<Candidate<'a>>,
+    refusals: Vec<Refusal>,
+    stated_anywhere: bool,
+}
+
 /// Whether the entry states the obligation, whatever its outcome.
 fn states(entry: &RunEntry, obligation: &str) -> bool {
     entry
@@ -130,113 +136,11 @@ pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Dis
     let mut refusals = Vec::new();
     let mut stated_anywhere = false;
     for (suite, suite_runs) in by_suite(runs) {
-        let suite_runs = ordered(suite_runs);
-        if invalid_timestamp(&suite_runs) {
-            let stated = suite_runs
-                .iter()
-                .flat_map(|run| &run.record.entries)
-                .any(|entry| states(entry, obligation));
-            stated_anywhere |= stated;
-            refusals.push(Refusal {
-                cause: Cause::RecordConflict,
-                premise: None,
-                locator: None,
-                detail: format!("suite {suite} has a run with an invalid timestamp"),
-            });
-            continue;
-        }
-        if duplicate_instant(&suite_runs) {
-            let stated = suite_runs
-                .iter()
-                .flat_map(|run| &run.record.entries)
-                .any(|entry| states(entry, obligation));
-            stated_anywhere |= stated;
-            refusals.push(Refusal {
-                cause: Cause::RecordConflict,
-                premise: None,
-                locator: None,
-                detail: format!("suite {suite} has multiple records for the same instant"),
-            });
-            continue;
-        }
-        if let Some((stated, refusal)) = duplicate_path_refusal(suite, &suite_runs, obligation) {
-            stated_anywhere |= stated;
-            refusals.push(refusal);
-            continue;
-        }
-        let Some((latest, earlier)) = suite_runs.split_last() else {
-            continue;
-        };
-        let stated_before = suite_runs
-            .iter()
-            .flat_map(|run| &run.record.entries)
-            .any(|entry| states(entry, obligation));
-        stated_anywhere |= stated_before;
-        // The latest run decides: the symbols it states are the suite's bound
-        // symbols now, so a second report for another request replaces the
-        // first (FR-153-AC-7) and a later run that states none leaves the
-        // obligation absent (FR-153-AC-5).
-        let current_entries: Vec<&RunEntry> = latest
-            .record
-            .entries
-            .iter()
-            .filter(|entry| states(entry, obligation))
-            .collect();
-        if current_entries.is_empty() && stated_before {
-            refusals.push(Refusal {
-                cause: Cause::Absent,
-                premise: None,
-                locator: None,
-                detail: format!(
-                    "the latest run of suite {suite} holds no entry stating {obligation}"
-                ),
-            });
-        }
-        for current in current_entries {
-            let symbol = &current.symbol;
-            let here = locator(latest, current);
-            let superseded_pass = earlier.iter().rev().find_map(|run| {
-                run.record
-                    .entries
-                    .iter()
-                    .find(|entry| {
-                        &entry.symbol == symbol
-                            && states(entry, obligation)
-                            && entry.outcome == Outcome::Pass
-                    })
-                    .map(|entry| locator(run, entry))
-            });
-            let failing = match current.outcome {
-                Outcome::Pass => None,
-                Outcome::Fail => Some((Cause::Failed, "reported failure")),
-                Outcome::Error => Some((Cause::Errored, "reported an error")),
-                Outcome::Skip => Some((Cause::Skipped, "was skipped")),
-            };
-            if let Some((cause, what)) = failing {
-                if let Some(earlier_pass) = superseded_pass {
-                    refusals.push(Refusal {
-                        cause: Cause::Stale,
-                        premise: None,
-                        locator: Some(earlier_pass),
-                        detail: format!(
-                            "an earlier passing run is superseded: the later run of suite {suite} {what} on {symbol}"
-                        ),
-                    });
-                }
-                refusals.push(Refusal {
-                    cause,
-                    premise: None,
-                    locator: Some(here),
-                    detail: format!("{symbol} in suite {suite} {what}"),
-                });
-            } else {
-                candidates.push(Candidate {
-                    locator: here,
-                    run: latest,
-                    entry: current,
-                });
-            }
-        }
+        let ordered_runs = ordered(suite_runs);
+        let result = suite_disposition(suite, &ordered_runs, obligation);
+        candidates.extend(result.candidates);
+        refusals.extend(result.refusals);
+        stated_anywhere |= result.stated_anywhere;
     }
     if !stated_anywhere {
         refusals.push(Refusal {
@@ -250,4 +154,146 @@ pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Dis
         candidates,
         refusals,
     }
+}
+
+fn suite_disposition<'a>(
+    suite: &SuiteId,
+    suite_runs: &[&'a RetainedRun],
+    obligation: &str,
+) -> SuiteDisposition<'a> {
+    if invalid_timestamp(suite_runs) {
+        return rejected_suite(
+            suite_runs,
+            obligation,
+            format!("suite {suite} has a run with an invalid timestamp"),
+        );
+    }
+    if duplicate_instant(suite_runs) {
+        return rejected_suite(
+            suite_runs,
+            obligation,
+            format!("suite {suite} has multiple records for the same instant"),
+        );
+    }
+    if let Some((stated_anywhere, refusal)) = duplicate_path_refusal(suite, suite_runs, obligation)
+    {
+        return SuiteDisposition {
+            candidates: Vec::new(),
+            refusals: vec![refusal],
+            stated_anywhere,
+        };
+    }
+    let Some((latest, earlier)) = suite_runs.split_last() else {
+        return SuiteDisposition {
+            candidates: Vec::new(),
+            refusals: Vec::new(),
+            stated_anywhere: false,
+        };
+    };
+    let stated_anywhere = suite_runs
+        .iter()
+        .flat_map(|run| &run.record.entries)
+        .any(|entry| states(entry, obligation));
+    let mut refusals = Vec::new();
+    let current_entries: Vec<&RunEntry> = latest
+        .record
+        .entries
+        .iter()
+        .filter(|entry| states(entry, obligation))
+        .collect();
+    if current_entries.is_empty() && stated_anywhere {
+        refusals.push(Refusal {
+            cause: Cause::Absent,
+            premise: None,
+            locator: None,
+            detail: format!("the latest run of suite {suite} holds no entry stating {obligation}"),
+        });
+    }
+    let mut candidates = Vec::new();
+    for current in current_entries {
+        let (candidate, entry_refusals) =
+            classify_entry(suite, latest, earlier, current, obligation);
+        candidates.extend(candidate);
+        refusals.extend(entry_refusals);
+    }
+    SuiteDisposition {
+        candidates,
+        refusals,
+        stated_anywhere,
+    }
+}
+
+fn rejected_suite<'a>(
+    runs: &[&'a RetainedRun],
+    obligation: &str,
+    detail: String,
+) -> SuiteDisposition<'a> {
+    let stated_anywhere = runs
+        .iter()
+        .flat_map(|run| &run.record.entries)
+        .any(|entry| states(entry, obligation));
+    SuiteDisposition {
+        candidates: Vec::new(),
+        refusals: vec![Refusal {
+            cause: Cause::RecordConflict,
+            premise: None,
+            locator: None,
+            detail,
+        }],
+        stated_anywhere,
+    }
+}
+
+fn classify_entry<'a>(
+    suite: &SuiteId,
+    latest: &'a RetainedRun,
+    earlier: &[&'a RetainedRun],
+    current: &'a RunEntry,
+    obligation: &str,
+) -> (Option<Candidate<'a>>, Vec<Refusal>) {
+    let symbol = &current.symbol;
+    let here = locator(latest, current);
+    let superseded_pass = earlier.iter().rev().find_map(|run| {
+        run.record
+            .entries
+            .iter()
+            .find(|entry| {
+                &entry.symbol == symbol
+                    && states(entry, obligation)
+                    && entry.outcome == Outcome::Pass
+            })
+            .map(|entry| locator(run, entry))
+    });
+    let failing = match current.outcome {
+        Outcome::Pass => None,
+        Outcome::Fail => Some((Cause::Failed, "reported failure")),
+        Outcome::Error => Some((Cause::Errored, "reported an error")),
+        Outcome::Skip => Some((Cause::Skipped, "was skipped")),
+    };
+    let Some((cause, what)) = failing else {
+        return (
+            Some(Candidate {
+                locator: here,
+                run: latest,
+                entry: current,
+            }),
+            Vec::new(),
+        );
+    };
+    let mut refusals = Vec::new();
+    if let Some(earlier_pass) = superseded_pass {
+        refusals.push(Refusal {
+            cause: Cause::Stale,
+            premise: None,
+            locator: Some(earlier_pass),
+            detail: format!("an earlier passing run is superseded: the later run of suite {suite} {what} on {symbol}"),
+        });
+    }
+    refusals.push(Refusal {
+        cause,
+        premise: None,
+        locator: Some(here),
+        detail: format!("{symbol} in suite {suite} {what}"),
+    });
+    (None, refusals)
 }

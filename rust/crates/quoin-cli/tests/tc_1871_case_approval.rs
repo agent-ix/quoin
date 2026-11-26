@@ -114,7 +114,7 @@ impl Fixture {
         .expect("caller trust configuration");
     }
 
-    fn git_command(&self, repo: &Path) -> Command {
+    fn git_command(repo: &Path) -> Command {
         let mut git = Command::new("git");
         git.current_dir(repo)
             .env("GIT_CONFIG_GLOBAL", "/dev/null")
@@ -125,8 +125,7 @@ impl Fixture {
 
     fn git(&self, args: &[&str]) -> String {
         success(
-            &self
-                .git_command(&self.repo)
+            &Self::git_command(&self.repo)
                 .args(args)
                 .output()
                 .expect("git runs"),
@@ -136,10 +135,14 @@ impl Fixture {
     }
 
     fn signed_tag(&self, name: &str, record: &str, digest: &str, meanings: &[&str]) {
-        let meaning = meanings
-            .iter()
-            .map(|value| format!("Signed-off-meaning: {value}\n"))
-            .collect::<String>();
+        let meaning = if meanings.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "Signed-off-meaning: {}\n",
+                meanings.join("\nSigned-off-meaning: ")
+            )
+        };
         let message = format!(
             "Review the bounded case\n\nApproved-Record-Id: {record}\nApproved-Record-Digest: {digest}\n{meaning}"
         );
@@ -511,6 +514,10 @@ fn sacm_case_approval_uses_dedicated_inputs_and_preserves_missing_claimed_time()
 
 #[trace("FR-225-AC-5")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one offline integration scenario checks that verification avoids network access and promisor blob fetches"
+)]
 #[ignore = "offline verifier lane requires QUOIN_E2E_EA, Git, strace and ssh-keygen"]
 fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() {
     let ea = verifier();
@@ -521,8 +528,7 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
     let tag = format!(
         "object {tip}\ntype commit\ntag cms\ntagger Operator <operator@example.invalid> 1767225784 +0000\n\nReview\n\nApproved-Record-Id: {KIND}\nApproved-Record-Digest: {digest}\nSigned-off-meaning: {MEANING}\n\n-----BEGIN SIGNED MESSAGE-----\nc2lnbmF0dXJl\n-----END SIGNED MESSAGE-----\n"
     );
-    let mut hash = fixture
-        .git_command(&fixture.repo)
+    let mut hash = Fixture::git_command(&fixture.repo)
         .args(["hash-object", "-t", "tag", "-w", "--stdin"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -590,8 +596,7 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
     let shallow = fixture.home.path().join("partial");
     let origin = format!("file://{}", fixture.repo.display());
     success(
-        &fixture
-            .git_command(fixture.home.path())
+        &Fixture::git_command(fixture.home.path())
             .args([
                 "clone",
                 "-q",
@@ -604,8 +609,7 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
             .unwrap(),
     );
     let absent_blob = fixture.git(&["rev-parse", "HEAD:trust-file"]);
-    let missing = fixture
-        .git_command(&shallow)
+    let missing = Fixture::git_command(&shallow)
         .env("GIT_ALLOW_PROTOCOL", "")
         .args(["cat-file", "-e", &absent_blob])
         .output()

@@ -185,6 +185,10 @@ pub fn require_complete_model(registry: &Registry) -> Result<()> {
 
 /// Permit the design matrix to keep valid coverage rows when the loader drops
 /// only required relations; every other dropped declaration remains fatal.
+///
+/// # Errors
+/// Returns [`Error::TraceabilityDeclarationsDropped`] when a dropped declaration
+/// is not a required relation.
 #[implements("FR-193-AC-10")]
 #[implements("FR-193-AC-11")]
 #[implements("FR-165-AC-21")]

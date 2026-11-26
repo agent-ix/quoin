@@ -203,7 +203,7 @@ impl Repo {
     }
 
     /// Install the synthetic owner of the binding's clause set into this
-    /// fixture's isolated IX_HOME. `record-discharge` refuses a set that no
+    /// fixture's isolated `IX_HOME`. `record-discharge` refuses a set that no
     /// installed module declares, even when the binding and facts are valid.
     fn ensure_clause_set(&self, clauses: &[&str]) {
         let marker = self.home.path().join("filament/modules/soup-clause-set");

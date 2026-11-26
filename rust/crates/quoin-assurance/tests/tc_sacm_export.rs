@@ -76,7 +76,7 @@ fn model(nodes: Vec<GsnNode>, edges: Vec<GsnEdge>, roots: &[&str]) -> GsnCase {
 
 fn shape_fixture() -> GsnCase {
     let mut open = node("G2", "goal");
-    open.status = "open".to_owned();
+    "open".clone_into(&mut open.status);
     open.open_reason = Some("Review still open".to_owned());
     open.undeveloped = Some(true);
     let mut undeveloped = node("G3", "goal");
@@ -383,7 +383,14 @@ fn sacm_content_addresses_exact_bytes_and_retains_non_supporting_evidence() {
         export(&fixture, &disk).expect("repeat evidence export").xmi
     );
     let parsed = parse_xml(&first.xmi);
-    assert_eq!(resolve_references(&parsed), Ok(()));
+    assert_exact_artifact_records(&parsed, &repo);
+    assert_non_supporting_evidence(&parsed);
+    assert_export_redaction(&first, &repo);
+    assert_identical_run_bytes_deduplicate(&fixture, &disk, &second_run);
+}
+
+fn assert_exact_artifact_records(parsed: &Element, repo: &tempfile::TempDir) {
+    assert_eq!(resolve_references(parsed), Ok(()));
     let leaves: Vec<_> = parsed
         .child("artifactPackage")
         .children
@@ -437,6 +444,9 @@ fn sacm_content_addresses_exact_bytes_and_retains_non_supporting_evidence() {
                 .all(|child| child.role != "location")
         );
     }
+}
+
+fn assert_non_supporting_evidence(parsed: &Element) {
     let argument = parsed.child("argumentPackage");
     let evidence: Vec<_> = argument
         .children
@@ -483,7 +493,10 @@ fn sacm_content_addresses_exact_bytes_and_retains_non_supporting_evidence() {
             assert_eq!(relation.attr("assertionDeclaration"), "needsSupport");
         }
     }
-    let xml = String::from_utf8(first.xmi).expect("UTF-8");
+}
+
+fn assert_export_redaction(first: &Export, repo: &tempfile::TempDir) {
+    let xml = std::str::from_utf8(&first.xmi).expect("UTF-8");
     assert!(
         !xml.contains("private-run-record")
             && !xml.contains(repo.path().to_str().expect("temp path is UTF-8"))
@@ -493,8 +506,15 @@ fn sacm_content_addresses_exact_bytes_and_retains_non_supporting_evidence() {
         .filter(|value| matches!(value.len(), 40 | 64))
         .collect();
     assert_eq!(digests, BTreeSet::from([FIRST_DIGEST, SECOND_DIGEST]));
-    std::fs::write(&second_run, RUN).expect("copy identical bytes to the second retained path");
-    let shared = parse_xml(&export(&fixture, &disk).expect("deduplicated bytes").xmi);
+}
+
+fn assert_identical_run_bytes_deduplicate(
+    fixture: &GsnCase,
+    disk: &DiskEvidence,
+    second_run: &std::path::Path,
+) {
+    std::fs::write(second_run, RUN).expect("copy identical bytes to the second retained path");
+    let shared = parse_xml(&export(fixture, disk).expect("deduplicated bytes").xmi);
     assert_eq!(
         shared
             .child("artifactPackage")

@@ -323,169 +323,11 @@ struct SignOff {
 #[implements("FR-217-AC-11")]
 #[implements("FR-217-AC-12")]
 fn build_report(paths: &[PathBuf]) -> Result<ValidationReport, String> {
-    if paths.is_empty() {
-        return Err("report requires one or more --results files".to_owned());
-    }
-    let mut records = Vec::new();
-    for path in paths {
-        let raw = std::fs::read_to_string(path)
-            .map_err(|error| format!("cannot read run record {}: {error}", path.display()))?;
-        let record: RunRecord = serde_json::from_str(&raw)
-            .map_err(|error| format!("cannot parse run record {}: {error}", path.display()))?;
-        if record.schema_version != 1 {
-            return Err(format!(
-                "run record {} has unsupported schemaVersion {}",
-                path.display(),
-                record.schema_version
-            ));
-        }
-        if record.tool.trim().is_empty() {
-            return Err(format!("run record {} has no tool name", path.display()));
-        }
-        for case in &record.results {
-            if !matches!(
-                case.status.as_str(),
-                "pass" | "fail" | "error" | "not-executed"
-            ) {
-                return Err(format!(
-                    "run record {} has unknown case status {:?}",
-                    path.display(),
-                    case.status
-                ));
-            }
-        }
-        records.push(record);
-    }
-    records.sort_by(|left, right| {
-        (&left.tool, &left.suite, &left.timestamp).cmp(&(
-            &right.tool,
-            &right.suite,
-            &right.timestamp,
-        ))
-    });
-
+    let records = read_run_records(paths)?;
     let (intended_use, mut reasons, documents_by_tool) = validation_documents(&records);
-    let mut tools = Vec::new();
-    let mut results = Vec::new();
-    let mut required_tools = intended_use
-        .iter()
-        .map(|item| item.tool.clone())
-        .collect::<BTreeSet<_>>();
-    for record in &records {
-        let version = record.tool_version.clone().unwrap_or_else(|| {
-            reasons.push(format!("missing tool version for {}", record.tool));
-            "not provided".to_owned()
-        });
-        tools.push(ToolRun {
-            name: record.tool.clone(),
-            version,
-            os: record
-                .os
-                .clone()
-                .unwrap_or_else(|| "not provided".to_owned()),
-            architecture: record
-                .architecture
-                .clone()
-                .unwrap_or_else(|| "not provided".to_owned()),
-            suite: record
-                .suite
-                .clone()
-                .unwrap_or_else(|| "not stated".to_owned()),
-            timestamp: record
-                .timestamp
-                .clone()
-                .unwrap_or_else(|| "not stated".to_owned()),
-            retained_location: record
-                .retained_location
-                .clone()
-                .unwrap_or_else(|| "not stated".to_owned()),
-        });
-        required_tools.remove(&record.tool);
-        for case in &record.results {
-            match case.status.as_str() {
-                "fail" | "error" => {}
-                "not-executed" => reasons.push(format!(
-                    "not-executed tool {} case {}",
-                    record.tool, case.id
-                )),
-                _ => {}
-            }
-            results.push(ReportCase {
-                id: case.id.clone(),
-                tool: record.tool.clone(),
-                criteria: case.criteria.clone(),
-                result: case.status.clone(),
-                detail: case.detail.clone(),
-                stderr: case.stderr.clone(),
-            });
-        }
-    }
-    for tool in required_tools {
-        reasons.push(format!("result missing for tool {tool}"));
-    }
-    results.sort_by(|left, right| (&left.tool, &left.id).cmp(&(&right.tool, &right.id)));
-
-    let mut feature_cases = BTreeMap::<(String, String), Vec<String>>::new();
-    for record in &records {
-        for case in &record.results {
-            for criterion in &case.criteria {
-                let feature = criterion.split("-AC-").next().unwrap_or_default();
-                if is_fr_id(feature) {
-                    feature_cases
-                        .entry((record.tool.clone(), feature.to_owned()))
-                        .or_default()
-                        .push(case.id.clone());
-                }
-            }
-        }
-    }
-    for cases in feature_cases.values_mut() {
-        cases.sort();
-        cases.dedup();
-    }
-    let mut feature_ratings_by_tool = BTreeMap::<(String, String), FeatureRating>::new();
-    for (tool, documents) in &documents_by_tool {
-        let repository_namespace = format!("agent-ix/{tool}");
-        feature_ratings_by_tool.extend(
-            feature_ratings(documents, &repository_namespace)
-                .into_iter()
-                .map(|(feature, rating)| ((tool.clone(), feature), rating)),
-        );
-    }
-    let feature_ids = feature_ratings_by_tool
-        .keys()
-        .chain(feature_cases.keys())
-        .cloned()
-        .collect::<BTreeSet<_>>();
-    let mut coverage = Vec::new();
-    for (tool, feature) in feature_ids {
-        let feature_rating = feature_ratings_by_tool
-            .get(&(tool.clone(), feature.clone()))
-            .cloned()
-            .unwrap_or_else(FeatureRating::unrated);
-        let cases = feature_cases
-            .remove(&(tool.clone(), feature.clone()))
-            .unwrap_or_default();
-        let passed = results.iter().any(|case| {
-            case.tool == tool
-                && case
-                    .criteria
-                    .iter()
-                    .any(|criterion| criterion.starts_with(&format!("{feature}-AC-")))
-                && case.result == "pass"
-        });
-        let result = if passed { "covered" } else { "uncovered" };
-        coverage.push(Coverage {
-            tool: tool.clone(),
-            fr: feature,
-            rating: feature_rating.display_value,
-            rating_status: feature_rating.status,
-            ratings: feature_rating.ratings,
-            cases,
-            result: result.to_owned(),
-        });
-    }
-
+    let (tools, results) = summarize_runs(&records, &intended_use, &mut reasons);
+    let (coverage, feature_ratings_by_tool) =
+        feature_coverage(&records, &documents_by_tool, &results);
     let mut high_risk_by_tool = BTreeMap::<String, BTreeSet<String>>::new();
     for item in &coverage {
         if feature_ratings_by_tool
@@ -717,7 +559,7 @@ fn feature_ratings(
                 RatingStatus::RatedMoreThanOnce => "multiple ratings".to_owned(),
                 RatingStatus::Unrated => "not provided".to_owned(),
             };
-            let status = match state.status {
+            let rating_status = match state.status {
                 RatingStatus::Rated => "rated",
                 RatingStatus::RatedMoreThanOnce => "rated_more_than_once",
                 RatingStatus::Unrated => "unrated",
@@ -726,7 +568,7 @@ fn feature_ratings(
             (
                 state.feature_id,
                 FeatureRating {
-                    status,
+                    status: rating_status,
                     display_value,
                     ratings,
                     high_process_risk,
@@ -791,6 +633,186 @@ fn ratings_for_feature(
     ratings
 }
 
+fn read_run_records(paths: &[PathBuf]) -> Result<Vec<RunRecord>, String> {
+    if paths.is_empty() {
+        return Err("report requires one or more --results files".to_owned());
+    }
+    let mut records = Vec::new();
+    for path in paths {
+        let raw = std::fs::read_to_string(path)
+            .map_err(|error| format!("cannot read run record {}: {error}", path.display()))?;
+        let record: RunRecord = serde_json::from_str(&raw)
+            .map_err(|error| format!("cannot parse run record {}: {error}", path.display()))?;
+        if record.schema_version != 1 {
+            return Err(format!(
+                "run record {} has unsupported schemaVersion {}",
+                path.display(),
+                record.schema_version
+            ));
+        }
+        if record.tool.trim().is_empty() {
+            return Err(format!("run record {} has no tool name", path.display()));
+        }
+        for case in &record.results {
+            if !matches!(
+                case.status.as_str(),
+                "pass" | "fail" | "error" | "not-executed"
+            ) {
+                return Err(format!(
+                    "run record {} has unknown case status {:?}",
+                    path.display(),
+                    case.status
+                ));
+            }
+        }
+        records.push(record);
+    }
+    records.sort_by(|left, right| {
+        (&left.tool, &left.suite, &left.timestamp).cmp(&(
+            &right.tool,
+            &right.suite,
+            &right.timestamp,
+        ))
+    });
+
+    Ok(records)
+}
+
+fn summarize_runs(
+    records: &[RunRecord],
+    intended_use: &[IntendedUse],
+    reasons: &mut Vec<String>,
+) -> (Vec<ToolRun>, Vec<ReportCase>) {
+    let mut tools = Vec::new();
+    let mut results = Vec::new();
+    let mut required_tools = intended_use
+        .iter()
+        .map(|item| item.tool.clone())
+        .collect::<BTreeSet<_>>();
+    for record in records {
+        let version = record.tool_version.clone().unwrap_or_else(|| {
+            reasons.push(format!("missing tool version for {}", record.tool));
+            "not provided".to_owned()
+        });
+        tools.push(ToolRun {
+            name: record.tool.clone(),
+            version,
+            os: record
+                .os
+                .clone()
+                .unwrap_or_else(|| "not provided".to_owned()),
+            architecture: record
+                .architecture
+                .clone()
+                .unwrap_or_else(|| "not provided".to_owned()),
+            suite: record
+                .suite
+                .clone()
+                .unwrap_or_else(|| "not stated".to_owned()),
+            timestamp: record
+                .timestamp
+                .clone()
+                .unwrap_or_else(|| "not stated".to_owned()),
+            retained_location: record
+                .retained_location
+                .clone()
+                .unwrap_or_else(|| "not stated".to_owned()),
+        });
+        required_tools.remove(&record.tool);
+        for case in &record.results {
+            if case.status == "not-executed" {
+                reasons.push(format!(
+                    "not-executed tool {} case {}",
+                    record.tool, case.id
+                ));
+            }
+            results.push(ReportCase {
+                id: case.id.clone(),
+                tool: record.tool.clone(),
+                criteria: case.criteria.clone(),
+                result: case.status.clone(),
+                detail: case.detail.clone(),
+                stderr: case.stderr.clone(),
+            });
+        }
+    }
+    for tool in required_tools {
+        reasons.push(format!("result missing for tool {tool}"));
+    }
+    results.sort_by(|left, right| (&left.tool, &left.id).cmp(&(&right.tool, &right.id)));
+
+    (tools, results)
+}
+
+fn feature_coverage(
+    records: &[RunRecord],
+    documents_by_tool: &BTreeMap<String, Vec<DocumentSource>>,
+    results: &[ReportCase],
+) -> (Vec<Coverage>, BTreeMap<(String, String), FeatureRating>) {
+    let mut feature_cases = BTreeMap::<(String, String), Vec<String>>::new();
+    for record in records {
+        for case in &record.results {
+            for criterion in &case.criteria {
+                let feature = criterion.split("-AC-").next().unwrap_or_default();
+                if is_fr_id(feature) {
+                    feature_cases
+                        .entry((record.tool.clone(), feature.to_owned()))
+                        .or_default()
+                        .push(case.id.clone());
+                }
+            }
+        }
+    }
+    for cases in feature_cases.values_mut() {
+        cases.sort();
+        cases.dedup();
+    }
+    let mut feature_ratings_by_tool = BTreeMap::<(String, String), FeatureRating>::new();
+    for (tool, documents) in documents_by_tool {
+        let repository_namespace = format!("agent-ix/{tool}");
+        feature_ratings_by_tool.extend(
+            feature_ratings(documents, &repository_namespace)
+                .into_iter()
+                .map(|(feature, rating)| ((tool.clone(), feature), rating)),
+        );
+    }
+    let feature_ids = feature_ratings_by_tool
+        .keys()
+        .chain(feature_cases.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut coverage = Vec::new();
+    for (tool, feature) in feature_ids {
+        let feature_rating = feature_ratings_by_tool
+            .get(&(tool.clone(), feature.clone()))
+            .cloned()
+            .unwrap_or_else(FeatureRating::unrated);
+        let cases = feature_cases
+            .remove(&(tool.clone(), feature.clone()))
+            .unwrap_or_default();
+        let passed = results.iter().any(|case| {
+            case.tool == tool
+                && case
+                    .criteria
+                    .iter()
+                    .any(|criterion| criterion.starts_with(&format!("{feature}-AC-")))
+                && case.result == "pass"
+        });
+        let result = if passed { "covered" } else { "uncovered" };
+        coverage.push(Coverage {
+            tool: tool.clone(),
+            fr: feature,
+            rating: feature_rating.display_value,
+            rating_status: feature_rating.status,
+            ratings: feature_rating.ratings,
+            cases,
+            result: result.to_owned(),
+        });
+    }
+
+    (coverage, feature_ratings_by_tool)
+}
+
 #[implements("FR-217-AC-8")]
 fn known_anomalies(
     records: &[RunRecord],
@@ -799,67 +821,79 @@ fn known_anomalies(
     let mut producers = Vec::new();
     let mut anomalies = Vec::new();
     for record in records {
-        let version = record
-            .tool_version
-            .clone()
-            .unwrap_or_else(|| "not provided".to_owned());
-        let Some(set) = &record.anomaly_set else {
-            producers.push(AnomalyProducer {
-                tool: record.tool.clone(),
-                version,
-                status: "not provided".to_owned(),
-            });
-            continue;
-        };
-        if !set.provided {
-            producers.push(AnomalyProducer {
-                tool: record.tool.clone(),
-                version,
-                status: "not provided".to_owned(),
-            });
-            continue;
+        let (producer, rows) = anomalies_for_record(record, high_risk)?;
+        producers.push(producer);
+        anomalies.extend(rows);
+    }
+    producers
+        .sort_by(|left, right| (&left.tool, &left.version).cmp(&(&right.tool, &right.version)));
+    producers.dedup_by(|left, right| {
+        left.tool == right.tool && left.version == right.version && left.status == right.status
+    });
+    anomalies.sort_by(|left, right| {
+        left.high_process_risk_features
+            .is_empty()
+            .cmp(&right.high_process_risk_features.is_empty())
+            .then_with(|| (&left.tool, &left.anomaly).cmp(&(&right.tool, &right.anomaly)))
+    });
+    anomalies.dedup_by(|left, right| left.tool == right.tool && left.anomaly == right.anomaly);
+    let all_provided =
+        !producers.is_empty() && producers.iter().all(|row| row.status == "provided");
+    let any_provided = producers.iter().any(|row| row.status == "provided");
+    let status = if all_provided {
+        if anomalies.is_empty() {
+            "none known"
+        } else {
+            "listed"
         }
-        if set.producer_version != version || version == "not provided" {
-            producers.push(AnomalyProducer {
-                tool: record.tool.clone(),
-                version: set.producer_version.clone(),
-                status: "version mismatch".to_owned(),
-            });
-            continue;
-        }
-        let temp =
-            tempfile::tempdir().map_err(|error| format!("create anomaly workspace: {error}"))?;
-        let scope = temp.path().join("spec/anomalies");
-        std::fs::create_dir_all(&scope)
-            .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
-        for document in &set.documents {
-            let relative = Path::new(&document.path);
-            if relative.is_absolute()
-                || relative
-                    .components()
-                    .any(|part| !matches!(part, std::path::Component::Normal(_)))
-            {
-                return Err(format!("unsafe embedded anomaly path {}", document.path));
-            }
-            let path = scope.join(relative);
-            let parent = path
-                .parent()
-                .ok_or_else(|| "embedded anomaly path has no parent".to_owned())?;
-            std::fs::create_dir_all(parent)
-                .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
-            std::fs::write(&path, document.raw.as_bytes()).map_err(|error| {
-                format!("materialize embedded anomaly {}: {error}", document.path)
-            })?;
-        }
-        let report = quoin_anomaly::build_report(&scope, &[]).map_err(|error| error.to_string())?;
-        let invalid = !report.unreadable.is_empty();
-        producers.push(AnomalyProducer {
-            tool: record.tool.clone(),
-            version: set.producer_version.clone(),
-            status: if invalid { "invalid" } else { "provided" }.to_owned(),
-        });
-        let tool_risk = high_risk.get(&record.tool).cloned().unwrap_or_default();
-        anomalies.extend(report.anomalies.iter().map(|row| {
+    } else if any_provided {
+        "partially provided"
+    } else {
+        "not provided"
+    };
+    Ok(KnownAnomalies {
+        provided: all_provided,
+        status: status.to_owned(),
+        producers,
+        anomalies,
+    })
+}
+
+fn anomalies_for_record(
+    record: &RunRecord,
+    high_risk: &BTreeMap<String, BTreeSet<String>>,
+) -> Result<(AnomalyProducer, Vec<KnownAnomaly>), String> {
+    let version = record.tool_version.as_deref().unwrap_or("not provided");
+    let Some(set) = &record.anomaly_set else {
+        return Ok((
+            anomaly_producer(record, version, "not provided"),
+            Vec::new(),
+        ));
+    };
+    if !set.provided {
+        return Ok((
+            anomaly_producer(record, version, "not provided"),
+            Vec::new(),
+        ));
+    }
+    if set.producer_version != version || version == "not provided" {
+        return Ok((
+            anomaly_producer(record, &set.producer_version, "version mismatch"),
+            Vec::new(),
+        ));
+    }
+    let report = embedded_anomaly_report(&set.documents)?;
+    let invalid = !report.unreadable.is_empty();
+    let producer = anomaly_producer(
+        record,
+        &set.producer_version,
+        if invalid { "invalid" } else { "provided" },
+    );
+    let tool_risk = high_risk.get(&record.tool).cloned().unwrap_or_default();
+    let anomalies = report
+        .anomalies
+        .iter()
+        .map(|row| {
             let mut affected_frs = row
                 .affected
                 .iter()
@@ -898,40 +932,43 @@ fn known_anomalies(
                 high_process_risk_features,
                 highlight,
             }
-        }));
-    }
-    producers
-        .sort_by(|left, right| (&left.tool, &left.version).cmp(&(&right.tool, &right.version)));
-    producers.dedup_by(|left, right| {
-        left.tool == right.tool && left.version == right.version && left.status == right.status
-    });
-    anomalies.sort_by(|left, right| {
-        left.high_process_risk_features
-            .is_empty()
-            .cmp(&right.high_process_risk_features.is_empty())
-            .then_with(|| (&left.tool, &left.anomaly).cmp(&(&right.tool, &right.anomaly)))
-    });
-    anomalies.dedup_by(|left, right| left.tool == right.tool && left.anomaly == right.anomaly);
-    let all_provided =
-        !producers.is_empty() && producers.iter().all(|row| row.status == "provided");
-    let any_provided = producers.iter().any(|row| row.status == "provided");
-    let status = if all_provided {
-        if anomalies.is_empty() {
-            "none known"
-        } else {
-            "listed"
-        }
-    } else if any_provided {
-        "partially provided"
-    } else {
-        "not provided"
-    };
-    Ok(KnownAnomalies {
-        provided: all_provided,
+        })
+        .collect();
+    Ok((producer, anomalies))
+}
+
+fn anomaly_producer(record: &RunRecord, version: &str, status: &str) -> AnomalyProducer {
+    AnomalyProducer {
+        tool: record.tool.clone(),
+        version: version.to_owned(),
         status: status.to_owned(),
-        producers,
-        anomalies,
-    })
+    }
+}
+
+fn embedded_anomaly_report(documents: &[DocumentSource]) -> Result<quoin_anomaly::Report, String> {
+    let temp = tempfile::tempdir().map_err(|error| format!("create anomaly workspace: {error}"))?;
+    let scope = temp.path().join("spec/anomalies");
+    std::fs::create_dir_all(&scope)
+        .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
+    for document in documents {
+        let relative = Path::new(&document.path);
+        if relative.is_absolute()
+            || relative
+                .components()
+                .any(|part| !matches!(part, std::path::Component::Normal(_)))
+        {
+            return Err(format!("unsafe embedded anomaly path {}", document.path));
+        }
+        let path = scope.join(relative);
+        let parent = path
+            .parent()
+            .ok_or_else(|| "embedded anomaly path has no parent".to_owned())?;
+        std::fs::create_dir_all(parent)
+            .map_err(|error| format!("create embedded anomaly directory: {error}"))?;
+        std::fs::write(&path, document.raw.as_bytes())
+            .map_err(|error| format!("materialize embedded anomaly {}: {error}", document.path))?;
+    }
+    quoin_anomaly::build_report(&scope, &[]).map_err(|error| error.to_string())
 }
 
 fn embedded_external_tools_index(bytes: Option<&[u8]>) -> ExternalToolsIndexState {
@@ -990,10 +1027,7 @@ fn embedded_external_tools_index(bytes: Option<&[u8]>) -> ExternalToolsIndexStat
         if entry.id.trim().is_empty()
             || entry.executable.trim().is_empty()
             || entry.version_invocation.is_empty()
-            || entry
-                .version_invocation
-                .iter()
-                .any(|argument| argument.is_empty())
+            || entry.version_invocation.iter().any(String::is_empty)
             || counts.get(&entry.id).copied() != Some(1)
         {
             invalid_ids.insert(entry.id);
@@ -1041,7 +1075,9 @@ fn external_tool_report(
         .map(|id| {
             let entry = index.entries.get(&id);
             let candidates = evidence_by_id.get(id.as_str()).cloned().unwrap_or_default();
-            let evidence = (candidates.len() == 1).then(|| candidates[0]);
+            let evidence = (candidates.len() == 1)
+                .then(|| candidates.first().copied())
+                .flatten();
             let valid = index.format_version == "1"
                 && !index.invalid_ids.contains(&id)
                 && entry.is_some_and(|entry| {
@@ -1082,12 +1118,14 @@ fn external_tool_report(
                 } else {
                     "not provided".to_owned()
                 },
-                index_path: evidence
-                    .map(|evidence| evidence.index_path.clone())
-                    .unwrap_or_else(|| INDEX_PATH.to_owned()),
-                index_format_version: evidence
-                    .map(|evidence| evidence.index_format_version.clone())
-                    .unwrap_or_else(|| index.format_version.clone()),
+                index_path: evidence.map_or_else(
+                    || INDEX_PATH.to_owned(),
+                    |evidence| evidence.index_path.clone(),
+                ),
+                index_format_version: evidence.map_or_else(
+                    || index.format_version.clone(),
+                    |evidence| evidence.index_format_version.clone(),
+                ),
                 status: if valid { "observed" } else { "not provided" }.to_owned(),
             }
         })
@@ -1098,6 +1136,18 @@ fn external_tool_report(
 
 #[implements("FR-217-AC-12")]
 fn render_markdown(report: &ValidationReport) -> String {
+    let mut lines = render_tool_section(report);
+    append_intended_use(report, &mut lines);
+    append_results(report, &mut lines);
+    append_coverage(report, &mut lines);
+    append_known_anomalies(report, &mut lines);
+    append_external_tools(report, &mut lines);
+    append_incomplete_reasons(report, &mut lines);
+    append_signoff(&mut lines);
+    lines.join("\n")
+}
+
+fn render_tool_section(report: &ValidationReport) -> Vec<String> {
     let mut lines = vec![
         "# Tool validation report".to_owned(),
         String::new(),
@@ -1120,6 +1170,10 @@ fn render_markdown(report: &ValidationReport) -> String {
             cell(&tool.retained_location)
         ));
     }
+    lines
+}
+
+fn append_intended_use(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([String::new(), "## Intended use".to_owned(), String::new()]);
     if report.intended_use.is_empty() {
         lines.push("not provided".to_owned());
@@ -1130,6 +1184,9 @@ fn render_markdown(report: &ValidationReport) -> String {
             lines.push(String::new());
         }
     }
+}
+
+fn append_results(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         "## Results".to_owned(),
         String::new(),
@@ -1146,6 +1203,9 @@ fn render_markdown(report: &ValidationReport) -> String {
             cell(&case.detail)
         ));
     }
+}
+
+fn append_coverage(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
         "## Coverage".to_owned(),
@@ -1172,6 +1232,9 @@ fn render_markdown(report: &ValidationReport) -> String {
             cell(&item.result)
         ));
     }
+}
+
+fn append_known_anomalies(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
         "## Known anomalies".to_owned(),
@@ -1212,6 +1275,9 @@ fn render_markdown(report: &ValidationReport) -> String {
             ));
         }
     }
+}
+
+fn append_external_tools(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([String::new(), "## External tools".to_owned(), String::new()]);
     if let Some(index) = &report.external_tools_index {
         lines.push(format!(
@@ -1251,6 +1317,9 @@ fn render_markdown(report: &ValidationReport) -> String {
             cell(&tool.status)
         ));
     }
+}
+
+fn append_incomplete_reasons(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
         "## Incomplete reasons".to_owned(),
@@ -1263,9 +1332,12 @@ fn render_markdown(report: &ValidationReport) -> String {
             report
                 .incomplete_reasons
                 .iter()
-                .map(|reason| format!("- {}", reason)),
+                .map(|reason| format!("- {reason}")),
         );
     }
+}
+
+fn append_signoff(lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
         "## Sign-off".to_owned(),
@@ -1275,7 +1347,6 @@ fn render_markdown(report: &ValidationReport) -> String {
         "Meaning: ".to_owned(),
         String::new(),
     ]);
-    lines.join("\n")
 }
 
 fn write_report(directory: &Path, markdown: &str, json_bytes: &[u8]) -> Result<(), String> {
@@ -1300,59 +1371,18 @@ fn verify_signoff(
     repo: &Path,
     report_directory: &Path,
 ) -> Result<Value, String> {
-    let repo = repo
-        .canonicalize()
-        .map_err(|error| format!("repository is unavailable: {error}"))?;
-    let report_directory = if report_directory.is_absolute() {
-        report_directory.to_path_buf()
-    } else {
-        std::env::current_dir()
-            .map_err(|error| format!("current directory is unavailable: {error}"))?
-            .join(report_directory)
-    };
-    let report_directory = report_directory.canonicalize().map_err(|error| {
-        format!(
-            "validation report directory is unavailable at {}: {error}",
-            report_directory.display()
-        )
-    })?;
-    let report = report_directory.join("validation-report.md");
-    if !report.is_file() {
-        return Err(format!(
-            "validation report is not present: {}",
-            report.display()
-        ));
-    }
-    let report = report
-        .strip_prefix(&repo)
-        .map_err(|_| "validation report must be inside --repo".to_owned())?;
-    let output = ProcessCommand::new("git")
-        .arg("-C")
-        .arg(&repo)
-        .args(["log", "-1", "--format=%H", "--"])
-        .arg(report)
-        .output()
-        .map_err(|error| format!("git is unavailable: {error}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "cannot locate report commit: {}",
-            String::from_utf8_lossy(&output.stderr).trim()
-        ));
-    }
-    let revision = String::from_utf8(output.stdout)
-        .map_err(|error| format!("git returned a non-UTF-8 commit id: {error}"))?
-        .trim()
-        .to_owned();
-    if revision.is_empty() {
+    let Some((repo, report_directory, revision)) = report_revision(repo, report_directory)? else {
         return Ok(signoff_result(
             "not_accepted",
             Some("unsigned"),
-            false,
-            false,
-            false,
-            false,
+            SignoffChecks {
+                mapped: false,
+                signature_valid: false,
+                principal_matches: false,
+                meaning_present: false,
+            },
         ));
-    }
+    };
     let request = json!({
         "protocol": SIGNATURE_REQUEST,
         "repository": repo,
@@ -1361,8 +1391,7 @@ fn verify_signoff(
         "allowed_signers": allowed_signers,
     });
     let result =
-        quoin_core::runtime::engineering_assurance_call(executable, "signature-verify", &request)
-            .map_err(|error| error.to_string())?;
+        quoin_core::runtime::engineering_assurance_call(executable, "signature-verify", &request)?;
     if !result.status.success() {
         return Err(format!(
             "engineering-assurance signature-verify failed: {}",
@@ -1406,7 +1435,7 @@ fn verify_signoff(
         .filter_map(Value::as_str)
         .collect::<Vec<_>>();
     let principal_matches = !principal.is_empty() && principal == expected_principal;
-    let meaning_present = meaning.iter().any(|value| *value == SIGNED_OFF_MEANING);
+    let meaning_present = meaning.contains(&SIGNED_OFF_MEANING);
     let (result_status, reason) = if status == "unsigned" {
         ("not_accepted", Some("unsigned"))
     } else if status == "signed_untrusted" && mapping == "unmapped" {
@@ -1425,28 +1454,85 @@ fn verify_signoff(
     Ok(signoff_result(
         result_status,
         reason,
-        mapping == "mapped",
-        status == "signed_valid",
-        principal_matches,
-        meaning_present,
+        SignoffChecks {
+            mapped: mapping == "mapped",
+            signature_valid: status == "signed_valid",
+            principal_matches,
+            meaning_present,
+        },
     ))
 }
 
-fn signoff_result(
-    status: &str,
-    reason: Option<&str>,
+fn report_revision(
+    repo: &Path,
+    report_directory: &Path,
+) -> Result<Option<(PathBuf, PathBuf, String)>, String> {
+    let repo = repo
+        .canonicalize()
+        .map_err(|error| format!("repository is unavailable: {error}"))?;
+    let report_directory = if report_directory.is_absolute() {
+        report_directory.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .map_err(|error| format!("current directory is unavailable: {error}"))?
+            .join(report_directory)
+    };
+    let report_directory = report_directory.canonicalize().map_err(|error| {
+        format!(
+            "validation report directory is unavailable at {}: {error}",
+            report_directory.display()
+        )
+    })?;
+    let report = report_directory.join("validation-report.md");
+    if !report.is_file() {
+        return Err(format!(
+            "validation report is not present: {}",
+            report.display()
+        ));
+    }
+    let report = report
+        .strip_prefix(&repo)
+        .map_err(|_| "validation report must be inside --repo".to_owned())?;
+    let output = ProcessCommand::new("git")
+        .arg("-C")
+        .arg(&repo)
+        .args(["log", "-1", "--format=%H", "--"])
+        .arg(report)
+        .output()
+        .map_err(|error| format!("git is unavailable: {error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "cannot locate report commit: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    let revision = String::from_utf8(output.stdout)
+        .map_err(|error| format!("git returned a non-UTF-8 commit id: {error}"))?
+        .trim()
+        .to_owned();
+    Ok((!revision.is_empty()).then_some((repo, report_directory, revision)))
+}
+
+#[derive(Clone, Copy)]
+#[allow(
+    clippy::struct_excessive_bools,
+    reason = "these independent booleans are the four separately reported sign-off checks"
+)]
+struct SignoffChecks {
     mapped: bool,
     signature_valid: bool,
     principal_matches: bool,
     meaning_present: bool,
-) -> Value {
+}
+
+fn signoff_result(status: &str, reason: Option<&str>, checks: SignoffChecks) -> Value {
     json!({
         "status": status,
         "reason": reason,
-        "signatureValid": signature_valid,
-        "signerMapped": mapped,
-        "principalMatchesRatedBy": principal_matches,
-        "meaningPresent": meaning_present,
+        "signatureValid": checks.signature_valid,
+        "signerMapped": checks.mapped,
+        "principalMatchesRatedBy": checks.principal_matches,
+        "meaningPresent": checks.meaning_present,
     })
 }
 
@@ -2059,7 +2145,13 @@ mod tests {
             .expect("valid tool row");
         assert_eq!(valid_row.status, "observed");
         assert_eq!(valid_row.observed_version_output, "valid tool version");
-        assert!(index.report.expect("partial index report").entries.len() > 0);
+        assert!(
+            !index
+                .report
+                .expect("partial index report")
+                .entries
+                .is_empty()
+        );
     }
 
     fn run_record_with_evidence(evidence: Value) -> RunRecord {

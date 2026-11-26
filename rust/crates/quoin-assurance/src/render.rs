@@ -374,12 +374,10 @@ fn walk(node: &CaseNode, lines: &mut Vec<String>, seen: &mut Vec<String>) {
     if !seen.contains(&id) {
         seen.push(id.clone());
         let (open, close) = match node.kind {
-            NodeKind::Solution => ("([", "])"),
-            NodeKind::Strategy => ("[/", "/]"),
+            NodeKind::Strategy | NodeKind::CounterClaim => ("[/", "/]"),
             NodeKind::Goal => ("[", "]"),
             NodeKind::Context => ("(", ")"),
-            NodeKind::Assumption | NodeKind::Justification => ("([", "])"),
-            NodeKind::CounterClaim => ("[/", "/]"),
+            NodeKind::Solution | NodeKind::Assumption | NodeKind::Justification => ("([", "])"),
         };
         lines.push(format!("  {id}{open}\"{}\"{close}", label(node)));
     }

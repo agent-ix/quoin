@@ -4,7 +4,7 @@
 //! `quoin soup promote`: write one `soup_record` per purl of an ingested SBOM
 //! (FR-141); `quoin soup report`: render them with their advisories and
 //! support (FR-144); `quoin soup vex export`: serialize authored statements
-//! as OpenVEX (FR-216).
+//! as `OpenVEX` (FR-216).
 //!
 //! The components are the FR-041 adapter's (`quoin_evidence::adapters::sbom`);
 //! this command has no SBOM reader. The record type, skeleton and schema belong
@@ -49,57 +49,112 @@ pub fn command() -> Command {
     Command::new("soup")
         .about(ABOUT)
         .subcommand_required(true)
-        .subcommand(
-            Command::new("promote")
-                .about("Write one soup_record per purl of an SBOM, leaving existing records alone")
-                .arg(
-                    Arg::new("sbom")
-                        .value_name("SBOM")
-                        .required(true)
-                        .help("CycloneDX or SPDX JSON inventory"),
-                )
-                .arg(
-                    Arg::new("repo")
-                        .long("repo")
-                        .value_name("DIR")
-                        .default_value(".")
-                        .help("Repository root; --out defaults to <repo>/spec/soup"),
-                )
-                .arg(
-                    Arg::new("out")
-                        .long("out")
-                        .value_name("DIR")
-                        .help("Where new records are written"),
-                )
-                .arg(
-                    Arg::new("records")
-                        .long("records")
-                        .value_name("DIR")
-                        .help("Where existing records are looked up; defaults to --out"),
-                )
-                .arg(
-                    Arg::new("discharges")
-                        .long("discharges")
-                        .value_name("OBLIGATION")
-                        .help("Obligation id written as disposition_clause on new records"),
-                )
-                .arg(
-                    Arg::new("module")
-                        .long("module")
-                        .value_name("DIR")
-                        .action(clap::ArgAction::Append)
-                        .help("Module root to look for the soup_record type in; repeat to add roots. Without it the installed modules are searched"),
-                ),
+        .subcommand(promote_command())
+        .subcommand(report_command())
+        .subcommand(vex_command())
+}
+
+fn promote_command() -> Command {
+    Command::new("promote")
+        .about("Write one soup_record per purl of an SBOM, leaving existing records alone")
+        .arg(
+            Arg::new("sbom")
+                .value_name("SBOM")
+                .required(true)
+                .help("CycloneDX or SPDX JSON inventory"),
         )
+        .arg(
+            Arg::new("repo")
+                .long("repo")
+                .value_name("DIR")
+                .default_value(".")
+                .help("Repository root; --out defaults to <repo>/spec/soup"),
+        )
+        .arg(
+            Arg::new("out")
+                .long("out")
+                .value_name("DIR")
+                .help("Where new records are written"),
+        )
+        .arg(
+            Arg::new("records")
+                .long("records")
+                .value_name("DIR")
+                .help("Where existing records are looked up; defaults to --out"),
+        )
+        .arg(
+            Arg::new("discharges")
+                .long("discharges")
+                .value_name("OBLIGATION")
+                .help("Obligation id written as disposition_clause on new records"),
+        )
+        .arg(
+            Arg::new("module")
+                .long("module")
+                .value_name("DIR")
+                .action(clap::ArgAction::Append)
+                .help("Module root to look for the soup_record type in; repeat to add roots. Without it the installed modules are searched"),
+        )
+}
+
+fn report_command() -> Command {
+    Command::new("report")
+        .about("Render one row per soup_record with its advisories and support status")
+        .arg(
+            Arg::new("repo")
+                .long("repo")
+                .value_name("DIR")
+                .default_value(".")
+                .help("Repository root; --records defaults to <repo>/spec/soup"),
+        )
+        .arg(
+            Arg::new("records")
+                .long("records")
+                .value_name("DIR")
+                .help("Where the soup_record files are read"),
+        )
+        .arg(
+            Arg::new("binding")
+                .long("binding")
+                .value_name("FILE")
+                .required(true)
+                .help("Quire clause-binding-v1 JSON report whose clauses the records' disposition_clause names"),
+        )
+        .arg(
+            Arg::new("as-of")
+                .long("as-of")
+                .value_name("INSTANT")
+                .required(true)
+                .help("Explicit evaluation instant; its UTC date is the end-of-support comparison date"),
+        )
+        .arg(
+            Arg::new("support")
+                .long("support")
+                .value_name("FILE")
+                .help("JSON file of public support statements: [{purl, support_status, end_of_support, source}]"),
+        )
+        .arg(
+            Arg::new("json")
+                .long("json")
+                .action(clap::ArgAction::SetTrue)
+                .help("Emit the report as JSON instead of Markdown"),
+        )
+}
+
+fn vex_command() -> Command {
+    Command::new("vex")
+        .about("Export authored SOUP VEX statements")
+        .hide(true)
+        .subcommand_required(true)
         .subcommand(
-            Command::new("report")
-                .about("Render one row per soup_record with its advisories and support status")
+            Command::new("export")
+                .about("Export authored statements as OpenVEX 0.2.0 JSON")
                 .arg(
                     Arg::new("repo")
                         .long("repo")
                         .value_name("DIR")
                         .default_value(".")
-                        .help("Repository root; --records defaults to <repo>/spec/soup"),
+                        .help("Repository root; records default to <repo>/spec/soup"),
                 )
                 .arg(
                     Arg::new("records")
@@ -108,93 +163,44 @@ pub fn command() -> Command {
                         .help("Where the soup_record files are read"),
                 )
                 .arg(
-                    Arg::new("binding")
-                        .long("binding")
+                    Arg::new("out")
+                        .long("out")
                         .value_name("FILE")
+                        .help("Output file; defaults to <repo>/spec/soup.vex.openvex.json"),
+                )
+                .arg(
+                    Arg::new("id")
+                        .long("id")
+                        .value_name("IRI")
                         .required(true)
-                        .help("Quire clause-binding-v1 JSON report whose clauses the records' disposition_clause names"),
+                        .help("Caller-supplied OpenVEX document @id"),
                 )
                 .arg(
-                    Arg::new("as-of")
-                        .long("as-of")
-                        .value_name("INSTANT")
+                    Arg::new("author")
+                        .long("author")
+                        .value_name("AUTHOR")
                         .required(true)
-                        .help("Explicit evaluation instant; its UTC date is the end-of-support comparison date"),
+                        .help("Caller-supplied OpenVEX author"),
                 )
                 .arg(
-                    Arg::new("support")
-                        .long("support")
-                        .value_name("FILE")
-                        .help("JSON file of public support statements: [{purl, support_status, end_of_support, source}]"),
+                    Arg::new("timestamp")
+                        .long("timestamp")
+                        .value_name("RFC3339")
+                        .required(true)
+                        .help("Caller-supplied OpenVEX timestamp"),
                 )
                 .arg(
-                    Arg::new("json")
-                        .long("json")
-                        .action(clap::ArgAction::SetTrue)
-                        .help("Emit the report as JSON instead of Markdown"),
-                ),
-        )
-        .subcommand(
-            Command::new("vex")
-                .about("Export authored SOUP VEX statements")
-                .hide(true)
-                .subcommand_required(true)
-                .subcommand(
-                    Command::new("export")
-                        .about("Export authored statements as OpenVEX 0.2.0 JSON")
-                        .arg(
-                            Arg::new("repo")
-                                .long("repo")
-                                .value_name("DIR")
-                                .default_value(".")
-                                .help("Repository root; records default to <repo>/spec/soup"),
-                        )
-                        .arg(
-                            Arg::new("records")
-                                .long("records")
-                                .value_name("DIR")
-                                .help("Where the soup_record files are read"),
-                        )
-                        .arg(
-                            Arg::new("out")
-                                .long("out")
-                                .value_name("FILE")
-                                .help("Output file; defaults to <repo>/spec/soup.vex.openvex.json"),
-                        )
-                        .arg(
-                            Arg::new("id")
-                                .long("id")
-                                .value_name("IRI")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX document @id"),
-                        )
-                        .arg(
-                            Arg::new("author")
-                                .long("author")
-                                .value_name("AUTHOR")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX author"),
-                        )
-                        .arg(
-                            Arg::new("timestamp")
-                                .long("timestamp")
-                                .value_name("RFC3339")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX timestamp"),
-                        )
-                        .arg(
-                            Arg::new("version")
-                                .long("version")
-                                .value_name("POSITIVE_INTEGER")
-                                .required(true)
-                                .help("Caller-supplied OpenVEX document version"),
-                        )
-                        .arg(
-                            Arg::new("role")
-                                .long("role")
-                                .value_name("ROLE")
-                                .help("Optional caller-supplied OpenVEX author role"),
-                        ),
+                    Arg::new("version")
+                        .long("version")
+                        .value_name("POSITIVE_INTEGER")
+                        .required(true)
+                        .help("Caller-supplied OpenVEX document version"),
+                )
+                .arg(
+                    Arg::new("role")
+                        .long("role")
+                        .value_name("ROLE")
+                        .help("Optional caller-supplied OpenVEX author role"),
                 ),
         )
 }

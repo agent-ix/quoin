@@ -565,119 +565,177 @@ fn formal_rule_selection_is_currently_approved(
     report: &Value,
     refusals: &mut Vec<Refusal>,
 ) -> bool {
-    let mut refuse = |cause, reason: &str| {
-        refusals.push(refusal(
-            cause,
-            Premise::ApprovedFormalRules,
-            locator,
-            reason,
-        ));
+    let Some(claims) = selected_formal_rule_claims(report, locator, refusals) else {
+        return false;
     };
+    let Some(rules) = current_formal_rules(run, locator, refusals) else {
+        return false;
+    };
+    claims
+        .iter()
+        .all(|claim| formal_rule_claim_is_currently_approved(claim, rules, locator, refusals))
+}
+
+fn selected_formal_rule_claims<'a>(
+    report: &'a Value,
+    locator: &RunLocator,
+    refusals: &mut Vec<Refusal>,
+) -> Option<&'a [Value]> {
     let Some(mapping) = report.get("formal_rule_selection") else {
-        refuse(
+        refuse_formal_selection(
+            locator,
+            refusals,
             Cause::QualificationRejected,
             "draft_rule_in_judgement: formal-rule selection mapping is missing",
         );
-        return false;
+        return None;
     };
     let Some(claims) = mapping.get("claims").and_then(Value::as_array) else {
-        refuse(
+        refuse_formal_selection(
+            locator,
+            refusals,
             Cause::QualificationRejected,
             "draft_rule_in_judgement: formal-rule selection mapping is malformed",
         );
-        return false;
+        return None;
     };
     if !valid_formal_rule_selection(Some(mapping), report.get("selection")) {
-        refuse(
+        refuse_formal_selection(
+            locator,
+            refusals,
             Cause::SelectionMismatch,
             "formal-rule selection differs from the selected report claims or source spans",
         );
-        return false;
+        return None;
     }
+    Some(claims)
+}
+
+fn current_formal_rules<'a>(
+    run: &'a RetainedRun,
+    locator: &RunLocator,
+    refusals: &mut Vec<Refusal>,
+) -> Option<&'a [Value]> {
     let Some(current) = run.observation.current_formal_rule_status.as_ref() else {
-        refuse(
+        refuse_formal_selection(
+            locator,
+            refusals,
             Cause::Unevaluated,
             "current FR-188 status is unavailable because the host verifier or result was not available",
         );
-        return false;
+        return None;
     };
     if current.get("protocol").and_then(Value::as_str) != Some("quoin.formal-rule-status/v1") {
-        refuse(
+        refuse_formal_selection(
+            locator,
+            refusals,
             Cause::Unevaluated,
             "current FR-188 status has an unsupported protocol",
         );
-        return false;
+        return None;
     }
     let Some(rules) = current.get("rules").and_then(Value::as_array) else {
-        refuse(
+        refuse_formal_selection(
+            locator,
+            refusals,
             Cause::Unevaluated,
             "current FR-188 status has no rules result",
         );
+        return None;
+    };
+    Some(rules)
+}
+
+fn formal_rule_claim_is_currently_approved(
+    claim: &Value,
+    rules: &[Value],
+    locator: &RunLocator,
+    refusals: &mut Vec<Refusal>,
+) -> bool {
+    let Some(symbol) = claim.get("symbol").and_then(Value::as_str) else {
+        refuse_formal_selection(
+            locator,
+            refusals,
+            Cause::SelectionMismatch,
+            "formal-rule selection has no matching symbol",
+        );
         return false;
     };
-    for claim in claims {
-        let Some(symbol) = claim.get("symbol").and_then(Value::as_str) else {
-            refuse(
-                Cause::SelectionMismatch,
-                "formal-rule selection has no matching symbol",
-            );
-            return false;
-        };
-        let mut current_rules = rules
-            .iter()
-            .filter(|rule| rule.get("symbol").and_then(Value::as_str) == Some(symbol));
-        let Some(current_rule) = current_rules.next() else {
-            refuse(
-                Cause::SelectionMismatch,
-                "formal-rule selection names a symbol absent from the current FR-188 selection",
-            );
-            return false;
-        };
-        if current_rules.next().is_some() {
-            refuse(
-                Cause::SelectionMismatch,
-                "current FR-188 selection contains duplicate symbol identities",
-            );
-            return false;
-        }
-        let Some(source) = claim.get("source") else {
-            refuse(
-                Cause::SelectionMismatch,
-                "formal-rule selection has no retained source span",
-            );
-            return false;
-        };
-        let source_document = source.get("document").and_then(Value::as_str);
-        let source_start = source.pointer("/start/byte").and_then(Value::as_u64);
-        let source_end = source.pointer("/end/byte").and_then(Value::as_u64);
-        let current_path = current_rule.get("path").and_then(Value::as_str);
-        let current_start = current_rule
-            .pointer("/declaration_range/start")
-            .and_then(Value::as_u64);
-        let current_end = current_rule
-            .pointer("/declaration_range/end")
-            .and_then(Value::as_u64);
-        if (source_document, source_start, source_end) != (current_path, current_start, current_end)
-        {
-            refuse(
-                Cause::SelectionMismatch,
-                "current FR-188 declaration path or span differs from the retained selected source span",
-            );
-            return false;
-        }
-        if current_rule.get("state").and_then(Value::as_str) != Some("approved") {
-            let reason = current_rule
-                .get("reason")
-                .and_then(Value::as_str)
-                .unwrap_or("not_approved");
-            refuse(
-                Cause::QualificationRejected,
-                &format!("draft_rule_in_judgement: current FR-188 status is {reason}"),
-            );
-            return false;
-        }
+    let mut matching = rules
+        .iter()
+        .filter(|rule| rule.get("symbol").and_then(Value::as_str) == Some(symbol));
+    let Some(current_rule) = matching.next() else {
+        refuse_formal_selection(
+            locator,
+            refusals,
+            Cause::SelectionMismatch,
+            "formal-rule selection names a symbol absent from the current FR-188 selection",
+        );
+        return false;
+    };
+    if matching.next().is_some() {
+        refuse_formal_selection(
+            locator,
+            refusals,
+            Cause::SelectionMismatch,
+            "current FR-188 selection contains duplicate symbol identities",
+        );
+        return false;
+    }
+    if !formal_rule_source_matches(claim, current_rule) {
+        refuse_formal_selection(
+            locator,
+            refusals,
+            Cause::SelectionMismatch,
+            "current FR-188 declaration path or span differs from the retained selected source span",
+        );
+        return false;
+    }
+    if current_rule.get("state").and_then(Value::as_str) != Some("approved") {
+        let reason = current_rule
+            .get("reason")
+            .and_then(Value::as_str)
+            .unwrap_or("not_approved");
+        refuse_formal_selection(
+            locator,
+            refusals,
+            Cause::QualificationRejected,
+            &format!("draft_rule_in_judgement: current FR-188 status is {reason}"),
+        );
+        return false;
     }
     true
+}
+
+fn formal_rule_source_matches(claim: &Value, current_rule: &Value) -> bool {
+    let Some(source) = claim.get("source") else {
+        return false;
+    };
+    let source_document = source.get("document").and_then(Value::as_str);
+    let source_start = source.pointer("/start/byte").and_then(Value::as_u64);
+    let source_end = source.pointer("/end/byte").and_then(Value::as_u64);
+    let current_path = current_rule.get("path").and_then(Value::as_str);
+    let current_start = current_rule
+        .pointer("/declaration_range/start")
+        .and_then(Value::as_u64);
+    let current_end = current_rule
+        .pointer("/declaration_range/end")
+        .and_then(Value::as_u64);
+    (source_document, source_start, source_end) == (current_path, current_start, current_end)
+}
+
+fn refuse_formal_selection(
+    locator: &RunLocator,
+    refusals: &mut Vec<Refusal>,
+    cause: Cause,
+    reason: &str,
+) {
+    refusals.push(refusal(
+        cause,
+        Premise::ApprovedFormalRules,
+        locator,
+        reason,
+    ));
 }
 
 fn valid_formal_rule_selection(mapping: Option<&Value>, selection: Option<&Value>) -> bool {

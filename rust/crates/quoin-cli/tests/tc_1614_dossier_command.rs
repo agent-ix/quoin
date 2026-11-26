@@ -29,6 +29,10 @@ use serde_json::Value;
 
 mod dropped_relation_support;
 
+const APPROVAL_SCOPE: &str = "Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.";
+const VERIFIER_IDENTITY: &str =
+    "Verifier identity: not provided as a distinct field by the source approval contracts.";
+
 fn quoin(work: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .arg("dossier")
@@ -503,6 +507,10 @@ fn a_failing_source_exits_3_names_it_writes_nothing_and_keeps_existing_files() {
 
 #[trace("FR-191-AC-13", "FR-191-AC-24", "FR-191-AC-29", "FR-207-AC-10")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one records-of-processing acceptance scenario checks rejected unversioned actions and the supported release path"
+)]
 fn records_of_processing_needs_no_version_and_exports_only_with_release() {
     let work = tempfile::tempdir().unwrap();
     let spec = work.path().join("spec");
@@ -980,6 +988,10 @@ fn export_passes_module_roots_to_quire_in_the_supplied_order() {
 
 #[trace("FR-201-AC-9", "FR-201-AC-10")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one end-to-end release record workflow checks source approvals, report ordering, and exported content"
+)]
 fn release_verify_result_is_appended_after_user_approvals_once() {
     let work = tempfile::tempdir().unwrap();
     let git = |args: &[&str]| {
@@ -1038,9 +1050,6 @@ fn release_verify_result_is_appended_after_user_approvals_once() {
     git(&["add", "dossier/DOS-REL.md"]);
     git(&["commit", "-qm", "release record"]);
     let generated_text = read(&work.path().join("dossier/DOS-REL.md"));
-    const APPROVAL_SCOPE: &str = "Approval entries in this export are treated as unbound to the exact bytes of this DOS-REL document because Quoin has not compared their source-record digests to those bytes. They report only the source records and verdicts in their inputs.";
-    const VERIFIER_IDENTITY: &str =
-        "Verifier identity: not provided as a distinct field by the source approval contracts.";
     let decision_at = generated_text.find("## Decision").unwrap();
     let evidence_at = generated_text.find("## Evidence at release").unwrap();
     let approval_at = generated_text.find(APPROVAL_SCOPE).unwrap();
@@ -1246,6 +1255,10 @@ fn release_record_generation_needs_no_git_and_is_repeatable() {
 
 #[trace("FR-201-AC-7", "FR-201-AC-9")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one end-to-end PDF and DOCX export scenario checks identical approval text in both formats"
+)]
 fn release_record_exports_pdf_and_docx_with_the_ea_approval_text() {
     let work = tempfile::tempdir().unwrap();
     let git = |args: &[&str]| {

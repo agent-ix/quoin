@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+//! The installed binary's self-test command and retained result contract.
+
+#![allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "test assertions inspect the fixed result schema; a missing field is a failed test"
+)]
+
 use ix_trace_rs::trace;
 use serde_json::Value;
 use std::process::Command;

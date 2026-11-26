@@ -12,6 +12,7 @@
 
 use ix_trace_rs::trace;
 use serde_json::Value;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -58,6 +59,10 @@ fn verify(repository: &Path, allowed_signers: &Path, verifier: &Path) -> Value {
 
 #[trace("FR-218-AC-4", "FR-218-AC-5")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one ignored end-to-end SSH signing scenario checks matching, missing, and unsigned verification outcomes"
+)]
 #[ignore = "real SSH signing lane requires Engineering Assurance, Git and ssh-keygen"]
 fn signoff_reports_signed_matching_principal_and_refuses_missing_meaning_or_unsigned_commit() {
     let verifier = find_program("engineering-assurance").expect("Engineering Assurance executable");
@@ -314,7 +319,6 @@ fn signoff_interprets_engineering_assurance_results() {
         ),
     )
     .expect("verifier written");
-    use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(&verifier, std::fs::Permissions::from_mode(0o755))
         .expect("verifier made executable");
 

@@ -7,7 +7,8 @@
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
-    reason = "test fixtures may panic"
+    clippy::indexing_slicing,
+    reason = "test fixtures assert fixed JSON output paths; a missing path is a failed command-contract test"
 )]
 
 use ix_trace_rs::trace;

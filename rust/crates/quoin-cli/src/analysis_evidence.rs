@@ -490,8 +490,8 @@ fn fresh_formal_rule_status(
     let matches = crate::formal_rules::command()
         .try_get_matches_from(argv)
         .ok()?;
-    let (_, args) = matches.subcommand()?;
-    crate::formal_rules::status_report_with_modules(args, module_paths).ok()
+    let (_, status_arguments) = matches.subcommand()?;
+    crate::formal_rules::status_report_with_modules(status_arguments, module_paths).ok()
 }
 
 fn host_observations(repo: &str, observations: &[RunObservationFile]) -> HostObservations {
@@ -805,6 +805,10 @@ mod tests {
     #[cfg(unix)]
     #[trace("FR-184-AC-25")]
     #[test]
+    #[allow(
+        clippy::too_many_lines,
+        reason = "one request assembly scenario checks refresh, non-refresh, and unavailable-verifier paths"
+    )]
     fn the_host_refreshes_formal_rule_status_and_fails_closed_when_verification_is_unavailable() {
         let repo = tempfile::tempdir().expect("temporary repository");
         fs::write(
@@ -897,14 +901,33 @@ mod tests {
             verifier_marker.is_file(),
             "formal_rule request invokes the verifier"
         );
-        let refreshed = formal_request.runs[0]
+        let refreshed = &formal_request
+            .runs
+            .first()
+            .expect("formal run")
             .observation
             .current_formal_rule_status
             .as_ref()
             .expect("request attached freshly derived status");
-        assert_eq!(refreshed["protocol"], "quoin.formal-rule-status/v1");
-        assert_eq!(refreshed["rules"][0]["state"], "draft");
-        assert_eq!(refreshed["rules"][0]["reason"], "approval_unverifiable");
+        assert_eq!(
+            refreshed
+                .get("protocol")
+                .and_then(serde_json::Value::as_str),
+            Some("quoin.formal-rule-status/v1")
+        );
+        let rule = refreshed
+            .get("rules")
+            .and_then(serde_json::Value::as_array)
+            .and_then(|rules| rules.first())
+            .expect("one refreshed rule");
+        assert_eq!(
+            rule.get("state").and_then(serde_json::Value::as_str),
+            Some("draft")
+        );
+        assert_eq!(
+            rule.get("reason").and_then(serde_json::Value::as_str),
+            Some("approval_unverifiable")
+        );
 
         fs::remove_file(&verifier_marker).expect("reset verifier marker");
         let analysis_request = request(
@@ -921,7 +944,10 @@ mod tests {
             "ordinary analysis does not require status refresh"
         );
         assert!(
-            analysis_request.runs[0]
+            analysis_request
+                .runs
+                .first()
+                .expect("analysis run")
                 .observation
                 .current_formal_rule_status
                 .is_none()
@@ -942,7 +968,10 @@ mod tests {
         )
         .expect("unavailable current verifier leaves request unevaluated");
         assert!(
-            unavailable_request.runs[0]
+            unavailable_request
+                .runs
+                .first()
+                .expect("unavailable run")
                 .observation
                 .current_formal_rule_status
                 .is_none()
@@ -985,9 +1014,9 @@ mod tests {
         fs::write(&path, [b'{', 0xff, b'}']).expect("invalid UTF-8 record bytes");
 
         let result = RunSnapshot::read(&DiskEvidence::new(repo.path()), RUN.to_owned());
-        let Err(error) = result else {
-            panic!("invalid UTF-8 evidence was silently dropped");
-        };
+        let error = result
+            .err()
+            .expect("invalid UTF-8 evidence must not be dropped");
         assert!(error.contains("unreadable"), "{error}");
     }
 
@@ -1002,9 +1031,9 @@ mod tests {
         fs::remove_file(path).expect("record disappeared after listing");
 
         let result = RunSnapshot::read(&source, RUN.to_owned());
-        let Err(error) = result else {
-            panic!("missing retained evidence was silently dropped");
-        };
+        let error = result
+            .err()
+            .expect("missing retained evidence must not be dropped");
         assert!(error.contains("disappeared"), "{error}");
     }
 

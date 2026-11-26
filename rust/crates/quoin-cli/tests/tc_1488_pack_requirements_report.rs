@@ -560,6 +560,10 @@ fn tc_1488_003_facts_for_one_set_leave_the_others_undischarged_and_counts_match_
 
 #[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3", "FR-208-AC-5")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one approval-role acceptance matrix checks storage, verification, and generic clause compatibility"
+)]
 fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic_sets() {
     let env = env();
     install_approval_fixture(&env);
@@ -690,13 +694,13 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     assert_eq!(art_35["compliance"], "compliant");
     assert_eq!(art_35["evidenceRefs"][0], "evidence://runs/SUITE-1/one");
 
-    let verified = json(&discharge_report_with_binding(
+    let bound_report = json(&discharge_report_with_binding(
         &env,
         &env.repo,
         &binding_path,
         &flags,
     ));
-    let approval_direct = verified["binding"]["direct"]
+    let approval_direct = bound_report["binding"]["direct"]
         .as_array()
         .unwrap()
         .iter()
@@ -707,7 +711,7 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
         approval_direct["fact"]["approvalRef"],
         "person://example.invalid/people/privacy-officer"
     );
-    let generic_direct = verified["binding"]["direct"]
+    let generic_direct = bound_report["binding"]["direct"]
         .as_array()
         .unwrap()
         .iter()

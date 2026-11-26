@@ -9,7 +9,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-//! `quoin soup vex export` writes only person-authored OpenVEX statements
+//! `quoin soup vex export` writes only person-authored `OpenVEX` statements
 //! (FR-216).
 
 use std::path::Path;
@@ -47,9 +47,13 @@ impl Fixture {
             front.push_str(&serde_json::to_string(&statements).unwrap());
             front.push('\n');
         }
-        front.push_str(&format!(
-            "---\n# [{id}] {id}\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| component_id | UUID | 1..1 | identity |\n| purl | String | 1..1 | minLength: 1 |\n"
-        ));
+        front.push_str("---\n# [");
+        front.push_str(id);
+        front.push_str("] ");
+        front.push_str(id);
+        front.push_str(
+            "\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| component_id | UUID | 1..1 | identity |\n| purl | String | 1..1 | minLength: 1 |\n"
+        );
         std::fs::write(self.path().join(format!("spec/soup/{id}.md")), front).unwrap();
     }
 
@@ -174,6 +178,10 @@ fn assert_matches_openvex_020_schema(document: &Value) {
     "FR-216-AC-10"
 )]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    reason = "one end-to-end export scenario checks authored statements, omitted private metadata, and deterministic output"
+)]
 fn export_copies_authored_values_with_caller_metadata_and_stays_deterministic() {
     let fixture = Fixture::new();
     fixture.record(

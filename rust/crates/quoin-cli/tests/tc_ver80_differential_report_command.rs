@@ -399,6 +399,12 @@ fn tc_002_audit_reports_the_obligation_undischarged_until_it_is_stated() {
 
 #[trace("FR-184-AC-26")]
 #[test]
+#[allow(
+    clippy::too_many_lines,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "this end-to-end acceptance case must keep producer, recorder, and consumer assertions in one scenario"
+)]
 fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consumer() {
     let binary = std::env::var_os("FILAMENT_ANALYZE_BIN")
         .map(PathBuf::from)
