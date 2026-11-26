@@ -592,7 +592,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3050,7 +3050,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3079,7 +3079,7 @@ dependencies = [
 [[package]]
 name = "quire-code-extraction"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-rs?rev=f13a80e9ab662fb36a61f664c4b2e230a1cf9340#f13a80e9ab662fb36a61f664c4b2e230a1cf9340"
+source = "git+https://github.com/agent-ix/quire-rs?rev=8fea9b4ee476ba2c1bc65e2e1b0c28d2664c9467#8fea9b4ee476ba2c1bc65e2e1b0c28d2664c9467"
 dependencies = [
  "quire-code-parse",
 ]
@@ -3108,7 +3108,7 @@ dependencies = [
 [[package]]
 name = "quire-rs"
 version = "0.63.2"
-source = "git+https://github.com/agent-ix/quire-rs?rev=f13a80e9ab662fb36a61f664c4b2e230a1cf9340#f13a80e9ab662fb36a61f664c4b2e230a1cf9340"
+source = "git+https://github.com/agent-ix/quire-rs?rev=8fea9b4ee476ba2c1bc65e2e1b0c28d2664c9467#8fea9b4ee476ba2c1bc65e2e1b0c28d2664c9467"
 dependencies = [
  "agent-ix-semantic-schema",
  "globset",
@@ -3972,7 +3972,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4030,7 +4030,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4557,7 +4557,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5314,7 +5314,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
