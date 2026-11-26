@@ -353,6 +353,47 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     );
 }
 
+#[trace("FR-212-AC-8")]
+#[test]
+fn tc_212_008_ensure_defaults_updates_an_installed_module_to_a_newer_pin() {
+    let h = home();
+    let older = write_module(&h.fixtures.join("older"), "mod", "older");
+    let pinned = write_module(&h.fixtures.join("pinned"), "mod", "pinned");
+    let resolver = CountingResolver::new()
+        .serving("https://github.com/agent-ix/fixture.git", "v1.0.0", older)
+        .serving("https://github.com/agent-ix/fixture.git", "v2.0.0", pinned);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+
+    ensure_defaults(&git_manifest("mod", "v1.0.0"), &installer).expect("install old pin");
+    let updated = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("ensure current pin updates an older installed release");
+    assert_eq!(
+        updated.updated,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2, "the new pin is resolved once");
+
+    let installed = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    let module = installed
+        .find(&ModuleName::new("mod").expect("legal module name"))
+        .expect("module remains installed");
+    assert_eq!(module.r#ref.as_deref(), Some("v2.0.0"));
+    assert_eq!(
+        fs::read_to_string(h.paths.target_root.join("mod/artifacts/marker.txt"))
+            .expect("pinned module artifact is present"),
+        "pinned"
+    );
+
+    let second = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("a module at the pin remains installed");
+    assert_eq!(
+        second.unchanged,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2, "the matching pin needs no fetch");
+}
+
 #[trace("FR-099-AC-11")]
 #[test]
 fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
