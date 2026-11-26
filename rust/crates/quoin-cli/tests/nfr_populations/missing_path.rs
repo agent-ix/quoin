@@ -41,13 +41,15 @@ pub(crate) fn probe(cx: &Context) -> Vec<Failure> {
             let line = command.line(target, missing);
             let line: Vec<&str> = line.iter().map(String::as_str).collect();
             let output = cx.run(command, &line);
-            failures.push(judge(
+            let mut failure = judge(
                 format!("{} {}:missing-path", command.id(), target.label),
                 &output,
                 |message| {
                     names(message, missing) && REASONS.iter().any(|reason| names(message, reason))
                 },
-            ));
+            );
+            failure.detail = format!("args {line:?}: {}", failure.detail);
+            failures.push(failure);
         }
     }
     failures

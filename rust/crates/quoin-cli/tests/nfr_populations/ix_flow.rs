@@ -23,12 +23,13 @@ use super::help_tree::CommandHelp;
 use super::{Probed, text};
 
 /// The `about` line of the commands that launch an `ix-flow` workflow.
-const WORKFLOW_ABOUT: &str = "Start the Quoin-owned specification workflow";
+const WORKFLOW_ABOUT: &str = "Start a Quoin-owned workflow";
 
 /// One way `ix-flow` fails. `operation` is the stub call the failure belongs
-/// to: the probe reaches it, or the failure was not the staged one. `evidence`
-/// is the fragment of the message that failure alone produces, from the stub's
-/// marker where the message is the tool's own, otherwise from `quoin`'s wording.
+/// to: the probe reaches it, or the failure was not the staged one. For
+/// design-gate's host-seeded context, the preceding `run` is the recorded stub
+/// call and the host fixture produces the context failure. `evidence` is the
+/// fragment that failure alone produces.
 struct Mode {
     id: &'static str,
     operation: Option<&'static str>,
@@ -145,12 +146,44 @@ fn workflow_commands(cx: &Context) -> Vec<&'static CommandHelp> {
 /// `sleep`, found on the ambient `PATH`, linked into `bin`: the stub's `PATH`
 /// holds nothing else, so an `ix-flow` elsewhere cannot be found.
 fn link_sleep(bin: &std::path::Path) {
+    link_ambient_program(bin, "sleep");
+}
+
+/// `node`, used by design-gate's host API preflight and context seed.
+fn link_node(bin: &std::path::Path) {
+    link_ambient_program(bin, "node");
+}
+
+fn link_ambient_program(bin: &std::path::Path, name: &str) {
     let path = std::env::var_os("PATH").unwrap_or_default();
-    let sleep = std::env::split_paths(&path)
-        .map(|directory| directory.join("sleep"))
+    let program = std::env::split_paths(&path)
+        .map(|directory| directory.join(name))
         .find(|candidate| candidate.is_file())
-        .expect("sleep is on PATH");
-    std::os::unix::fs::symlink(sleep, bin.join("sleep")).expect("sleep links");
+        .unwrap_or_else(|| panic!("{name} is on PATH"));
+    std::os::unix::fs::symlink(program, bin.join(name)).expect("program links");
+}
+
+/// The design-gate flow checks the host API before `run`, then seeds its
+/// context through that API instead of calling `ix-flow add-item`.
+fn write_design_gate_host(bin: &std::path::Path) {
+    let package = bin.join("node_modules/@agent-ix/ix-flow");
+    let dist = package.join("dist");
+    std::fs::create_dir_all(&dist).expect("the host fixture directory is creatable");
+    std::fs::write(package.join("package.json"), r#"{"type":"module"}"#)
+        .expect("the host fixture package manifest is writable");
+    std::fs::write(
+        dist.join("host.js"),
+        r#"export class WorkflowCommandRunner {
+  async seedSystemOwnedItem() {
+    if (process.env.NFR_STUB_MODE === "fails-the-context") {
+      return { ok: false, error: { message: "nfr007-fails-the-context" } };
+    }
+    return { ok: true };
+  }
+}
+"#,
+    )
+    .expect("the design-gate host fixture is writable");
 }
 
 /// One launch of `command` with `ix-flow` absent (`None`) or the stub in
@@ -173,6 +206,10 @@ fn launch(
         std::fs::set_permissions(&stub, std::fs::Permissions::from_mode(0o755))
             .expect("the stub is executable");
         link_sleep(&bin);
+        if command.id() == "design-gate" {
+            link_node(&bin);
+            write_design_gate_host(&bin);
+        }
     }
     let skill = scratch.path().join("skill");
     let workflow = skill.join("workflows").join(command.id());
@@ -203,9 +240,13 @@ fn surfaced(cx: &Context, command: &CommandHelp, mode: &Mode) -> bool {
     let (output, operations) = launch(cx, command, stub_mode);
     let stderr = text(&output.stderr);
     let evidence = stderr.contains(mode.evidence);
-    let reached = mode
-        .operation
-        .is_none_or(|wanted| operations.iter().any(|operation| operation == wanted));
+    let operation = if command.id() == "design-gate" && mode.id == "ix-flow-fails-the-context" {
+        Some("run")
+    } else {
+        mode.operation
+    };
+    let reached =
+        operation.is_none_or(|wanted| operations.iter().any(|operation| operation == wanted));
     !output.status.success() && evidence && reached
 }
 

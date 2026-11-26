@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 use super::{Code, Refusal, Stop};
 use crate::evidence::audit::AuditOptions;
 use crate::matrix::{Built, build};
+use ix_trace_rs::implements;
 use quoin_anomaly::{
     AnomalyRead, CarriedAnomaly, GateMode, Record as AnomalyRecord, gate_carried, is_carried,
     read_anomalies,
@@ -159,6 +160,8 @@ pub(super) fn risk_findings(repo: &Path, modules: &[String]) -> Result<Vec<OpenF
 
 /// Authored vulnerability records whose lifecycle status is still open
 /// (FR-032, FR-167). No advisory, VEX or anomaly data is consulted.
+#[implements("FR-167-AC-20")]
+#[implements("FR-166-AC-14")]
 pub(super) fn vulnerabilities(
     repo: &Path,
     modules: &[String],
@@ -170,16 +173,10 @@ pub(super) fn vulnerabilities(
     let selection = if roots.is_empty() {
         ModuleSelection::ScopeOrAmbient
     } else {
-        ModuleSelection::Closed(roots)
+        ModuleSelection::Closed(roots.clone())
     };
-    let corpus =
-        quoin_quire::records::read(repo, &selection, &["vulnerability"]).map_err(|error| {
-            Stop::from(Refusal::invalid(
-                "--repo",
-                "vulnerability-records",
-                &error.to_string(),
-            ))
-        })?;
+    let corpus = quoin_quire::records::read(repo, &selection, &["vulnerability"])
+        .map_err(|error| vulnerability_records_refusal(modules, &roots, &error))?;
     if let Some(unreadable) = corpus.unreadable.first() {
         let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
         let path = unreadable
@@ -195,8 +192,12 @@ pub(super) fn vulnerabilities(
         )
         .into());
     }
-    if let Some(path) = corpus.malformed.first() {
-        let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
+    let root = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
+    if let Some(path) = corpus
+        .malformed
+        .iter()
+        .find(|path| is_malformed_vulnerability_record(path))
+    {
         let shown = path
             .strip_prefix(&root)
             .unwrap_or(path)
@@ -211,6 +212,51 @@ pub(super) fn vulnerabilities(
     }
 
     render_vulnerabilities(&corpus.documents)
+}
+
+/// A malformed identity is a vulnerability-record failure when its parsed
+/// frontmatter declares that type, regardless of the file's repository path.
+/// Typeless mappings are valid non-record documents under FR-166-AC-14.
+#[implements("FR-166-AC-14")]
+fn is_malformed_vulnerability_record(path: &Path) -> bool {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|text| quoin_quire::validate::frontmatter(&text))
+        .is_some_and(|frontmatter| {
+            frontmatter
+                .get("type")
+                .and_then(Value::as_str)
+                .is_some_and(|kind| kind.trim() == "vulnerability")
+        })
+}
+
+/// Preserve the module root when reading vulnerability records fails during
+/// module loading, just as the risk-summary refusal does.
+#[implements("FR-166-AC-13")]
+fn vulnerability_records_refusal(
+    modules: &[String],
+    roots: &[ModuleRoot],
+    error: &quoin_quire::Error,
+) -> Stop {
+    let failed = match error {
+        quoin_quire::Error::ModuleLoad { path, .. } => roots
+            .iter()
+            .position(|root| path.starts_with(root.as_path())),
+        quoin_quire::Error::ModuleSetEmpty { .. } if roots.len() == 1 => Some(0),
+        _ => None,
+    };
+    if let Some(index) = failed.and_then(|index| modules.get(index)) {
+        return module_invalid(index, &error.to_string()).into();
+    }
+    if !modules.is_empty()
+        && matches!(
+            error,
+            quoin_quire::Error::ModuleLoad { .. } | quoin_quire::Error::ModuleSetEmpty { .. }
+        )
+    {
+        return module_invalid(&modules.join(", "), &error.to_string()).into();
+    }
+    Refusal::invalid("--repo", "vulnerability-records", &error.to_string()).into()
 }
 
 /// Select and copy authored lifecycle facts from the parsed vulnerability

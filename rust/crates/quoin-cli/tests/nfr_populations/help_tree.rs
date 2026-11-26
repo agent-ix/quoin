@@ -109,7 +109,11 @@ impl CommandHelp {
     pub(crate) fn requires_only(&self, target: &Target) -> bool {
         self.flags
             .iter()
-            .all(|f| !f.required || Some(&f.name) == target.flag.as_ref())
+            .all(|flag| !flag.required || Some(&flag.name) == target.flag.as_ref())
+            && self.arguments.iter().all(|argument| {
+                !argument.required
+                    || (target.flag.is_none() && argument.name.to_lowercase() == target.label)
+            })
     }
 
     /// The arguments that give \`target\` \`value\`. A positional target is the
