@@ -13,11 +13,37 @@
 )]
 
 use ix_trace_rs::trace;
+use quoin_evidence::EvidenceError;
 use quoin_evidence::Outcome;
 use quoin_evidence::adapters::{
-    ADAPTERS, AdapterSelection, adapter_names, parse_audit_script, parse_cargo_audit,
-    parse_cargo_mutants, parse_junit, select_adapter,
+    ADAPTERS, AdapterResult, AdapterSelection, adapter_names, parse_agent_eval, parse_audit_script,
+    parse_cargo_audit, parse_cargo_mutants, parse_contract_conformance, parse_differential_report,
+    parse_entries, parse_junit, parse_sbom, select_adapter,
 };
+
+#[trace("FR-033-AC-3")]
+#[test]
+fn tc_1915_each_run_adapter_is_registered_with_its_summary_and_parser() {
+    let expected: &[(&str, fn(&str) -> Result<AdapterResult, EvidenceError>)] = &[
+        ("entries", parse_entries),
+        ("junit", parse_junit),
+        ("cargo-mutants", parse_cargo_mutants),
+        ("sbom", parse_sbom),
+        ("agent-eval", parse_agent_eval),
+        ("contract-conformance", parse_contract_conformance),
+        ("differential-report", parse_differential_report),
+    ];
+    assert_eq!(ADAPTERS.len(), expected.len());
+    for (name, parser) in expected {
+        let adapter = ADAPTERS
+            .iter()
+            .find(|adapter| adapter.name == *name)
+            .expect("the declared adapter is registered");
+        assert!(!adapter.name.trim().is_empty());
+        assert!(!adapter.summary.trim().is_empty(), "{name}");
+        assert!(std::ptr::fn_addr_eq(adapter.parse, *parser), "{name}");
+    }
+}
 
 fn chosen(adapter: Option<&str>, tool: Option<&str>) -> &'static str {
     select_adapter(AdapterSelection { adapter, tool })
