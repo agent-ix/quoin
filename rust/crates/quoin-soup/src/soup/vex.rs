@@ -229,6 +229,7 @@ fn render(records: &[Existing], metadata: &Metadata) -> Result<Value, Stop> {
 }
 
 impl SourceStatement {
+    #[implements("FR-216-AC-1", "FR-216-AC-2")]
     fn json(&self, purl: &str) -> Value {
         let mut statement = Map::new();
         statement.insert("vulnerability".to_owned(), json!({"name": self.advisory}));
@@ -262,7 +263,7 @@ pub(super) struct SourceStatement {
     pub(super) evidence_refs: Vec<String>,
 }
 
-#[implements("FR-156-AC-3", "FR-156-AC-4")]
+#[implements("FR-156-AC-3", "FR-156-AC-4", "FR-216-AC-6")]
 pub(super) fn source_statement(record: &Existing, source: &Value) -> Result<SourceStatement, Stop> {
     let Some(object) = source.as_object() else {
         return Err(source_invalid(
