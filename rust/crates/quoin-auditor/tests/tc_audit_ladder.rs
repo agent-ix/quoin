@@ -263,6 +263,51 @@ fn vacuity_needs_every_bound_symbol_skipped_or_absent() {
     assert_eq!(of_kind(&out, "vacuous-evidence", "FR-9-AC-2").len(), 0);
 }
 
+/// Vacuity folds symbols across every suite bound to the obligation.
+#[trace("FR-032-AC-8")]
+#[test]
+fn vacuity_folds_over_all_bound_suites() {
+    let obligation = ob("FR-9-AC-1", "the system SHALL do the thing");
+    let mixed_case = |alpha: Outcome, zeta: Outcome| {
+        let mixed = input(
+            vec![obligation.clone()],
+            vec![
+                bind("FR-9-AC-1", "alpha", &["t::alpha"]),
+                bind("FR-9-AC-1", "zeta", &["t::zeta"]),
+            ],
+            vec![
+                run_of("alpha", None, vec![RunEntry::new("t::alpha", alpha)]),
+                run_of("zeta", None, vec![RunEntry::new("t::zeta", zeta)]),
+            ],
+        );
+        let report = report(&mixed);
+        assert!(
+            of_kind(&report, "vacuous-evidence", "FR-9-AC-1").is_empty(),
+            "one passing bound symbol in another suite keeps the evidence non-vacuous"
+        );
+    };
+    // Bindings sort by suite name: cover a passing first suite and a passing
+    // later suite so neither a first-only nor last-only scan can pass.
+    mixed_case(Outcome::Pass, Outcome::Skip);
+    mixed_case(Outcome::Skip, Outcome::Pass);
+
+    let all_vacuous = input(
+        vec![obligation],
+        vec![
+            bind("FR-9-AC-1", "alpha", &["t::alpha"]),
+            bind("FR-9-AC-1", "zeta", &["t::zeta"]),
+        ],
+        vec![
+            run_of("alpha", None, vec![]),
+            run_of("zeta", None, vec![RunEntry::new("t::zeta", Outcome::Skip)]),
+        ],
+    );
+    let all_vacuous_report = report(&all_vacuous);
+    let findings = of_kind(&all_vacuous_report, "vacuous-evidence", "FR-9-AC-1");
+    assert_eq!(findings.len(), 1);
+    assert_eq!(findings[0].severity, Some(Severity::high()));
+}
+
 /// An obligation with no binding is undischarged at medium severity.
 #[trace("FR-032-AC-5")]
 #[test]
@@ -308,7 +353,7 @@ fn a_non_test_method_discharged_by_a_test_run_is_flagged() {
 
 /// A criticality demanding two independent methods is satisfied by two suites
 /// and not by two symbols in one, and does not apply below the threshold.
-#[trace("FR-032-AC-7")]
+#[trace("FR-032-AC-7", "FR-032-AC-8")]
 #[test]
 fn two_independent_methods_means_two_suites_not_two_symbols() {
     let build = |criticality: &str, bindings: Vec<Binding>| {
