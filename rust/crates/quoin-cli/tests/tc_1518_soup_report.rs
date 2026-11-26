@@ -434,7 +434,7 @@ fn absent_empty_and_stated_lists_render_not_stated_none_and_the_ids() {
     assert!(markdown.contains("- Support status: unknown"), "{markdown}");
 }
 
-#[trace("FR-144-AC-5", "NFR-030-AC-2")]
+#[trace("FR-144-AC-5", "NFR-030-AC-2", "NFR-030-M-3")]
 #[test]
 fn unmatched_advisories_and_unusable_scans_follow_the_rows_and_no_record_is_called_free() {
     let (repo, binding) = standard();
@@ -476,6 +476,46 @@ fn unmatched_advisories_and_unusable_scans_follow_the_rows_and_no_record_is_call
         .as_array()
         .unwrap();
     assert!(free.is_empty(), "{report}");
+}
+
+#[trace("NFR-030-AC-4")]
+#[test]
+fn failed_empty_and_idless_osv_reports_never_make_a_record_look_free_of_advisories() {
+    let reports = [
+        ("failed", "not JSON"),
+        ("empty", r#"{"results":[]}"#),
+        (
+            "idless",
+            r#"{"results":[{"packages":[{"package":{"purl":"pkg:npm/example@1.0.0"},"vulnerabilities":[{}],"groups":[]}]}]}"#,
+        ),
+    ];
+    for (suite, raw) in reports {
+        let adapter = select_finding_adapter(AdapterSelection {
+            adapter: None,
+            tool: Some("osv-scanner"),
+        })
+        .unwrap();
+        assert!(adapter.run(raw, None).is_err(), "{suite} report must be refused");
+
+        let repo = Repo::new();
+        repo.record("example", "pkg:npm/example@1.0.0", &[]);
+        let binding = repo.binding(&[]);
+        let report = report_json(&repo, &binding, &[]);
+        let osv = report["scans"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|scan| scan["tool"] == "osv-scanner")
+            .unwrap();
+        assert_eq!(osv["state"], "not run");
+        let record = row(&report, "pkg:npm/example@1.0.0");
+        assert_eq!(record["no_advisory_reported_by"], json!([]), "{suite}");
+        let markdown = text(&repo.report(&binding, &[]).stdout);
+        assert!(
+            markdown.contains("osv-scanner: not assessed (see Scans)"),
+            "{suite}: {markdown}"
+        );
+    }
 }
 
 #[trace("FR-144-AC-6")]
@@ -859,7 +899,7 @@ fn the_wall_clock_is_not_an_input_only_as_of_is() {
     assert_eq!(later.stdout, repo.report(&binding, &["--json"]).stdout);
 }
 
-#[trace("FR-144-AC-5", "NFR-030-AC-2")]
+#[trace("FR-144-AC-5", "NFR-030-AC-2", "NFR-030-M-3")]
 #[test]
 fn a_cargo_deny_log_refused_at_recording_leaves_the_scan_not_run_and_no_record_free() {
     let refused = std::fs::read_to_string(
@@ -905,28 +945,34 @@ fn walk(value: &Value, found: &mut Vec<Value>) {
     }
 }
 
-#[trace("NFR-030-AC-1")]
+#[trace("NFR-030-AC-1", "NFR-030-M-1")]
 #[test]
 fn with_every_optional_input_absent_every_value_is_unknown_not_stated_or_an_input() {
     let repo = Repo::new();
     repo.record("a", "pkg:cargo/a@1.0.0", &[]);
     let binding = repo.binding(&[]);
     let report = report_json(&repo, &binding, &[]);
-    let row = row(&report, "pkg:cargo/a@1.0.0");
+    let mut row = row(&report, "pkg:cargo/a@1.0.0").clone();
+    for status in ["support_status", "end_of_support"] {
+        assert_eq!(row[status]["origin"], "none");
+        row[status]
+            .as_object_mut()
+            .unwrap()
+            .remove("origin");
+    }
     let inputs = [
         row["purl"].as_str().unwrap(),
         row["id"].as_str().unwrap(),
         row["path"].as_str().unwrap(),
     ];
     let mut leaves = Vec::new();
-    walk(row, &mut leaves);
+    walk(&row, &mut leaves);
     for leaf in leaves {
         match leaf {
             Value::String(word) => assert!(
                 [
                     "unknown",
                     "not stated",
-                    "none",
                     // No licence-policy scan is retained: the one status a row
                     // states, rather than an invented verdict.
                     "policy findings not assessed: licence-policy not run",
