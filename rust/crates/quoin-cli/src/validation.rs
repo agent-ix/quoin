@@ -279,7 +279,7 @@ fn run_coverage(
                 format!(
                     "{}: {} (rating IDs: {}; values: {})",
                     feature.rating.feature_id,
-                    status(feature.rating),
+                    status(&feature.rating),
                     ids,
                     if values.is_empty() {
                         "none".to_owned()
