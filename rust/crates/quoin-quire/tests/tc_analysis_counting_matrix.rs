@@ -265,3 +265,73 @@ fn ordinary_analysis_projection_without_formal_rule_selection_is_eligible() {
     );
 }
 
+#[trace("NFR-033-M-2")]
+#[test]
+fn requested_result_order_does_not_change_per_criterion_status() {
+    let first = Recorded::new(&[AC1], "analysis-suite-a", "2026-11-13T00:00:00Z");
+    let second = Recorded::new(&[AC1], "analysis-suite-b", "2026-11-14T00:00:00Z");
+    let first_run = first.runs().remove(0);
+    let second_run = second.runs().remove(0);
+    let mut bindings = first.bindings();
+    bindings.extend(second.bindings());
+
+    let forward = count(
+        vec![first_run.clone(), second_run.clone()],
+        bindings.clone(),
+        &[AC1],
+        admitted(),
+    );
+    let reverse = count(vec![second_run, first_run], bindings, &[AC1], admitted());
+
+    assert_eq!(status(&forward, AC1), status(&reverse, AC1));
+    assert_eq!(
+        forward.report.evidence_results,
+        reverse.report.evidence_results
+    );
+}
+
+#[trace("NFR-033-M-3")]
+#[test]
+fn healthy_audit_alone_does_not_supply_a_positive_analysis_decision() {
+    let recorded = Recorded::new(&[AC1], "analysis-suite", "2026-11-13T00:00:00Z");
+    let audit = quoin_auditor::audit(&quoin_auditor::AuditInput {
+        obligations: obligations()
+            .into_iter()
+            .filter(|obligation| obligation.id == AC1)
+            .collect(),
+        bindings: recorded.bindings(),
+        runs: recorded.runs().into_iter().map(|run| run.record).collect(),
+        injections: Some(Vec::new()),
+        mock_inspection_suites: Some(vec!["analysis-suite".to_owned()]),
+        ..quoin_auditor::AuditInput::default()
+    })
+    .unwrap();
+    assert!(audit.findings.is_empty(), "{:?}", audit.findings);
+    assert!(audit.healthy.contains(&AC1.to_owned()), "{audit:?}");
+    let outcome = count(
+        recorded.runs(),
+        recorded.bindings(),
+        &[AC1],
+        HostObservations::default(),
+    );
+
+    assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
+    assert!(
+        outcome
+            .report
+            .record_binders
+            .as_ref()
+            .unwrap()
+            .iter()
+            .all(|binder| binder.target.id != AC1)
+    );
+    assert!(
+        outcome
+            .report
+            .evidence_results
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|result| result.cause == CauseCode::Unevaluated)
+    );
+}
