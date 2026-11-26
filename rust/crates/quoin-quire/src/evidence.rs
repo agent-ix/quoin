@@ -256,8 +256,7 @@ pub fn compute(request: &Request) -> Result<Outcome> {
 ///
 /// # Errors
 /// As [`compute`], plus errors in the declared design relations.
-#[implements("FR-193-AC-10")]
-#[implements("FR-193-AC-11")]
+#[implements("FR-165-AC-21")]
 pub fn compute_for_matrix(
     request: &Request,
 ) -> Result<(Outcome, crate::design_matrix::DesignMatrix)> {
