@@ -361,6 +361,7 @@ fn compute_with<T>(
     ))
 }
 
+#[implements("FR-165-AC-21")]
 fn resolve_requests(
     request: &Request,
     entries: &[CriterionEntry<'_>],
@@ -376,6 +377,7 @@ fn resolve_requests(
     (accepted, pending)
 }
 
+#[implements("FR-165-AC-21")]
 fn resolve_request(
     request: &Request,
     entries: &[CriterionEntry<'_>],
@@ -422,6 +424,7 @@ fn resolve_request(
     }
 }
 
+#[implements("FR-165-AC-21")]
 fn select_requested_entry(
     entries: &[CriterionEntry<'_>],
     id: &str,
@@ -479,6 +482,7 @@ fn select_requested_entry(
     Ok((ordinal, method))
 }
 
+#[implements("FR-165-AC-21")]
 fn conflicting_selection(
     request: &Request,
     ordinal: usize,

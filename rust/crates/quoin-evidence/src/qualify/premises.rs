@@ -8,6 +8,7 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
+use ix_trace_rs::implements;
 use serde_json::Value;
 
 use super::{
@@ -559,6 +560,8 @@ fn selection_ids(items: &[Value]) -> Option<BTreeSet<&str>> {
     Some(values)
 }
 
+#[implements("FR-184-AC-17")]
+#[implements("FR-184-AC-25")]
 fn formal_rule_selection_is_currently_approved(
     run: &RetainedRun,
     locator: &RunLocator,
@@ -576,6 +579,7 @@ fn formal_rule_selection_is_currently_approved(
         .all(|claim| formal_rule_claim_is_currently_approved(claim, rules, locator, refusals))
 }
 
+#[implements("FR-184-AC-17")]
 fn selected_formal_rule_claims<'a>(
     report: &'a Value,
     locator: &RunLocator,
@@ -611,6 +615,7 @@ fn selected_formal_rule_claims<'a>(
     Some(claims)
 }
 
+#[implements("FR-184-AC-17")]
 fn current_formal_rules<'a>(
     run: &'a RetainedRun,
     locator: &RunLocator,
@@ -646,6 +651,7 @@ fn current_formal_rules<'a>(
     Some(rules)
 }
 
+#[implements("FR-184-AC-25")]
 fn formal_rule_claim_is_currently_approved(
     claim: &Value,
     rules: &[Value],
@@ -707,6 +713,7 @@ fn formal_rule_claim_is_currently_approved(
     true
 }
 
+#[implements("FR-184-AC-17")]
 fn formal_rule_source_matches(claim: &Value, current_rule: &Value) -> bool {
     let Some(source) = claim.get("source") else {
         return false;
@@ -724,6 +731,7 @@ fn formal_rule_source_matches(claim: &Value, current_rule: &Value) -> bool {
     (source_document, source_start, source_end) == (current_path, current_start, current_end)
 }
 
+#[implements("FR-184-AC-25")]
 fn refuse_formal_selection(
     locator: &RunLocator,
     refusals: &mut Vec<Refusal>,

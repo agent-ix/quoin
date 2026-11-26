@@ -514,10 +514,6 @@ fn sacm_case_approval_uses_dedicated_inputs_and_preserves_missing_claimed_time()
 
 #[trace("FR-225-AC-5")]
 #[test]
-#[allow(
-    clippy::too_many_lines,
-    reason = "one offline integration scenario checks that verification avoids network access and promisor blob fetches"
-)]
 #[ignore = "offline verifier lane requires QUOIN_E2E_EA, Git, strace and ssh-keygen"]
 fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() {
     let ea = verifier();
@@ -543,41 +539,15 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
     fixture.git(&["update-ref", "refs/tags/cms", object.trim()]);
 
     let trace_path = fixture.home.path().join("offline.trace");
-    let trace = |repo: &Path, tag: &str, trust: &str| {
-        let command = fixture.command(repo, "--gsn");
-        let output = Command::new("strace")
-            .args([
-                "-f",
-                "-qq",
-                "-e",
-                "trace=execve,%network",
-                "-e",
-                "inject=%network:error=ENETDOWN",
-                "-o",
-            ])
-            .arg(&trace_path)
-            .arg("--")
-            .arg(command.get_program())
-            .args(command.get_args())
-            .current_dir(repo)
-            .envs(
-                command
-                    .get_envs()
-                    .filter_map(|(key, val)| val.map(|val| (key, val))),
-            )
-            .args([
-                "--case-approval-tag",
-                tag,
-                "--case-approval-verifier",
-                ea.to_str().unwrap(),
-                "--case-approval-allowed-signers",
-                trust,
-            ])
-            .output()
-            .unwrap();
-        (output, fs::read_to_string(&trace_path).unwrap())
-    };
-    let (cms, executed) = trace(&fixture.repo, "cms", &fixture.trust_path());
+
+    let (cms, executed) = trace_case_approval_offline(
+        &fixture,
+        &ea,
+        &trace_path,
+        &fixture.repo,
+        "cms",
+        &fixture.trust_path(),
+    );
     without_approval(&cms, &unsigned, "gitsign_identity_missing");
     assert!(executed.contains("approval-verify"), "{executed}");
     assert!(
@@ -623,7 +593,14 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
         &fixture.command(&shallow, "--gsn").output().unwrap(),
     ))
     .unwrap();
-    let (partial, executed) = trace(&shallow, "promisor", "HEAD:trust-file");
+    let (partial, executed) = trace_case_approval_offline(
+        &fixture,
+        &ea,
+        &trace_path,
+        &shallow,
+        "promisor",
+        "HEAD:trust-file",
+    );
     without_approval(&partial, &expected, "EA status unverifiable");
     assert!(executed.contains("approval-verify"), "{executed}");
     assert!(
@@ -633,4 +610,46 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
             || line.contains("connect(")),
         "{executed}"
     );
+}
+
+fn trace_case_approval_offline(
+    fixture: &Fixture,
+    verifier: &Path,
+    trace_path: &Path,
+    repo: &Path,
+    tag: &str,
+    trust: &str,
+) -> (Output, String) {
+    let command = fixture.command(repo, "--gsn");
+    let output = Command::new("strace")
+        .args([
+            "-f",
+            "-qq",
+            "-e",
+            "trace=execve,%network",
+            "-e",
+            "inject=%network:error=ENETDOWN",
+            "-o",
+        ])
+        .arg(trace_path)
+        .arg("--")
+        .arg(command.get_program())
+        .args(command.get_args())
+        .current_dir(repo)
+        .envs(
+            command
+                .get_envs()
+                .filter_map(|(key, val)| val.map(|val| (key, val))),
+        )
+        .args([
+            "--case-approval-tag",
+            tag,
+            "--case-approval-verifier",
+            verifier.to_str().unwrap(),
+            "--case-approval-allowed-signers",
+            trust,
+        ])
+        .output()
+        .unwrap();
+    (output, fs::read_to_string(trace_path).unwrap())
 }

@@ -1120,10 +1120,6 @@ fn soup_rows_follow_the_group_order_and_unassessed_items_are_listed_after_them()
 
 #[trace("FR-167-AC-5", "FR-167-AC-18", "FR-167-AC-23")]
 #[test]
-#[allow(
-    clippy::too_many_lines,
-    reason = "one release snapshot acceptance matrix checks anomaly projection and gate behavior across lifecycle states"
-)]
 fn snapshot_lists_fr162_carried_and_fixed_anomalies_with_gate_only_on_carried() {
     let repo = Repo::bare();
     let rationale = "## Release Rationale\n\n| Author | Rationale |\n|--------|-----------|\n| Dana LEE | Mixed Case stays. |\n| Sam | Second row. |\n";
@@ -1183,6 +1179,10 @@ fn snapshot_lists_fr162_carried_and_fixed_anomalies_with_gate_only_on_carried() 
         "",
     );
     let snapshot = repo.snapshot(&repo.run());
+    assert_anomaly_snapshot_projection(&snapshot, &repo);
+}
+
+fn assert_anomaly_snapshot_projection(snapshot: &serde_json::Value, repo: &Repo) {
     let anomalies = snapshot["anomalies"].as_array().unwrap();
     let ids: Vec<&str> = anomalies
         .iter()

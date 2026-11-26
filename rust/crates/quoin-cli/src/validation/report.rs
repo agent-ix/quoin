@@ -633,6 +633,9 @@ fn ratings_for_feature(
     ratings
 }
 
+#[implements("FR-218-AC-1")]
+#[implements("FR-218-AC-2")]
+#[implements("FR-218-AC-3")]
 fn read_run_records(paths: &[PathBuf]) -> Result<Vec<RunRecord>, String> {
     if paths.is_empty() {
         return Err("report requires one or more --results files".to_owned());
@@ -678,6 +681,9 @@ fn read_run_records(paths: &[PathBuf]) -> Result<Vec<RunRecord>, String> {
     Ok(records)
 }
 
+#[implements("FR-217-AC-1")]
+#[implements("FR-218-AC-1")]
+#[implements("FR-218-AC-3")]
 fn summarize_runs(
     records: &[RunRecord],
     intended_use: &[IntendedUse],
@@ -744,6 +750,9 @@ fn summarize_runs(
     (tools, results)
 }
 
+#[implements("FR-217-AC-10")]
+#[implements("FR-217-AC-11")]
+#[implements("FR-218-AC-3")]
 fn feature_coverage(
     records: &[RunRecord],
     documents_by_tool: &BTreeMap<String, Vec<DocumentSource>>,
@@ -859,6 +868,11 @@ fn known_anomalies(
     })
 }
 
+#[implements("FR-217-AC-5")]
+#[implements("FR-217-AC-6")]
+#[implements("FR-217-AC-7")]
+#[implements("FR-217-AC-8")]
+#[implements("FR-217-AC-9")]
 fn anomalies_for_record(
     record: &RunRecord,
     high_risk: &BTreeMap<String, BTreeSet<String>>,
@@ -937,6 +951,8 @@ fn anomalies_for_record(
     Ok((producer, anomalies))
 }
 
+#[implements("FR-217-AC-8")]
+#[implements("FR-217-AC-9")]
 fn anomaly_producer(record: &RunRecord, version: &str, status: &str) -> AnomalyProducer {
     AnomalyProducer {
         tool: record.tool.clone(),
@@ -945,6 +961,11 @@ fn anomaly_producer(record: &RunRecord, version: &str, status: &str) -> AnomalyP
     }
 }
 
+#[implements("FR-217-AC-5")]
+#[implements("FR-217-AC-6")]
+#[implements("FR-217-AC-7")]
+#[implements("FR-217-AC-8")]
+#[implements("FR-217-AC-9")]
 fn embedded_anomaly_report(documents: &[DocumentSource]) -> Result<quoin_anomaly::Report, String> {
     let temp = tempfile::tempdir().map_err(|error| format!("create anomaly workspace: {error}"))?;
     let scope = temp.path().join("spec/anomalies");
@@ -1147,6 +1168,7 @@ fn render_markdown(report: &ValidationReport) -> String {
     lines.join("\n")
 }
 
+#[implements("FR-217-AC-1")]
 fn render_tool_section(report: &ValidationReport) -> Vec<String> {
     let mut lines = vec![
         "# Tool validation report".to_owned(),
@@ -1186,6 +1208,8 @@ fn append_intended_use(report: &ValidationReport, lines: &mut Vec<String>) {
     }
 }
 
+#[implements("FR-217-AC-1")]
+#[implements("FR-217-AC-12")]
 fn append_results(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         "## Results".to_owned(),
@@ -1205,6 +1229,11 @@ fn append_results(report: &ValidationReport, lines: &mut Vec<String>) {
     }
 }
 
+#[implements("FR-217-AC-1")]
+#[implements("FR-217-AC-10")]
+#[implements("FR-217-AC-11")]
+#[implements("FR-217-AC-12")]
+#[implements("FR-218-AC-3")]
 fn append_coverage(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
@@ -1234,6 +1263,11 @@ fn append_coverage(report: &ValidationReport, lines: &mut Vec<String>) {
     }
 }
 
+#[implements("FR-217-AC-5")]
+#[implements("FR-217-AC-6")]
+#[implements("FR-217-AC-7")]
+#[implements("FR-217-AC-8")]
+#[implements("FR-217-AC-9")]
 fn append_known_anomalies(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
@@ -1277,6 +1311,8 @@ fn append_known_anomalies(report: &ValidationReport, lines: &mut Vec<String>) {
     }
 }
 
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 fn append_external_tools(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([String::new(), "## External tools".to_owned(), String::new()]);
     if let Some(index) = &report.external_tools_index {
@@ -1319,6 +1355,7 @@ fn append_external_tools(report: &ValidationReport, lines: &mut Vec<String>) {
     }
 }
 
+#[implements("FR-218-AC-2")]
 fn append_incomplete_reasons(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
@@ -1337,6 +1374,7 @@ fn append_incomplete_reasons(report: &ValidationReport, lines: &mut Vec<String>)
     }
 }
 
+#[implements("FR-217-AC-4")]
 fn append_signoff(lines: &mut Vec<String>) {
     lines.extend([
         String::new(),
@@ -1376,9 +1414,11 @@ fn verify_signoff(
             "not_accepted",
             Some("unsigned"),
             SignoffChecks {
-                mapped: false,
-                signature_valid: false,
-                principal_matches: false,
+                signer: SignerChecks {
+                    mapped: false,
+                    signature_valid: false,
+                    principal_matches: false,
+                },
                 meaning_present: false,
             },
         ));
@@ -1455,14 +1495,18 @@ fn verify_signoff(
         result_status,
         reason,
         SignoffChecks {
-            mapped: mapping == "mapped",
-            signature_valid: status == "signed_valid",
-            principal_matches,
+            signer: SignerChecks {
+                mapped: mapping == "mapped",
+                signature_valid: status == "signed_valid",
+                principal_matches,
+            },
             meaning_present,
         },
     ))
 }
 
+#[implements("FR-218-AC-4")]
+#[implements("FR-218-AC-5")]
 fn report_revision(
     repo: &Path,
     report_directory: &Path,
@@ -1514,24 +1558,27 @@ fn report_revision(
 }
 
 #[derive(Clone, Copy)]
-#[allow(
-    clippy::struct_excessive_bools,
-    reason = "these independent booleans are the four separately reported sign-off checks"
-)]
 struct SignoffChecks {
-    mapped: bool,
-    signature_valid: bool,
-    principal_matches: bool,
+    signer: SignerChecks,
     meaning_present: bool,
 }
 
+#[derive(Clone, Copy)]
+struct SignerChecks {
+    mapped: bool,
+    signature_valid: bool,
+    principal_matches: bool,
+}
+
+#[implements("FR-218-AC-4")]
+#[implements("FR-218-AC-5")]
 fn signoff_result(status: &str, reason: Option<&str>, checks: SignoffChecks) -> Value {
     json!({
         "status": status,
         "reason": reason,
-        "signatureValid": checks.signature_valid,
-        "signerMapped": checks.mapped,
-        "principalMatchesRatedBy": checks.principal_matches,
+        "signatureValid": checks.signer.signature_valid,
+        "signerMapped": checks.signer.mapped,
+        "principalMatchesRatedBy": checks.signer.principal_matches,
         "meaningPresent": checks.meaning_present,
     })
 }

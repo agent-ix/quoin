@@ -802,14 +802,15 @@ mod tests {
         path
     }
 
+    struct FormalRuleStatusFixture {
+        repo: tempfile::TempDir,
+        verifier: SignatureVerifier,
+        verifier_marker: std::path::PathBuf,
+        obligation: Obligation,
+    }
+
     #[cfg(unix)]
-    #[trace("FR-184-AC-25")]
-    #[test]
-    #[allow(
-        clippy::too_many_lines,
-        reason = "one request assembly scenario checks refresh, non-refresh, and unavailable-verifier paths"
-    )]
-    fn the_host_refreshes_formal_rule_status_and_fails_closed_when_verification_is_unavailable() {
+    fn formal_rule_status_fixture() -> FormalRuleStatusFixture {
         let repo = tempfile::tempdir().expect("temporary repository");
         fs::write(
             repo.path().join("manifest.yaml"),
@@ -868,15 +869,6 @@ mod tests {
             allowed_signers: allowed_signers.clone(),
             gitsign: None,
         };
-        let repo_path = repo.path().to_str().expect("repository path");
-        let observation = |run_kind: &str| {
-            serde_json::from_value(serde_json::json!({
-                "protocol": "quoin.analysis-run-observation/v1",
-                "record": RUN,
-                "run_kind": run_kind,
-            }))
-            .expect("run observation")
-        };
         let obligation = Obligation {
             id: "FR-001-AC-1".to_owned(),
             identity: None,
@@ -887,14 +879,39 @@ mod tests {
             criticality: None,
             parameters: None,
         };
+        FormalRuleStatusFixture {
+            repo,
+            verifier,
+            verifier_marker,
+            obligation,
+        }
+    }
+
+    #[cfg(unix)]
+    fn formal_rule_observation(run_kind: &str) -> RunObservationFile {
+        serde_json::from_value(serde_json::json!({
+            "protocol": "quoin.analysis-run-observation/v1",
+            "record": RUN,
+            "run_kind": run_kind,
+        }))
+        .expect("run observation")
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-184-AC-25")]
+    #[test]
+    fn the_host_refreshes_formal_rule_status_and_fails_closed_when_verification_is_unavailable() {
+        let fixture = formal_rule_status_fixture();
+        let repo_path = fixture.repo.path().to_str().expect("repository path");
+        let verifier_marker = fixture.verifier_marker.clone();
         let audit_inputs = serde_json::json!({"injections": null, "mock_inspection_suites": null});
         let formal_request = request(
             repo_path,
             &[],
             &audit_inputs,
-            std::slice::from_ref(&obligation),
-            &[observation("formal_rule")],
-            Some(&verifier),
+            std::slice::from_ref(&fixture.obligation),
+            &[formal_rule_observation("formal_rule")],
+            Some(&fixture.verifier),
         )
         .expect("production request succeeds with a controlled verifier");
         assert!(
@@ -934,9 +951,9 @@ mod tests {
             repo_path,
             &[],
             &audit_inputs,
-            std::slice::from_ref(&obligation),
-            &[observation("analysis")],
-            Some(&verifier),
+            std::slice::from_ref(&fixture.obligation),
+            &[formal_rule_observation("analysis")],
+            Some(&fixture.verifier),
         )
         .expect("ordinary analysis request");
         assert!(
@@ -954,16 +971,16 @@ mod tests {
         );
 
         let unavailable = SignatureVerifier {
-            executable: executable(repo.path(), "unavailable-ea", "exit 9"),
-            allowed_signers,
+            executable: executable(fixture.repo.path(), "unavailable-ea", "exit 9"),
+            allowed_signers: fixture.verifier.allowed_signers.clone(),
             gitsign: None,
         };
         let unavailable_request = request(
             repo_path,
             &[],
             &audit_inputs,
-            std::slice::from_ref(&obligation),
-            &[observation("formal_rule")],
+            std::slice::from_ref(&fixture.obligation),
+            &[formal_rule_observation("formal_rule")],
             Some(&unavailable),
         )
         .expect("unavailable current verifier leaves request unevaluated");

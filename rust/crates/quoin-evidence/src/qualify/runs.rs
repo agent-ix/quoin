@@ -13,6 +13,7 @@ use super::{Cause, Refusal, RetainedRun, RunLocator};
 use crate::ids::SuiteId;
 use crate::parse_timestamp;
 use crate::types::{Outcome, RunEntry};
+use ix_trace_rs::implements;
 
 /// A passing entry that is the latest word of its suite on one symbol.
 pub(super) struct Candidate<'a> {
@@ -156,6 +157,8 @@ pub(super) fn dispositions<'a>(obligation: &str, runs: &'a [RetainedRun]) -> Dis
     }
 }
 
+#[implements("FR-153-AC-5")]
+#[implements("FR-153-AC-6")]
 fn suite_disposition<'a>(
     suite: &SuiteId,
     suite_runs: &[&'a RetainedRun],
@@ -223,6 +226,8 @@ fn suite_disposition<'a>(
     }
 }
 
+#[implements("FR-153-AC-5")]
+#[implements("FR-153-AC-6")]
 fn rejected_suite<'a>(
     runs: &[&'a RetainedRun],
     obligation: &str,
@@ -244,6 +249,8 @@ fn rejected_suite<'a>(
     }
 }
 
+#[implements("FR-153-AC-5")]
+#[implements("FR-153-AC-6")]
 fn classify_entry<'a>(
     suite: &SuiteId,
     latest: &'a RetainedRun,
