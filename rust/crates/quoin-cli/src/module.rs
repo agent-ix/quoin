@@ -110,6 +110,7 @@ pub(crate) fn lag_diagnostics_or_warning(
     })
 }
 
+#[implements("FR-212-AC-1")]
 fn lag_warnings(
     manifest: &quoin_modules::MarketplaceManifest,
     registry: &quoin_modules::ModuleRegistry,
@@ -135,8 +136,8 @@ fn lag_warnings(
                     .as_str()
                     .to_owned(),
                 message: format!(
-                    "installed module {} {state}; run `quoin module remove {}` then `quoin module ensure-defaults` to install the pinned release",
-                    lag.name, lag.name
+                    "installed module {} {state}; run `quoin module ensure-defaults` to install the pinned release",
+                    lag.name
                 ),
                 context: std::collections::BTreeMap::from([
                     ("module".to_owned(), lag.name.to_string()),
@@ -341,10 +342,11 @@ fn remove(arguments: &ArgMatches) -> Result<Response, String> {
     render(response, |_| Ok(format!("removed {name}")))
 }
 
+#[implements("FR-212-AC-8")]
 fn ensure_defaults() -> Result<Response, String> {
     let mut ensured = invoke(
         "modules.ensure_defaults",
-        &serde_json::json!({ "manifest": DEFAULT_MODULES, "mode": "lazy" }),
+        &serde_json::json!({ "manifest": DEFAULT_MODULES, "mode": "pinned" }),
     )?;
     if !ensured.outcome.carries_payload() {
         return Ok(ensured);

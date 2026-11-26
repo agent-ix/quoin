@@ -172,6 +172,7 @@ fn a_registry_write_failure_is_internal_not_a_refusal() {
 /// authoring path, so a default of `sync` would put a git fetch in front of
 /// every `quoin write`.
 #[test]
+#[trace("FR-212-AC-8")]
 fn the_reconcile_default_is_lazy_and_sync_is_opt_in() {
     let host = FakeHost::default();
     let capabilities = Capabilities::with_modules(&host);
@@ -193,6 +194,15 @@ fn the_reconcile_default_is_lazy_and_sync_is_opt_in() {
     assert_eq!(response.payload["installed"][0], "alpha");
     assert_eq!(response.payload["unchanged"][0], "beta");
     assert_eq!(response.payload["updated"], serde_json::json!([]));
+
+    let host = FakeHost::default();
+    let capabilities = Capabilities::with_modules(&host);
+    ensure_defaults(
+        &serde_json::json!({ "manifest": manifest_yaml(), "mode": "pinned" }),
+        &capabilities,
+    )
+    .unwrap();
+    assert!(host.calls.borrow()[0].ends_with(",Pinned)"));
 }
 
 /// Reconciling re-judges what is already installed, and a module that no

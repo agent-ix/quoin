@@ -12,6 +12,7 @@
 //! may be read off stdin at all, and `super::check_bound` applies them before
 //! any host is consulted. stdin is untrusted (rust-style §11).
 
+use ix_trace_rs::implements;
 use serde::{Deserialize, Serialize};
 
 use quoin_modules::{InstalledModule, ReconcileMode};
@@ -136,7 +137,7 @@ pub struct EnsureDefaultsRequest {
     #[serde(default)]
     pub home: Option<String>,
     /// `lazy` (the default) installs only what is missing; `sync`
-    /// re-resolves every entry.
+    /// re-resolves every entry; `pinned` updates entries older than their pins.
     #[serde(default)]
     pub mode: Mode,
 }
@@ -155,13 +156,17 @@ pub enum Mode {
     Lazy,
     /// Re-resolve every entry.
     Sync,
+    /// Re-resolve installed entries older than or incomparable with their pins.
+    Pinned,
 }
 
 impl From<Mode> for ReconcileMode {
+    #[implements("FR-212-AC-8")]
     fn from(mode: Mode) -> Self {
         match mode {
             Mode::Lazy => Self::Lazy,
             Mode::Sync => Self::Sync,
+            Mode::Pinned => Self::Pinned,
         }
     }
 }

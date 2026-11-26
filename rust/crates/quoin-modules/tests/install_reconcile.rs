@@ -353,6 +353,110 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     );
 }
 
+#[trace("FR-212-AC-8")]
+#[test]
+fn tc_212_008_ensure_defaults_updates_an_installed_module_to_a_newer_pin() {
+    let h = home();
+    let older = write_module(&h.fixtures.join("older"), "mod", "older");
+    let pinned = write_module(&h.fixtures.join("pinned"), "mod", "pinned");
+    let resolver = CountingResolver::new()
+        .serving("https://github.com/agent-ix/fixture.git", "v1.0.0", older)
+        .serving("https://github.com/agent-ix/fixture.git", "v2.0.0", pinned);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+
+    ensure_defaults(&git_manifest("mod", "v1.0.0"), &installer).expect("install old pin");
+    let updated = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("ensure current pin updates an older installed release");
+    assert_eq!(
+        updated.updated,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2, "the new pin is resolved once");
+
+    let installed = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    let module = installed
+        .find(&ModuleName::new("mod").expect("legal module name"))
+        .expect("module remains installed");
+    assert_eq!(module.r#ref.as_deref(), Some("v2.0.0"));
+    assert_eq!(
+        fs::read_to_string(h.paths.target_root.join("mod/artifacts/marker.txt"))
+            .expect("pinned module artifact is present"),
+        "pinned"
+    );
+
+    let second = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("a module at the pin remains installed");
+    assert_eq!(
+        second.unchanged,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2, "the matching pin needs no fetch");
+}
+
+#[trace("FR-212-AC-8")]
+#[test]
+fn ensure_defaults_leaves_a_newer_semantic_release_unchanged() {
+    let h = home();
+    let newer = write_module(&h.fixtures.join("newer"), "mod", "newer");
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v3.0.0", newer);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+
+    ensure_defaults(&git_manifest("mod", "v3.0.0"), &installer).expect("install newer release");
+    let result = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("a newer semantic release remains installed");
+
+    assert_eq!(
+        result.unchanged,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 1, "a newer release is not re-resolved");
+    let registry = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    assert_eq!(
+        registry
+            .find(&ModuleName::new("mod").expect("legal module name"))
+            .and_then(|module| module.r#ref.as_deref()),
+        Some("v3.0.0")
+    );
+}
+
+#[trace("FR-212-AC-8")]
+#[test]
+fn ensure_defaults_repairs_an_incomparable_installed_ref() {
+    let h = home();
+    let older = write_module(&h.fixtures.join("older"), "mod", "older");
+    let pinned = write_module(&h.fixtures.join("pinned"), "mod", "pinned");
+    let resolver = CountingResolver::new()
+        .serving("https://github.com/agent-ix/fixture.git", "v1.0.0", older)
+        .serving("https://github.com/agent-ix/fixture.git", "v2.0.0", pinned);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+
+    ensure_defaults(&git_manifest("mod", "v1.0.0"), &installer).expect("install old pin");
+    let mut registry = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    registry.plugins[0].r#ref = Some("main".to_owned());
+    registry
+        .write(&h.paths.registry_path)
+        .expect("write incomparable ref");
+
+    let result = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("an incomparable ref is repaired to the pin");
+    assert_eq!(
+        result.updated,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2);
+    let registry = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    assert_eq!(
+        registry
+            .find(&ModuleName::new("mod").expect("legal module name"))
+            .and_then(|module| module.r#ref.as_deref()),
+        Some("v2.0.0")
+    );
+}
+
 #[trace("FR-099-AC-11")]
 #[test]
 fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
