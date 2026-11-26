@@ -15,6 +15,7 @@ use crate::ids::ModuleName;
 use crate::install::ModuleInstaller;
 use crate::manifest::MarketplaceManifest;
 use crate::registry::ModuleRegistry;
+use ix_trace_rs::implements;
 
 /// How hard reconcile should look.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -52,6 +53,7 @@ impl ReconcileReport {
 /// # Errors
 /// The first entry's failure stops the reconcile and is returned; entries
 /// already processed keep their effect, matching the oracle's fail-fast loop.
+#[implements("FR-099-AC-11")]
 pub fn reconcile(
     manifest: &MarketplaceManifest,
     installer: &ModuleInstaller<'_>,
@@ -67,11 +69,10 @@ pub fn reconcile(
             continue;
         }
         let existing = registry.find(&entry.name);
+        let target = entry.name.dir_under(&installer.paths().target_root);
         let materialized = existing.is_some_and(|installed| {
-            entry
-                .name
-                .dir_under(&installer.paths().target_root)
-                .is_dir()
+            target.is_dir()
+                && target.join("manifest.yaml").is_file()
                 && !installed.target_path.is_empty()
         });
 

@@ -31,6 +31,32 @@ fn retained_home() -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/retained-catalog/ix-home")
 }
 
+/// The retained snapshot contains `.keep` placeholders instead of materialized
+/// module roots. Give the copied roots minimal valid manifests so these CLI
+/// tests exercise catalog rendering without treating partial roots as installed
+/// or triggering a network fetch.
+fn materialize_retained_module_manifests(home: &Path) {
+    let modules = home.join("filament/modules");
+    for entry in fs::read_dir(&modules).expect("retained module roots are readable") {
+        let entry = entry.expect("retained module root entry is readable");
+        if entry
+            .file_type()
+            .expect("module root type is readable")
+            .is_dir()
+        {
+            let name = entry
+                .file_name()
+                .into_string()
+                .expect("fixture module names are UTF-8");
+            fs::write(
+                entry.path().join("manifest.yaml"),
+                format!("name: {name}\n"),
+            )
+            .expect("copied module root is materialized");
+        }
+    }
+}
+
 /// A real, on-disk semantic contract root for `QUOIN_SEMANTIC_ROOT`, so these
 /// tests exercise the override path deliberately rather than always falling
 /// through to the binary's own per-`IX_HOME` auto-materialization. Built once
@@ -73,14 +99,15 @@ fn text(bytes: &[u8]) -> String {
 /// The frozen catalog fixture is copied before invocation because catalog access
 /// reconciles defaults. The native command must retain the old shell's JSON
 /// and human listing shapes without mutating migration evidence in place. This
-/// fixture deliberately has no resolved module roots: its contract is the
-/// empty JSON module list and an entirely empty human response.
-#[trace("FR-099-AC-3", "FR-102")]
+/// fixture is copied and completed with minimal manifests before invocation,
+/// so its contract is the listed modules with no artifact entries.
+#[trace("FR-102")]
 #[test]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
     let home = scratch.path().join("ix-home");
     copy_tree(&retained_home(), &home).expect("retained fixture is copied");
+    materialize_retained_module_manifests(&home);
 
     let json = invoke(&home, &["catalog", "list", "--json"]);
     assert!(json.status.success(), "stderr: {}", text(&json.stderr));
@@ -91,15 +118,22 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
         .get("modules")
         .and_then(serde_json::Value::as_array)
         .expect("catalog JSON names its modules");
+    assert_eq!(modules.len(), 10, "all complete fixture modules are listed");
     assert!(
-        modules.is_empty(),
-        "fixture deliberately resolves no modules"
+        catalog
+            .get("entries")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(Vec::is_empty),
+        "minimal manifests declare no artifact or object entries"
     );
 
     let human = invoke(&home, &["catalog", "list"]);
     assert!(human.status.success(), "stderr: {}", text(&human.stderr));
     assert_eq!(human.stderr.len(), 0);
-    assert_eq!(human.stdout.len(), 0);
+    assert!(
+        text(&human.stdout).contains("engineering-assurance@unknown"),
+        "human listing includes the complete fixture modules"
+    );
 }
 
 /// The shipped command, rather than the retired protocol executable, discovers
@@ -205,6 +239,7 @@ fn plat_1167_bare_catalog_defaults_to_list_without_panicking() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
     let home = scratch.path().join("ix-home");
     copy_tree(&retained_home(), &home).expect("retained fixture is copied");
+    materialize_retained_module_manifests(&home);
 
     let human = invoke(&home, &["catalog"]);
     assert!(human.status.success(), "stderr: {}", text(&human.stderr));

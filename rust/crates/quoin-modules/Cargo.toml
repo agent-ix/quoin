@@ -13,6 +13,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 # quoin#450, the independent review's finding 3. `contract_gate` is the
 # production `SemanticGate`, and it is stated in THIS crate's vocabulary
 # (`SemanticGate`, `SemanticVerdict`, `ModuleName`, `ModuleRegistry`) over free
@@ -52,7 +53,6 @@ schemars = { workspace = true, optional = true }
 schema = ["dep:schemars"]
 
 [dev-dependencies]
-ix-trace-rs = { workspace = true }
 quoin-catalog = { workspace = true }
 quire-fixtures = { workspace = true }
 tempfile = "=3.27.0"

@@ -120,7 +120,7 @@ pub enum EntryKind {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Duplicate {
-    /// The namespace in which the collision occurred.
+    /// The namespace of the first declaration in this name collision.
     pub kind: EntryKind,
     /// The duplicate name, preserving its first declaration spelling.
     pub name: String,
@@ -354,11 +354,15 @@ fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
     // TypeScript implementation used a `Map`, so duplicate groups were emitted
     // in the order their first type declaration appeared. Keep that observable
     // declaration order while sorting only the MODULE names, as it did.
+    // `find_entry` resolves by case-folded name alone, across artifact and
+    // object entries. The duplicate gate must use that same identity or it
+    // could miss a collision that resolution treats as one type.
     let mut grouped: Vec<(EntryKind, String, Vec<String>)> = Vec::new();
     for entry in entries {
-        if let Some((_, _, modules)) = grouped.iter_mut().find(|(kind, name, _)| {
-            *kind == entry.kind && name.to_lowercase() == entry.name.to_lowercase()
-        }) {
+        if let Some((_, _, modules)) = grouped
+            .iter_mut()
+            .find(|(_, name, _)| name.to_lowercase() == entry.name.to_lowercase())
+        {
             if !modules.contains(&entry.module_name) {
                 modules.push(entry.module_name.clone());
             }
@@ -536,10 +540,16 @@ mod tests {
             manifest: format!("name: {module}\nartifact_types: [{{name: {type_name}}}]\n"),
             skeleton_names: Vec::new(),
         };
+        let object_document = |root: &str, module: &str, type_name: &str| ModuleDocument {
+            root: root.to_owned(),
+            manifest: format!("name: {module}\nobject_types: [{{name: {type_name}}}]\n"),
+            skeleton_names: Vec::new(),
+        };
         let catalog = build(
             &[
                 document("/modules/one", "one", "FR"),
                 document("/modules/two", "two", "fr"),
+                object_document("/modules/three", "three", "fr"),
             ],
             &[],
         )
@@ -549,7 +559,7 @@ mod tests {
             panic!("case-folded type declarations form one duplicate group");
         };
         assert_eq!(duplicate.name, "FR");
-        assert_eq!(duplicate.modules, ["one", "two"]);
+        assert_eq!(duplicate.modules, ["one", "three", "two"]);
         assert_eq!(
             find_entry(&catalog, "FR").map(|entry| entry.module_name.as_str()),
             find_entry(&catalog, "fr").map(|entry| entry.module_name.as_str()),

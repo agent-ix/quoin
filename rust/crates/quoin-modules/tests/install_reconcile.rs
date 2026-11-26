@@ -337,6 +337,37 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     );
 }
 
+#[trace("FR-099-AC-11")]
+#[test]
+fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
+    let h = home();
+    let tree = write_module(&h.fixtures, "mod", "v1");
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+    let manifest = git_manifest("mod", "v1.0.0");
+
+    ensure_defaults(&manifest, &installer).expect("initial reconcile installs the module");
+    let installed_root = h.paths.target_root.join("mod");
+    fs::remove_file(installed_root.join("manifest.yaml")).expect("simulate an interrupted root");
+
+    let repaired = ensure_defaults(&manifest, &installer).expect("partial root is re-resolved");
+    assert_eq!(
+        repaired.updated,
+        vec![ModuleName::new("mod").expect("legal")]
+    );
+    assert_eq!(
+        resolver.calls(),
+        2,
+        "partial roots must not take the lazy fast path"
+    );
+    assert_eq!(
+        fs::read_to_string(installed_root.join("manifest.yaml")).expect("restored manifest"),
+        "name: mod\n"
+    );
+}
+
 #[trace("FR-019-AC-2")]
 #[test]
 fn tc_381_284_sync_mode_re_resolves_an_installed_module() {
