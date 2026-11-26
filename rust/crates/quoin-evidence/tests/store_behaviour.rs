@@ -772,7 +772,7 @@ fn tc_plat_1794_record_intake_refuses_dirty_ids_and_writes_healthy_run_scan_and_
         injections: vec![MockInjection {
             suite: suite("SUITE-1794"),
             symbol: SymbolId::new("tests::ok"),
-            injects: vec!["".to_owned()],
+            injects: vec![String::new()],
             path: None,
             line: Some(1),
         }],
@@ -998,7 +998,7 @@ fn tc_plat_1794_disappeared_newest_record_is_reported_and_blocks_fallback_and_gc
             .unwrap()
             .is_none()
     );
-    assert_eq!(skipped, [missing_path.clone()]);
+    assert_eq!(skipped, std::slice::from_ref(&missing_path));
 
     skipped.clear();
     assert!(gc(&mut store, false, &mut skipped).unwrap().is_empty());
@@ -1023,7 +1023,7 @@ fn tc_plat_1794_invalid_utf8_records_are_reported_and_do_not_abort_read_gc_or_tr
     );
     let valid_path = write_run(&mut inner, &valid).unwrap();
     let corrupt_path = "runs/SUITE-1794/corrupt.json";
-    inner.write(corrupt_path, br#"{"#).unwrap();
+    inner.write(corrupt_path, br"{").unwrap();
     let mut store = FaultingRead {
         inner,
         fault_path: corrupt_path.to_owned(),

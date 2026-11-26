@@ -560,12 +560,10 @@ fn tc_1488_003_facts_for_one_set_leave_the_others_undischarged_and_counts_match_
 
 #[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3", "FR-208-AC-5")]
 #[test]
-fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic_sets() {
+fn tc_208_003_clause_approval_roles_reject_missing_reference_and_keep_generic_clause() {
     let env = env();
     install_approval_fixture(&env);
 
-    // An approval-class fact with no approval reference, or a blank one, is
-    // refused whole; the clause without roles is stored.
     for blank in [None, Some(" \t\n")] {
         let mut fact = direct("art-35(1)");
         if let Some(blank) = blank {
@@ -579,95 +577,108 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
             text(&refused)
         );
     }
+
     let no_approval_ref = record_output(&env, &env.repo, "gdpr", "1.0.0", &[direct("no-role")]);
     assert!(
         no_approval_ref.status.success(),
         "a generic clause must accept a direct fact without approvalRef: {}",
         text(&no_approval_ref)
     );
-    let no_approval_report = json(&env.report(&["--json"]));
-    let no_approval_row = no_approval_report["matrices"][0]["rows"]
+    let report = json(&env.report(&["--json"]));
+    let row = report["matrices"][0]["rows"]
         .as_array()
         .unwrap()
         .iter()
         .find(|row| row["clauseId"] == "no-role")
         .unwrap();
-    assert_eq!(no_approval_row["compliance"], "compliant");
-    let no_approval_binding = env.base.join("no-approval-binding.json");
-    std::fs::write(
-        &no_approval_binding,
-        env.engine_binding("gdpr", "1.0.0", &[]),
-    )
-    .unwrap();
-    let no_approval_direct = json(&discharge_report_with_binding(
-        &env,
-        &env.repo,
-        &no_approval_binding,
-        &[],
-    ));
-    let no_approval_fact = no_approval_direct["binding"]["direct"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|fact| fact["clauseId"] == "no-role")
-        .unwrap();
-    assert!(
-        !no_approval_fact["fact"]
-            .as_object()
-            .unwrap()
-            .contains_key("approvalRef"),
-        "a generic direct fact without an approval reference acquired one: {no_approval_fact}"
-    );
+    assert_eq!(row["compliance"], "compliant");
 
-    let generic_approval_ref = "person://example.invalid/people/generic-reviewer";
-    let mut generic_fact = direct("no-role");
-    generic_fact["approvalRef"] = serde_json::json!(generic_approval_ref);
-    record(&env, &env.repo, "gdpr", "1.0.0", &[generic_fact]);
-    let missing = json(&env.report(&["--json"]));
-    let rows = missing["matrices"][0]["rows"].as_array().unwrap();
-    let row = |clause_id: &str| {
-        rows.iter()
-            .find(|row| row["clauseId"] == clause_id)
-            .unwrap()
-    };
-    assert_eq!(row("art-35(1)")["compliance"], "undischarged");
-    assert_eq!(row("art-35(1)")["reason"], "no discharge fact");
-    assert_eq!(row("no-role")["compliance"], "compliant");
-    let binding_path = env.base.join("approval-binding.json");
+    let binding_path = env.base.join("no-approval-binding.json");
     std::fs::write(&binding_path, env.engine_binding("gdpr", "1.0.0", &[])).unwrap();
-    let generic_report = json(&discharge_report_with_binding(
+    let binding = json(&discharge_report_with_binding(
         &env,
         &env.repo,
         &binding_path,
         &[],
     ));
-    let generic_direct = generic_report["binding"]["direct"]
+    let fact = binding["binding"]["direct"]
         .as_array()
         .unwrap()
         .iter()
         .find(|fact| fact["clauseId"] == "no-role")
         .unwrap();
-    assert_eq!(generic_direct["fact"]["approvalRef"], generic_approval_ref);
     assert!(
-        !generic_direct
+        !fact["fact"]
             .as_object()
             .unwrap()
-            .contains_key("verifiedApprover"),
-        "a caller-supplied approvalRef for a generic clause was presented as verified: {generic_direct}"
+            .contains_key("approvalRef"),
+        "a generic direct fact without an approval reference acquired one: {fact}"
+    );
+}
+
+#[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3", "FR-208-AC-5")]
+#[test]
+fn tc_208_003_generic_approval_reference_is_not_verified() {
+    let env = env();
+    install_approval_fixture(&env);
+    let approval_ref = "person://example.invalid/people/generic-reviewer";
+    let mut generic = direct("no-role");
+    generic["approvalRef"] = serde_json::json!(approval_ref);
+    record(&env, &env.repo, "gdpr", "1.0.0", &[generic]);
+
+    let report = json(&env.report(&["--json"]));
+    let rows = report["matrices"][0]["rows"].as_array().unwrap();
+    let role_row = rows
+        .iter()
+        .find(|row| row["clauseId"] == "art-35(1)")
+        .unwrap();
+    let generic_row = rows
+        .iter()
+        .find(|row| row["clauseId"] == "no-role")
+        .unwrap();
+    assert_eq!(role_row["compliance"], "undischarged");
+    assert_eq!(role_row["reason"], "no discharge fact");
+    assert_eq!(generic_row["compliance"], "compliant");
+
+    let binding_path = env.base.join("approval-binding.json");
+    std::fs::write(&binding_path, env.engine_binding("gdpr", "1.0.0", &[])).unwrap();
+    let binding = json(&discharge_report_with_binding(
+        &env,
+        &env.repo,
+        &binding_path,
+        &[],
+    ));
+    let fact = binding["binding"]["direct"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|fact| fact["clauseId"] == "no-role")
+        .unwrap();
+    assert_eq!(fact["fact"]["approvalRef"], approval_ref);
+    assert!(
+        !fact.as_object().unwrap().contains_key("verifiedApprover"),
+        "a caller-supplied approvalRef for a generic clause was presented as verified: {fact}"
     );
 
-    let mut blank_generic_approval = direct("no-role");
-    blank_generic_approval["approvalRef"] = serde_json::json!("");
-    let rejected = record_output(&env, &env.repo, "gdpr", "1.0.0", &[blank_generic_approval]);
+    let mut blank = direct("no-role");
+    blank["approvalRef"] = serde_json::json!("");
+    let rejected = record_output(&env, &env.repo, "gdpr", "1.0.0", &[blank]);
     assert!(!rejected.status.success(), "{}", text(&rejected));
     assert!(
         stderr(&rejected).contains("approvalRef must not be empty"),
         "{}",
         text(&rejected)
     );
+}
 
-    // With a verifier the approval is verified at record time and again when
-    // the report is built.
+#[trace("FR-208-AC-1", "FR-208-AC-2", "FR-208-AC-3", "FR-208-AC-5")]
+#[test]
+fn tc_208_003_approval_role_is_verified_only_with_verifier() {
+    let env = env();
+    install_approval_fixture(&env);
+    let generic_ref = "person://example.invalid/people/generic-reviewer";
+    let mut generic = direct("no-role");
+    generic["approvalRef"] = serde_json::json!(generic_ref);
     let (verifier, signers) = stub_verifier(&env, "risk-approver");
     let flags = [
         "--engineering-assurance",
@@ -677,66 +688,74 @@ fn tc_208_003_clause_approval_roles_gate_pack_discharge_without_changing_generic
     ];
     let mut approved = direct("art-35(1)");
     approved["approvalRef"] = serde_json::json!("person://example.invalid/people/privacy-officer");
-    let recorded = record_output_with(&env, &env.repo, "gdpr", "1.0.0", &[approved], &flags);
+    let recorded = record_output_with(
+        &env,
+        &env.repo,
+        "gdpr",
+        "1.0.0",
+        &[approved, generic],
+        &flags,
+    );
     assert!(recorded.status.success(), "{}", text(&recorded));
+
     let mut arguments = vec!["--json"];
     arguments.extend_from_slice(&flags);
-    let accepted = json(&env.report(&arguments));
-    let rows = accepted["matrices"][0]["rows"].as_array().unwrap();
-    let art_35 = rows
+    let report = json(&env.report(&arguments));
+    let rows = report["matrices"][0]["rows"].as_array().unwrap();
+    let approved_row = rows
         .iter()
         .find(|row| row["clauseId"] == "art-35(1)")
         .unwrap();
-    assert_eq!(art_35["compliance"], "compliant");
-    assert_eq!(art_35["evidenceRefs"][0], "evidence://runs/SUITE-1/one");
+    assert_eq!(approved_row["compliance"], "compliant");
+    assert_eq!(
+        approved_row["evidenceRefs"][0],
+        "evidence://runs/SUITE-1/one"
+    );
 
-    let verified = json(&discharge_report_with_binding(
+    let binding_path = env.base.join("approval-binding.json");
+    std::fs::write(&binding_path, env.engine_binding("gdpr", "1.0.0", &[])).unwrap();
+    let binding = json(&discharge_report_with_binding(
         &env,
         &env.repo,
         &binding_path,
         &flags,
     ));
-    let approval_direct = verified["binding"]["direct"]
-        .as_array()
-        .unwrap()
+    let direct = binding["binding"]["direct"].as_array().unwrap();
+    let approved_fact = direct
         .iter()
         .find(|fact| fact["clauseId"] == "art-35(1)")
         .unwrap();
-    assert_eq!(approval_direct["verifiedApprover"], "r");
+    assert_eq!(approved_fact["verifiedApprover"], "r");
     assert_eq!(
-        approval_direct["fact"]["approvalRef"],
+        approved_fact["fact"]["approvalRef"],
         "person://example.invalid/people/privacy-officer"
     );
-    let generic_direct = verified["binding"]["direct"]
-        .as_array()
-        .unwrap()
+    let generic_fact = direct
         .iter()
         .find(|fact| fact["clauseId"] == "no-role")
         .unwrap();
-    assert_eq!(generic_direct["fact"]["approvalRef"], generic_approval_ref);
+    assert_eq!(generic_fact["fact"]["approvalRef"], generic_ref);
     assert!(
-        !generic_direct
+        !generic_fact
             .as_object()
             .unwrap()
             .contains_key("verifiedApprover"),
-        "the verifier was applied to a clause with no approval roles: {generic_direct}"
+        "the verifier was applied to a clause with no approval roles: {generic_fact}"
     );
 
-    // Without the flags nothing is verified, so the stored fact does not
-    // discharge.
     let unverified = json(&env.report(&["--json"]));
     let rows = unverified["matrices"][0]["rows"].as_array().unwrap();
-    let art_35 = rows
+    let approved_row = rows
         .iter()
         .find(|row| row["clauseId"] == "art-35(1)")
         .unwrap();
-    assert_eq!(art_35["compliance"], "undischarged");
+    assert_eq!(approved_row["compliance"], "undischarged");
     assert!(
-        art_35["reason"]
+        approved_row["reason"]
             .as_str()
             .unwrap()
             .starts_with("approval-verifier-unavailable"),
-        "{art_35}"
+        "{approved_row}"
     );
 }
 

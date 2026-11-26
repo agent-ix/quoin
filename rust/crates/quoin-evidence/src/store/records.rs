@@ -47,6 +47,11 @@ pub(crate) trait StoredRecord {
 /// The analysis qualifier reads exact bytes for provenance, so it cannot route
 /// through the generic store decoder. It uses this same semantic intake check
 /// before it admits the typed record.
+///
+/// # Errors
+///
+/// Returns an error when any run-record field violates the retained-record
+/// validation rules.
 pub fn validate_run_record(record: &RunRecord) -> Result<(), EvidenceError> {
     record.validate()
 }
@@ -552,8 +557,7 @@ where
             {
                 records.push(record);
             }
-            Ok(_) => skipped.push(path),
-            Err(EvidenceError::StoreRead { .. }) => skipped.push(path),
+            Ok(_) | Err(EvidenceError::StoreRead { .. }) => skipped.push(path),
             Err(other) => return Err(other),
         }
     }

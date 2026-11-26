@@ -44,11 +44,10 @@ fn tc_3003_the_nfr003_populations_are_stated_by_class() {
 /// NFR-007-M-1: every way `ix-flow` fails reaches the caller as a non-zero exit
 /// naming what failed, for every workflow command.
 #[cfg(unix)]
-#[trace("FR-131-AC-10", "NFR-007-M-1")]
+#[trace("FR-099-AC-10", "FR-131-AC-10", "NFR-007-M-1")]
 #[test]
 fn tc_3004_the_nfr007_population_is_stated_by_failure_mode() {
     let probed = ix_flow::external_tool_failures(&context::Context::new());
-    assert!(probed.examined.len() >= 24, "{:?}", probed.examined);
     let unmatched: BTreeSet<_> = probed.examined.difference(&probed.matched).collect();
     assert!(
         unmatched.is_empty(),

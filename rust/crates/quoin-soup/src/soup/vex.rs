@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! `quoin soup vex export --format openvex`: serialize authored SOUP
-//! statements as `OpenVEX` 0.2.0 (FR-216).
+//! `quoin soup vex export`: serialize authored SOUP statements as `OpenVEX`
+//! 0.2.0 (FR-216). No scan, advisory or vulnerability lifecycle is read.
 
 use std::collections::BTreeSet;
 use std::io::Write as _;
@@ -237,8 +237,8 @@ impl SourceStatement {
         statement.insert("products".to_owned(), json!([{"@id": purl}]));
         for (field, value) in [
             ("justification", &self.justification),
-            ("impact_statement", &self.impact_statement),
-            ("action_statement", &self.action_statement),
+            ("impact_statement", &self.impact),
+            ("action_statement", &self.action),
         ] {
             if let Some(value) = value {
                 statement.insert(field.to_owned(), json!(value));
@@ -248,16 +248,12 @@ impl SourceStatement {
     }
 }
 
-#[allow(
-    clippy::struct_field_names,
-    reason = "these members preserve the authored VEX source field names"
-)]
 pub(super) struct SourceStatement {
     pub(super) advisory: String,
     pub(super) status: String,
     pub(super) justification: Option<String>,
-    pub(super) impact_statement: Option<String>,
-    pub(super) action_statement: Option<String>,
+    pub(super) impact: Option<String>,
+    pub(super) action: Option<String>,
     pub(super) assessed_by: String,
     pub(super) assessed_at: String,
     pub(super) evidence_refs: Vec<String>,
@@ -318,8 +314,8 @@ pub(super) fn source_statement(record: &Existing, source: &Value) -> Result<Sour
         advisory,
         status,
         justification,
-        impact_statement,
-        action_statement,
+        impact: impact_statement,
+        action: action_statement,
         assessed_by: required("assessed_by")?,
         assessed_at: required("assessed_at")?,
         evidence_refs,

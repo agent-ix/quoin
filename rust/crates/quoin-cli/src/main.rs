@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The first Rust-owned `quoin` command slice (FR-062, FR-102).
 //!
 //! This binary owns syntax and rendering only. The graph analysis remains in
@@ -172,11 +174,11 @@ fn main() -> std::process::ExitCode {
     }
     match run(arguments) {
         Ok(response) => emit(&response),
-        Err(error) => emit_error(error),
+        Err(error) => emit_error(&error),
     }
 }
 
-fn emit_error(error: ShellError) -> std::process::ExitCode {
+fn emit_error(error: &ShellError) -> std::process::ExitCode {
     emit_error_to(
         error,
         &mut std::io::stdout().lock(),
@@ -185,7 +187,7 @@ fn emit_error(error: ShellError) -> std::process::ExitCode {
 }
 
 fn emit_error_to<'a>(
-    error: ShellError,
+    error: &ShellError,
     stdout: &'a mut dyn std::io::Write,
     stderr: &'a mut dyn std::io::Write,
 ) -> std::process::ExitCode {
@@ -312,26 +314,8 @@ fn root_usage() -> String {
 }
 
 fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
-    if let Some(("class", class)) = matches.subcommand() {
-        return class_obligations::run(class);
-    }
-    if let Some(("catalog", catalog)) = matches.subcommand() {
-        return catalog::run(catalog);
-    }
-    if let Some(("advise", advise)) = matches.subcommand() {
-        return advise::run(advise);
-    }
-    if let Some(("anomaly", anomaly)) = matches.subcommand() {
-        return anomaly::run(anomaly);
-    }
-    if let Some(("assurance", assurance)) = matches.subcommand() {
-        return assurance::run(assurance);
-    }
-    if let Some(("config", config)) = matches.subcommand() {
-        return config::run(config);
-    }
-    if let Some(("completeness", completeness)) = matches.subcommand() {
-        return completeness::run(completeness);
+    if let Some(result) = dispatch_primary(matches) {
+        return result;
     }
     if let Some(("validation", validation)) = matches.subcommand() {
         return validation::run(validation);
@@ -416,6 +400,31 @@ fn dispatch(matches: &ArgMatches) -> Result<Response, String> {
             outcome: error.outcome(),
         }
     })))
+}
+
+fn dispatch_primary(matches: &ArgMatches) -> Option<Result<Response, String>> {
+    if let Some(("class", class)) = matches.subcommand() {
+        return Some(class_obligations::run(class));
+    }
+    if let Some(("catalog", catalog)) = matches.subcommand() {
+        return Some(catalog::run(catalog));
+    }
+    if let Some(("advise", advise)) = matches.subcommand() {
+        return Some(advise::run(advise));
+    }
+    if let Some(("anomaly", anomaly)) = matches.subcommand() {
+        return Some(anomaly::run(anomaly));
+    }
+    if let Some(("assurance", assurance)) = matches.subcommand() {
+        return Some(assurance::run(assurance));
+    }
+    if let Some(("config", config)) = matches.subcommand() {
+        return Some(config::run(config));
+    }
+    if let Some(("completeness", completeness)) = matches.subcommand() {
+        return Some(completeness::run(completeness));
+    }
+    None
 }
 
 /// Match the retained graph command's `askGraph(...).trimEnd()` boundary.

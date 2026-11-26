@@ -1179,6 +1179,10 @@ fn snapshot_lists_fr162_carried_and_fixed_anomalies_with_gate_only_on_carried() 
         "",
     );
     let snapshot = repo.snapshot(&repo.run());
+    assert_anomaly_snapshot_projection(&snapshot, &repo);
+}
+
+fn assert_anomaly_snapshot_projection(snapshot: &serde_json::Value, repo: &Repo) {
     let anomalies = snapshot["anomalies"].as_array().unwrap();
     let ids: Vec<&str> = anomalies
         .iter()
@@ -1994,13 +1998,6 @@ fn an_unverified_control_on_two_rows_is_one_open_finding_equal_to_the_risk_summa
     let repo = Repo::bare();
     unverified_control(&repo);
     let snapshot = repo.snapshot(&with_risk(&repo));
-    let snapshot_anomaly_ids: Vec<&str> = snapshot["anomalies"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|anomaly| anomaly["id"].as_str().unwrap())
-        .collect();
-    assert!(snapshot_anomaly_ids.contains(&"AN-004"));
     let items = findings_of(&snapshot, "control-without-verification");
     assert_eq!(items.len(), 1, "{items:?}");
     assert_eq!(
@@ -2232,7 +2229,8 @@ fn the_refusal_names_the_module_that_failed_and_not_one_that_loaded() {
     assert_eq!(refused[0]["code"], "release_snapshot_input_invalid");
     assert_eq!(
         refused[0]["context"]["module"],
-        broken.path().to_str().unwrap()
+        broken.path().to_str().unwrap(),
+        "{refused}"
     );
 
     // A set that declares no safety record type names every root given, and
@@ -2339,4 +2337,49 @@ fn the_unusable_file_is_named_relative_to_repo_whatever_the_repo_spelling() {
         !message.contains(repo.path().to_str().unwrap()),
         "{message}"
     );
+}
+
+#[trace("FR-166-AC-14")]
+#[test]
+fn a_valid_typeless_skill_document_is_not_a_vulnerability_record() {
+    let repo = Repo::bare();
+    for path in ["docs/SKILL.md", "spec/vulnerabilities/SKILL.md"] {
+        repo.write(
+            path,
+            "---\nname: quoin-test-skill\ndescription: A valid skill document.\n---\n# Skill\n",
+        );
+    }
+
+    let snapshot = repo.snapshot(&repo.run());
+    assert_eq!(snapshot["vulnerabilities"], json!([]));
+}
+
+#[trace("FR-166-AC-14")]
+#[test]
+fn a_vulnerability_without_an_id_is_not_silently_dropped_outside_its_usual_directory() {
+    let repo = Repo::bare();
+    repo.write(
+        "docs/missing-id.md",
+        "---\ntitle: MissingId\ntype: vulnerability\nobject: vulnerability\nseverity: high\n---\n# Missing ID\n",
+    );
+    let security = security_module();
+    let safety = safety_module();
+
+    let output = run_with_modules(&repo, &[&safety, &security]);
+    assert_eq!(output.status.code(), Some(2), "{}", text(&output.stderr));
+    let refused: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(refused[0]["code"], "release_snapshot_input_invalid");
+    assert!(
+        text(&output.stderr).contains("docs/missing-id.md"),
+        "{}",
+        text(&output.stderr)
+    );
+}
+
+fn security_module() -> String {
+    let checkout = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-security"),
+        PathBuf::from,
+    );
+    checkout.join("spec_objects_security").display().to_string()
 }

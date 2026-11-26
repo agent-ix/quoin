@@ -14,6 +14,14 @@ publish.workspace = true
 default-run = "quoin"
 build = "build.rs"
 
+[features]
+e2e-release-export = []
+
+[[test]]
+name = "tc_191_real_release_export"
+path = "tests/tc_191_real_release_export.rs"
+required-features = ["e2e-release-export"]
+
 [[bin]]
 name = "quoin"
 path = "src/main.rs"

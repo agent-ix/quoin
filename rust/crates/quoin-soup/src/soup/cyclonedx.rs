@@ -419,13 +419,13 @@ fn vulnerability(
         analysis: Analysis {
             state,
             justification,
-            detail: statement.impact_statement.clone(),
+            detail: statement.impact.clone(),
         },
         affects: vec![AffectedComponent {
             component_ref: record.purl.clone(),
             versions,
         }],
         properties,
-        recommendation: statement.action_statement.clone(),
+        recommendation: statement.action.clone(),
     })
 }

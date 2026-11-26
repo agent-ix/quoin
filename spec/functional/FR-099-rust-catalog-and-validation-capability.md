@@ -72,24 +72,19 @@ store.
   SHALL refuse it, preserving the existing strict-parsing behaviour.
 - Quoin SHALL keep exactly one catalog and one module store across the port and
   SHALL NOT introduce a second catalog, registry or module resolver.
-- Markdown skill prose outside `workflow-assets/` SHALL remain data; the Rust
-  implementation SHALL resolve the skills root from an argument or environment
-  value with an embedded fallback, and SHALL carry the existing
-  skill-vocabulary-drift and skill-contract assertions as Rust tests reading the
-  same Markdown.
-- Quoin SHALL classify `skills/**/workflow-assets/**` as executable assertion
-  logic rather than as inert data, because `src/flows.ts:57` spawns ix-flow
-  against those assets and their `specInvariants` decide whether a review, matrix
-  or plan flow passes.
-- Quoin SHALL record one disposition for each such asset, distinguishing the
-  first-party invariant shim from the vendored bundle:
-  22,575 of the 23,164 lines under `skills/` are three byte-identical copies of
-  `workflow-assets/dist/index.js` and its declaration file, a build product of
-  `ix-spec-workflows`, while `scripts/invariants.js` is 139 hand-written lines
-  that re-export `specInvariants` from it.
-- Quoin SHALL treat the vendored bundle as a generated build product by its
-  location and by the disposition recorded above; no generator identity or
-  version is recorded or compared.
+- Markdown skill prose outside `workflow-assets/` SHALL remain data. A workflow
+  launch SHALL require an explicit `--path` to an installed skill directory,
+  canonicalize that directory, and require both `SKILL.md` and the selected
+  `workflows/<name>/def.yaml`. Rust skill-contract tests SHALL read the shipped
+  Markdown files so edits to their checked contract vocabulary fail the tests;
+  the binary does not resolve a repository skills root or embed the skills.
+- Quoin SHALL treat any files present under `skills/**/workflow-assets/**` as
+  executable workflow assets and record a disposition for each. The disposition
+  vocabulary SHALL distinguish a first-party invariant shim from a vendored
+  bundle; an absent asset has no required disposition. The repository currently
+  contains no files at that path, so historical references to `src/flows.ts`,
+  copied `workflow-assets/dist/index.js` bundles and their former line counts do
+  not describe the shipped tree.
 - Quoin SHALL apply the boundary hardening of
   [FR-096](./FR-096-versioned-rust-engine-boundary.md) — real-path resolution, a
   resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout and the three-way
@@ -119,10 +114,10 @@ refusal and are never reported as an empty but successful catalog.
 | FR-099-AC-3 | `quoin-core catalog.list` assembles a catalog identical to the retained catalog for the same configuration root, resolves a type case-insensitively, and reports a planted duplicate type rather than selecting one. | Test |
 | FR-099-AC-4 | A second reconcile over an already-materialized configuration root performs no git or network access and yields a catalog identical to the first. | Test |
 | FR-099-AC-5 | A manifest carrying an unknown key is refused by the Rust reader with the same classification as the retained reader. | Test |
-| FR-099-AC-6 | `quoin-core semantic.validate` and `quoin-core completeness.analyze` return verdicts identical to the retained implementations over the golden corpus. | Test |
-| FR-099-AC-7 | The Rust skill tests read the shipped Markdown skills and fail on a planted vocabulary drift, and the binary resolves the skills root from an argument, an environment value and its embedded fallback. | Test |
-| FR-099-AC-8 | `package.json` declares no dependency on `@agent-ix/ix-cli-core`, and each imported symbol recorded in the baseline inventory has a named Rust implementation and a test; the gate reads the inventory rather than a hard-coded count. | Test |
-| FR-099-AC-9 | Every asset under `skills/**/workflow-assets/**` carries a recorded disposition that distinguishes the first-party invariant shim from the vendored bundle, and an unclassified asset fails the gate. | Test |
+| FR-099-AC-6 | `quoin-core semantic.read_blocks` preserves contract validation results and diagnostics for the semantic fixtures, and `quoin-core completeness.assess_bundle` preserves the assessment verdict for the committed golden corpus across its disk and content inputs. | Test |
+| FR-099-AC-7 | Workflow launch requires an explicit `--path` to an installed skill directory and rejects a missing skill document or selected workflow definition; Rust skill-contract tests read shipped Markdown and fail when checked vocabulary drifts. | Test |
+| FR-099-AC-8 | `package.json` declares no dependency on `@agent-ix/ix-cli-core`; each inventory entry whose Quoin-owned responsibility is ported names its Rust implementation and test, while shell-only or distribution entries retain an explicit deferred/excluded disposition; the gate reads the inventory rather than a hard-coded count. | Test |
+| FR-099-AC-9 | The gate enumerates files present under `skills/**/workflow-assets/**`, requires a recorded disposition for each, and fails when an asset is unclassified; it does not require dispositions for absent files. | Test |
 | FR-099-AC-10 | The ix-flow child process is spawned through one hardened path: real-path resolution, a resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout, and exit, signal and spawn-failure reported as three distinct outcomes. | Test |
 | FR-099-AC-11 | A partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the already-materialized path. | Test |
 | FR-099-AC-12 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the duplicate gate and identical to the resolver. | Test |

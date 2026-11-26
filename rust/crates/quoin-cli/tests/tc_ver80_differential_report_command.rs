@@ -399,15 +399,21 @@ fn tc_002_audit_reports_the_obligation_undischarged_until_it_is_stated() {
 
 #[trace("FR-184-AC-26")]
 #[test]
-fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consumer() {
-    let binary = std::env::var_os("FILAMENT_ANALYZE_BIN")
+fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consumer()
+-> Result<(), String> {
+    let Some(binary) = std::env::var_os("FILAMENT_ANALYZE_BIN")
         .map(PathBuf::from)
         .filter(|path| path.is_absolute() && path.is_file())
-        .expect("FILAMENT_ANALYZE_BIN must name the real executable absolute path");
-    let producer_execute = std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
-        .map(|directory| directory.join("engineering-assurance"))
-        .find(|path| path.is_absolute() && path.is_file())
-        .expect("engineering-assurance producer-execute must be installed on PATH");
+    else {
+        return Err("FILAMENT_ANALYZE_BIN must name the real executable absolute path".to_owned());
+    };
+    let Some(producer_execute) =
+        std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
+            .map(|directory| directory.join("engineering-assurance"))
+            .find(|path| path.is_absolute() && path.is_file())
+    else {
+        return Err("engineering-assurance producer-execute must be installed on PATH".to_owned());
+    };
     let package_fixture = include_bytes!("fixtures/formal-rules/checked-package-v2-success.json");
     let mut evidence = CheckedPackageEvidence::default();
     evidence.support_feature("filament.value.complete/v1");
@@ -417,7 +423,7 @@ fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consum
         &evidence,
     ) {
         CheckedPackageV2ReadResult::Admitted(package) => *package,
-        other => panic!("checked package fixture was refused: {other:?}"),
+        other => return Err(format!("checked package fixture was refused: {other:?}")),
     };
     let selected_claim: CheckedNodeId = serde_json::from_value(serde_json::json!({
         "package": "test/formal-rules",
@@ -438,10 +444,7 @@ fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consum
             work_limit: u64::MAX,
         },
     );
-    let package = lowered
-        .package
-        .canonical_bytes()
-        .expect("lowered contract package bytes");
+    let package = lowered.package.canonical_bytes().unwrap();
 
     let fixture = fixture();
     let spec = SPEC.replace("|  |\n", "| Analysis |\n");
@@ -475,42 +478,17 @@ fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consum
     let recorded = fixture.record(&report_path, &["--discharges", "FR-001-AC-1", "--json"]);
     assert_eq!(recorded.status.code(), Some(0), "{}", stderr(&recorded));
     let record: serde_json::Value = serde_json::from_slice(&recorded.stdout).unwrap();
-    let run = "runs/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json";
-    let recorded_run = Path::new(record["run_path"].as_str().unwrap());
-    assert!(recorded_run.ends_with(run), "{}", recorded_run.display());
-    let retained_path = fixture.repo.path().join("spec/evidence").join(run);
-    let retained: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(retained_path).unwrap()).unwrap();
-    assert_eq!(retained["suite"], "SUITE-SMT");
-    assert_eq!(retained["timestamp"], "2026-01-01T00:00:00Z");
-    let projection_path = fixture
-        .repo
-        .path()
-        .join("spec/evidence/analysis-reports")
-        .join("SUITE-SMT")
-        .join(std::path::Path::new(run).file_name().unwrap());
-    let projection: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(projection_path).unwrap()).unwrap();
-    assert_eq!(projection["producer"], actual_report["producer"]);
-    for (projected_engine, actual_engine) in projection["engines"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .zip(actual_report["engines"].as_array().unwrap())
-    {
-        assert_eq!(projected_engine["engine"], actual_engine["engine"]);
-        assert_eq!(
-            projected_engine["configured_executable"],
-            actual_engine["configuredExecutable"]
-        );
-        assert_eq!(projected_engine["status"], actual_engine["status"]);
-        assert_eq!(projected_engine["outcome"], actual_engine["outcome"]);
-    }
-    assert_eq!(
-        projection["disposition"],
-        actual_report["differential"]["disposition"]
-    );
+    let run = assert_retained_run_projection(&fixture, &actual_report, &record);
 
+    assert_real_matrix_consumption(&fixture, &actual_report, run)?;
+    Ok(())
+}
+
+fn assert_real_matrix_consumption(
+    fixture: &Fixture,
+    actual_report: &serde_json::Value,
+    run: &str,
+) -> Result<(), String> {
     let observation_path = fixture.home.path().join("run-observation.json");
     let same_revision = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     std::fs::write(
@@ -539,13 +517,58 @@ fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consum
         (Some("agreement"), Some("refuted")) => "failed",
         (Some("inconclusive" | "unavailable"), _) => "errored",
         (Some("disagreement"), _) => "absent",
-        other => panic!("unexpected real analyzer disposition: {other:?}"),
+        other => return Err(format!("unexpected real analyzer disposition: {other:?}")),
     };
     assert!(rows.iter().any(|row| row["status"] == expected), "{rows:?}");
     assert!(
         rows.iter().all(|row| row["status"] != "qualified-record"),
         "the real report has no admitted FR-116 owner premises: {rows:?}"
     );
+    Ok(())
+}
+
+fn assert_retained_run_projection(
+    fixture: &Fixture,
+    actual_report: &serde_json::Value,
+    record: &serde_json::Value,
+) -> &'static str {
+    const RUN: &str = "runs/SUITE-SMT/2026-01-01T00~3A00~3A00Z.json";
+    let recorded_run = Path::new(record["run_path"].as_str().unwrap());
+    assert!(recorded_run.ends_with(RUN), "{}", recorded_run.display());
+    let retained_path = fixture.repo.path().join("spec/evidence").join(RUN);
+    let retained: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(retained_path).unwrap()).unwrap();
+    assert_eq!(retained["suite"], "SUITE-SMT");
+    assert_eq!(retained["timestamp"], "2026-01-01T00:00:00Z");
+    let projection_path = fixture
+        .repo
+        .path()
+        .join("spec/evidence/analysis-reports")
+        .join("SUITE-SMT")
+        .join(std::path::Path::new(RUN).file_name().unwrap());
+    let projection: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(projection_path).unwrap()).unwrap();
+    assert_eq!(projection["producer"], actual_report["producer"]);
+    for (projected_engine, actual_engine) in projection["engines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(actual_report["engines"].as_array().unwrap())
+    {
+        assert_eq!(projected_engine["engine"], actual_engine["engine"]);
+        assert_eq!(
+            projected_engine["configured_executable"],
+            actual_engine["configuredExecutable"]
+        );
+        assert_eq!(projected_engine["status"], actual_engine["status"]);
+        assert_eq!(projected_engine["outcome"], actual_engine["outcome"]);
+    }
+    assert_eq!(
+        projection["disposition"],
+        actual_report["differential"]["disposition"]
+    );
+
+    RUN
 }
 
 #[trace("FR-153-AC-8")]

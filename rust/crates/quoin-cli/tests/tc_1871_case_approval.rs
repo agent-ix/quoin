@@ -114,7 +114,7 @@ impl Fixture {
         .expect("caller trust configuration");
     }
 
-    fn git_command(&self, repo: &Path) -> Command {
+    fn git_command(repo: &Path) -> Command {
         let mut git = Command::new("git");
         git.current_dir(repo)
             .env("GIT_CONFIG_GLOBAL", "/dev/null")
@@ -125,8 +125,7 @@ impl Fixture {
 
     fn git(&self, args: &[&str]) -> String {
         success(
-            &self
-                .git_command(&self.repo)
+            &Self::git_command(&self.repo)
                 .args(args)
                 .output()
                 .expect("git runs"),
@@ -136,10 +135,14 @@ impl Fixture {
     }
 
     fn signed_tag(&self, name: &str, record: &str, digest: &str, meanings: &[&str]) {
-        let meaning = meanings
-            .iter()
-            .map(|value| format!("Signed-off-meaning: {value}\n"))
-            .collect::<String>();
+        let meaning = if meanings.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "Signed-off-meaning: {}\n",
+                meanings.join("\nSigned-off-meaning: ")
+            )
+        };
         let message = format!(
             "Review the bounded case\n\nApproved-Record-Id: {record}\nApproved-Record-Digest: {digest}\n{meaning}"
         );
@@ -521,8 +524,7 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
     let tag = format!(
         "object {tip}\ntype commit\ntag cms\ntagger Operator <operator@example.invalid> 1767225784 +0000\n\nReview\n\nApproved-Record-Id: {KIND}\nApproved-Record-Digest: {digest}\nSigned-off-meaning: {MEANING}\n\n-----BEGIN SIGNED MESSAGE-----\nc2lnbmF0dXJl\n-----END SIGNED MESSAGE-----\n"
     );
-    let mut hash = fixture
-        .git_command(&fixture.repo)
+    let mut hash = Fixture::git_command(&fixture.repo)
         .args(["hash-object", "-t", "tag", "-w", "--stdin"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -537,41 +539,15 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
     fixture.git(&["update-ref", "refs/tags/cms", object.trim()]);
 
     let trace_path = fixture.home.path().join("offline.trace");
-    let trace = |repo: &Path, tag: &str, trust: &str| {
-        let command = fixture.command(repo, "--gsn");
-        let output = Command::new("strace")
-            .args([
-                "-f",
-                "-qq",
-                "-e",
-                "trace=execve,%network",
-                "-e",
-                "inject=%network:error=ENETDOWN",
-                "-o",
-            ])
-            .arg(&trace_path)
-            .arg("--")
-            .arg(command.get_program())
-            .args(command.get_args())
-            .current_dir(repo)
-            .envs(
-                command
-                    .get_envs()
-                    .filter_map(|(key, val)| val.map(|val| (key, val))),
-            )
-            .args([
-                "--case-approval-tag",
-                tag,
-                "--case-approval-verifier",
-                ea.to_str().unwrap(),
-                "--case-approval-allowed-signers",
-                trust,
-            ])
-            .output()
-            .unwrap();
-        (output, fs::read_to_string(&trace_path).unwrap())
-    };
-    let (cms, executed) = trace(&fixture.repo, "cms", &fixture.trust_path());
+
+    let (cms, executed) = trace_case_approval_offline(
+        &fixture,
+        &ea,
+        &trace_path,
+        &fixture.repo,
+        "cms",
+        &fixture.trust_path(),
+    );
     without_approval(&cms, &unsigned, "gitsign_identity_missing");
     assert!(executed.contains("approval-verify"), "{executed}");
     assert!(
@@ -590,8 +566,7 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
     let shallow = fixture.home.path().join("partial");
     let origin = format!("file://{}", fixture.repo.display());
     success(
-        &fixture
-            .git_command(fixture.home.path())
+        &Fixture::git_command(fixture.home.path())
             .args([
                 "clone",
                 "-q",
@@ -604,8 +579,7 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
             .unwrap(),
     );
     let absent_blob = fixture.git(&["rev-parse", "HEAD:trust-file"]);
-    let missing = fixture
-        .git_command(&shallow)
+    let missing = Fixture::git_command(&shallow)
         .env("GIT_ALLOW_PROTOCOL", "")
         .args(["cat-file", "-e", &absent_blob])
         .output()
@@ -619,7 +593,14 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
         &fixture.command(&shallow, "--gsn").output().unwrap(),
     ))
     .unwrap();
-    let (partial, executed) = trace(&shallow, "promisor", "HEAD:trust-file");
+    let (partial, executed) = trace_case_approval_offline(
+        &fixture,
+        &ea,
+        &trace_path,
+        &shallow,
+        "promisor",
+        "HEAD:trust-file",
+    );
     without_approval(&partial, &expected, "EA status unverifiable");
     assert!(executed.contains("approval-verify"), "{executed}");
     assert!(
@@ -629,4 +610,46 @@ fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() 
             || line.contains("connect(")),
         "{executed}"
     );
+}
+
+fn trace_case_approval_offline(
+    fixture: &Fixture,
+    verifier: &Path,
+    trace_path: &Path,
+    repo: &Path,
+    tag: &str,
+    trust: &str,
+) -> (Output, String) {
+    let command = fixture.command(repo, "--gsn");
+    let output = Command::new("strace")
+        .args([
+            "-f",
+            "-qq",
+            "-e",
+            "trace=execve,%network",
+            "-e",
+            "inject=%network:error=ENETDOWN",
+            "-o",
+        ])
+        .arg(trace_path)
+        .arg("--")
+        .arg(command.get_program())
+        .args(command.get_args())
+        .current_dir(repo)
+        .envs(
+            command
+                .get_envs()
+                .filter_map(|(key, val)| val.map(|val| (key, val))),
+        )
+        .args([
+            "--case-approval-tag",
+            tag,
+            "--case-approval-verifier",
+            verifier.to_str().unwrap(),
+            "--case-approval-allowed-signers",
+            trust,
+        ])
+        .output()
+        .unwrap();
+    (output, fs::read_to_string(trace_path).unwrap())
 }

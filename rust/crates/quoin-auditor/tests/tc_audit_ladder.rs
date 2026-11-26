@@ -23,8 +23,8 @@ use quoin_auditor::catalog::{
 };
 use quoin_evidence::ids::{ObligationId, SuiteId, SymbolId};
 use quoin_evidence::types::{
-    Binding, MUTATION_SCORE_METRIC, MockInjection, Outcome, RunEntry, RunRecord,
-    STORE_SCHEMA_VERSION, Survivor,
+    Binding, Finding as ScanFinding, FindingRecord, MUTATION_SCORE_METRIC, MockInjection, Outcome,
+    RunEntry, RunRecord, STORE_SCHEMA_VERSION, Survivor,
 };
 use quoin_finding_types::{AuditReport, Finding, Severity};
 use quoin_quire_types::Obligation;
@@ -70,6 +70,20 @@ fn run_of(suite: &str, kind: Option<&str>, entries: Vec<RunEntry>) -> RunRecord 
         evidence_kind: kind.map(ToOwned::to_owned),
         timestamp: "2026-09-27T00:00:00Z".to_owned(),
         entries,
+    }
+}
+
+fn scan_of(suite: &str, rules_evaluated: u64) -> FindingRecord {
+    FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new(suite),
+        tool: "semgrep 1.2.3".to_owned(),
+        evidence_kind: None,
+        timestamp: "2026-09-27T00:00:00Z".to_owned(),
+        ruleset: None,
+        rules_evaluated: Some(rules_evaluated),
+        findings: Vec::<ScanFinding>::new(),
+        evaluated: None,
     }
 }
 
@@ -153,6 +167,60 @@ fn a_passing_run_at_head_is_healthy_and_silent() {
     assert_eq!(out.healthy, ["FR-9-AC-1"]);
 }
 
+/// A clean finding scan discharges its binding without becoming vacuous.
+#[trace("FR-034-AC-9")]
+#[test]
+fn tc_fr034_a_clean_scan_is_neither_undischarged_nor_vacuous() {
+    let obligation = "FR-034-AC-9";
+    let mut audited = input(
+        vec![ob(obligation, "a clean scan is evidence")],
+        vec![bind(obligation, "scanner", &[])],
+        vec![],
+    );
+    audited.scans = Some(vec![scan_of("scanner", 3)]);
+    audited.vacuous_scan_suites = Some(Vec::new());
+
+    let out = report(&audited);
+
+    assert!(
+        of_kind(&out, "undischarged", obligation).is_empty(),
+        "{:?}",
+        out.findings
+    );
+    assert!(
+        of_kind(&out, "vacuous-evidence", obligation).is_empty(),
+        "{:?}",
+        out.findings
+    );
+}
+
+/// Run-shaped checks use the run belonging to their binding's suite even when
+/// another suite's scan is also bound to the same obligation.
+#[trace("FR-034-AC-12")]
+#[test]
+fn tc_fr034_run_checks_stay_with_their_suite_beside_a_scan_binding() {
+    let obligation = "FR-034-AC-12";
+    let mut audited = input(
+        vec![ob(obligation, "run checks stay suite-scoped")],
+        vec![
+            bind(obligation, "scanner", &["scanner::criterion"]),
+            bind(obligation, "tests", &["tests::criterion"]),
+        ],
+        vec![run_of("tests", None, Vec::new())],
+    );
+    audited.scans = Some(vec![scan_of("scanner", 3)]);
+    audited.vacuous_scan_suites = Some(Vec::new());
+
+    let out = report(&audited);
+    let vacuous = of_kind(&out, "vacuous-evidence", obligation);
+
+    assert_eq!(vacuous.len(), 1, "{:?}", out.findings);
+    assert_eq!(
+        vacuous[0].summary,
+        "every symbol bound to FR-034-AC-12 was skipped or absent from its run: tests:tests::criterion. The row reads as covered and nothing was verified."
+    );
+}
+
 /// A missing recorded run is high severity.
 #[trace("FR-032-AC-3")]
 #[test]
@@ -193,6 +261,51 @@ fn vacuity_needs_every_bound_symbol_skipped_or_absent() {
     assert_eq!(vacuous.len(), 1);
     assert_eq!(vacuous[0].severity, Some(Severity::high()));
     assert_eq!(of_kind(&out, "vacuous-evidence", "FR-9-AC-2").len(), 0);
+}
+
+/// Vacuity folds symbols across every suite bound to the obligation.
+#[trace("FR-032-AC-8")]
+#[test]
+fn vacuity_folds_over_all_bound_suites() {
+    let obligation = ob("FR-9-AC-1", "the system SHALL do the thing");
+    let mixed_case = |alpha: Outcome, zeta: Outcome| {
+        let mixed = input(
+            vec![obligation.clone()],
+            vec![
+                bind("FR-9-AC-1", "alpha", &["t::alpha"]),
+                bind("FR-9-AC-1", "zeta", &["t::zeta"]),
+            ],
+            vec![
+                run_of("alpha", None, vec![RunEntry::new("t::alpha", alpha)]),
+                run_of("zeta", None, vec![RunEntry::new("t::zeta", zeta)]),
+            ],
+        );
+        let report = report(&mixed);
+        assert!(
+            of_kind(&report, "vacuous-evidence", "FR-9-AC-1").is_empty(),
+            "one passing bound symbol in another suite keeps the evidence non-vacuous"
+        );
+    };
+    // Bindings sort by suite name: cover a passing first suite and a passing
+    // later suite so neither a first-only nor last-only scan can pass.
+    mixed_case(Outcome::Pass, Outcome::Skip);
+    mixed_case(Outcome::Skip, Outcome::Pass);
+
+    let all_vacuous = input(
+        vec![obligation],
+        vec![
+            bind("FR-9-AC-1", "alpha", &["t::alpha"]),
+            bind("FR-9-AC-1", "zeta", &["t::zeta"]),
+        ],
+        vec![
+            run_of("alpha", None, vec![]),
+            run_of("zeta", None, vec![RunEntry::new("t::zeta", Outcome::Skip)]),
+        ],
+    );
+    let all_vacuous_report = report(&all_vacuous);
+    let findings = of_kind(&all_vacuous_report, "vacuous-evidence", "FR-9-AC-1");
+    assert_eq!(findings.len(), 1);
+    assert_eq!(findings[0].severity, Some(Severity::high()));
 }
 
 /// An obligation with no binding is undischarged at medium severity.
@@ -240,7 +353,7 @@ fn a_non_test_method_discharged_by_a_test_run_is_flagged() {
 
 /// A criticality demanding two independent methods is satisfied by two suites
 /// and not by two symbols in one, and does not apply below the threshold.
-#[trace("FR-032-AC-7")]
+#[trace("FR-032-AC-7", "FR-032-AC-8")]
 #[test]
 fn two_independent_methods_means_two_suites_not_two_symbols() {
     let build = |criticality: &str, bindings: Vec<Binding>| {

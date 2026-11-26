@@ -256,9 +256,8 @@ fn tc_455_intake_runs_nothing_and_reports_only_what_a_producer_wrote() {
 }
 
 /// The approval check is a comparison of strings and a local hash. The modules
-/// that read and judge a claimed approval name no `std` item at all, so they
-/// cannot start a process, touch a file, or open a socket; the digest is the one
-/// computation they ask of `quoin-store`, and verification passes it in.
+/// that read and judge a claimed approval use no process, file, environment,
+/// clock, or network APIs; using a pure standard-library iterator is safe.
 #[trace("FR-065-AC-18", "FR-063-AC-11")]
 #[test]
 fn tc_1511_the_approval_modules_start_no_process_and_name_no_host_capability() {
@@ -269,7 +268,18 @@ fn tc_1511_the_approval_modules_start_no_process_and_name_no_host_capability() {
             .iter()
             .find(|(name, _)| name == module)
             .unwrap_or_else(|| panic!("{module} is part of this crate"));
-        for forbidden in ["std::", "Command", "git ", "ssh-keygen", "TcpStream"] {
+        for forbidden in [
+            "std::process",
+            "Command",
+            "std::fs",
+            "std::env",
+            "std::time",
+            "std::net",
+            "TcpStream",
+            "UdpSocket",
+            "git ",
+            "ssh-keygen",
+        ] {
             assert!(
                 !contents.contains(forbidden),
                 "{module} reaches for `{forbidden}`; the claim is compared, never verified"

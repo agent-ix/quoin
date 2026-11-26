@@ -22,6 +22,7 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use quoin_catalog::{ModuleDocument, build as build_catalog};
 use quoin_modules::git::{GitResolver, ResolvedGitSource, Revision};
 use quoin_modules::install::ModuleInstaller;
 use quoin_modules::manifest::{MarketplaceEntry, MarketplaceManifest};
@@ -122,8 +123,18 @@ fn write_module(root: &Path, name: &str, marker: &str) -> PathBuf {
     let dir = root.join(name);
     fs::create_dir_all(dir.join("artifacts")).expect("fixture dirs");
     fs::write(dir.join("manifest.yaml"), format!("name: {name}\n")).expect("manifest");
+    fs::write(dir.join(".quoin-extract-complete"), "").expect("resolved git tree is complete");
     fs::write(dir.join("artifacts").join("marker.txt"), marker).expect("marker");
     dir
+}
+
+fn catalog_for_installed_module(root: &Path) -> quoin_catalog::Catalog {
+    let document = ModuleDocument {
+        root: root.display().to_string(),
+        manifest: fs::read_to_string(root.join("manifest.yaml")).expect("module manifest"),
+        skeleton_names: Vec::new(),
+    };
+    build_catalog(&[document], &[]).expect("installed module builds a catalog")
 }
 
 struct Home {
@@ -281,16 +292,36 @@ fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
     }
 }
 
-#[trace("FR-019-AC-2", "NFR-001-M-1")]
+#[trace("FR-019-AC-2", "NFR-001-M-1", "FR-099-AC-4", "FR-099-CON-3")]
 #[test]
 fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     let h = home();
-    let tree = write_module(&h.fixtures, "mod", "v1");
+    let tree = h.fixtures.join("repo");
+    fs::create_dir_all(tree.join("nested/artifacts")).expect("nested fixture dirs");
+    fs::write(tree.join(".quoin-extract-complete"), "").expect("resolved git tree is complete");
+    fs::write(
+        tree.join("nested/manifest.yaml"),
+        "name: mod\nversion: 1.0.0\nartifact_types:\n  - name: FR\n",
+    )
+    .expect("fixture declares a catalog artifact");
+    fs::write(tree.join("nested/artifacts/marker.txt"), "v1").expect("artifact fixture");
     let resolver =
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
-    let manifest = git_manifest("mod", "v1.0.0");
+    let manifest = MarketplaceManifest {
+        schema_version: 1,
+        name: Some("test-set".to_owned()),
+        entries: vec![MarketplaceEntry {
+            name: ModuleName::new("mod").expect("legal name"),
+            source: Source::Git {
+                url: "https://github.com/agent-ix/fixture.git".to_owned(),
+                r#ref: Some("v1.0.0".to_owned()),
+            },
+            default_enabled: None,
+            path: Some("nested".to_owned()),
+        }],
+    };
 
     let first = ensure_defaults(&manifest, &installer).expect("first reconcile");
     assert_eq!(
@@ -298,6 +329,10 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
         vec![ModuleName::new("mod").expect("legal")]
     );
     assert_eq!(resolver.calls(), 1, "the first reconcile must fetch");
+    let installed_root = h.paths.target_root.join("mod");
+    let first_catalog = catalog_for_installed_module(&installed_root);
+    assert_eq!(first_catalog.entries.len(), 1);
+    assert_eq!(first_catalog.entries[0].name, "FR");
 
     let second = ensure_defaults(&manifest, &installer).expect("second reconcile");
     assert_eq!(
@@ -310,6 +345,160 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
         1,
         "a settled lazy reconcile must not resolve anything — it runs before \
          every catalog read"
+    );
+    assert_eq!(
+        catalog_for_installed_module(&installed_root),
+        first_catalog,
+        "a second reconcile preserves the non-empty catalog from the materialized module root"
+    );
+}
+
+#[trace("FR-212-AC-8")]
+#[test]
+fn tc_212_008_ensure_defaults_updates_an_installed_module_to_a_newer_pin() {
+    let h = home();
+    let older = write_module(&h.fixtures.join("older"), "mod", "older");
+    let pinned = write_module(&h.fixtures.join("pinned"), "mod", "pinned");
+    let resolver = CountingResolver::new()
+        .serving("https://github.com/agent-ix/fixture.git", "v1.0.0", older)
+        .serving("https://github.com/agent-ix/fixture.git", "v2.0.0", pinned);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+
+    ensure_defaults(&git_manifest("mod", "v1.0.0"), &installer).expect("install old pin");
+    let updated = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("ensure current pin updates an older installed release");
+    assert_eq!(
+        updated.updated,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2, "the new pin is resolved once");
+
+    let installed = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    let module = installed
+        .find(&ModuleName::new("mod").expect("legal module name"))
+        .expect("module remains installed");
+    assert_eq!(module.r#ref.as_deref(), Some("v2.0.0"));
+    assert_eq!(
+        fs::read_to_string(h.paths.target_root.join("mod/artifacts/marker.txt"))
+            .expect("pinned module artifact is present"),
+        "pinned"
+    );
+
+    let second = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("a module at the pin remains installed");
+    assert_eq!(
+        second.unchanged,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2, "the matching pin needs no fetch");
+}
+
+#[trace("FR-212-AC-8")]
+#[test]
+fn ensure_defaults_leaves_a_newer_semantic_release_unchanged() {
+    let h = home();
+    let newer = write_module(&h.fixtures.join("newer"), "mod", "newer");
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v3.0.0", newer);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+
+    ensure_defaults(&git_manifest("mod", "v3.0.0"), &installer).expect("install newer release");
+    let result = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("a newer semantic release remains installed");
+
+    assert_eq!(
+        result.unchanged,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 1, "a newer release is not re-resolved");
+    let registry = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    assert_eq!(
+        registry
+            .find(&ModuleName::new("mod").expect("legal module name"))
+            .and_then(|module| module.r#ref.as_deref()),
+        Some("v3.0.0")
+    );
+}
+
+#[trace("FR-212-AC-8")]
+#[test]
+fn ensure_defaults_repairs_an_incomparable_installed_ref() {
+    let h = home();
+    let older = write_module(&h.fixtures.join("older"), "mod", "older");
+    let pinned = write_module(&h.fixtures.join("pinned"), "mod", "pinned");
+    let resolver = CountingResolver::new()
+        .serving("https://github.com/agent-ix/fixture.git", "v1.0.0", older)
+        .serving("https://github.com/agent-ix/fixture.git", "v2.0.0", pinned);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+
+    ensure_defaults(&git_manifest("mod", "v1.0.0"), &installer).expect("install old pin");
+    let mut registry = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    registry.plugins[0].r#ref = Some("main".to_owned());
+    registry
+        .write(&h.paths.registry_path)
+        .expect("write incomparable ref");
+
+    let result = ensure_defaults(&git_manifest("mod", "v2.0.0"), &installer)
+        .expect("an incomparable ref is repaired to the pin");
+    assert_eq!(
+        result.updated,
+        vec![ModuleName::new("mod").expect("legal module name")]
+    );
+    assert_eq!(resolver.calls(), 2);
+    let registry = ModuleRegistry::read(&h.paths.registry_path).expect("registry is readable");
+    assert_eq!(
+        registry
+            .find(&ModuleName::new("mod").expect("legal module name"))
+            .and_then(|module| module.r#ref.as_deref()),
+        Some("v2.0.0")
+    );
+}
+
+#[trace("FR-099-AC-11")]
+#[test]
+fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
+    let h = home();
+    let tree = write_module(&h.fixtures, "mod", "v1");
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+    let manifest = MarketplaceManifest {
+        schema_version: 1,
+        name: Some("test-set".to_owned()),
+        entries: vec![MarketplaceEntry {
+            name: ModuleName::new("mod").expect("legal name"),
+            source: Source::GitSubdir {
+                url: "https://github.com/agent-ix/fixture.git".to_owned(),
+                path: "module".to_owned(),
+                r#ref: Some("v1.0.0".to_owned()),
+            },
+            default_enabled: None,
+            path: None,
+        }],
+    };
+
+    ensure_defaults(&manifest, &installer).expect("initial reconcile installs the module");
+    let installed_root = h.paths.target_root.join("mod");
+    fs::remove_file(installed_root.join(".quoin-materialize-complete"))
+        .expect("simulate an interrupted git-subdir root");
+
+    let repaired = ensure_defaults(&manifest, &installer).expect("partial root is re-resolved");
+    assert_eq!(
+        repaired.updated,
+        vec![ModuleName::new("mod").expect("legal")]
+    );
+    assert_eq!(
+        resolver.calls(),
+        2,
+        "partial roots must not take the lazy fast path"
+    );
+    assert!(
+        installed_root.join(".quoin-materialize-complete").is_file(),
+        "the complete-tree marker returns after replacement"
     );
 }
 

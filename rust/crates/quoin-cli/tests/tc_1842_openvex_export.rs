@@ -9,7 +9,7 @@
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 
-//! `quoin soup vex export` writes only person-authored OpenVEX statements
+//! `quoin soup vex export` writes only person-authored `OpenVEX` statements
 //! (FR-216).
 
 use std::path::Path;
@@ -47,9 +47,13 @@ impl Fixture {
             front.push_str(&serde_json::to_string(&statements).unwrap());
             front.push('\n');
         }
-        front.push_str(&format!(
-            "---\n# [{id}] {id}\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| component_id | UUID | 1..1 | identity |\n| purl | String | 1..1 | minLength: 1 |\n"
-        ));
+        front.push_str("---\n# [");
+        front.push_str(id);
+        front.push_str("] ");
+        front.push_str(id);
+        front.push_str(
+            "\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| component_id | UUID | 1..1 | identity |\n| purl | String | 1..1 | minLength: 1 |\n"
+        );
         std::fs::write(self.path().join(format!("spec/soup/{id}.md")), front).unwrap();
     }
 
@@ -236,13 +240,17 @@ fn export_copies_authored_values_with_caller_metadata_and_stays_deterministic() 
     let document: Value = serde_json::from_slice(&first_bytes).unwrap();
     assert_matches_openvex_020_schema(&document);
 
+    assert_exported_authored_statements(&document);
+}
+
+fn assert_exported_authored_statements(document: &Value) {
     assert_eq!(document["@context"], "https://openvex.dev/ns/v0.2.0");
     assert_eq!(document["@id"], "urn:example:vex:document-1");
     assert_eq!(document["author"], "security@example.test");
     assert_eq!(document["timestamp"], "2026-11-24T10:00:00Z");
     assert_eq!(document["version"], 1);
     assert_eq!(
-        keys(&document),
+        keys(document),
         [
             "@context",
             "@id",

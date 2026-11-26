@@ -34,7 +34,7 @@ fn obligation(id: &str) -> Value {
 /// A cargo-deny scan is recorded under `--tool cargo-deny <version>` as a
 /// finding record in `scans/`, not refused as another tool's output and not
 /// written to `runs/`.
-#[trace("FR-034-AC-24")]
+#[trace("FR-034-AC-15", "FR-034-AC-24")]
 #[test]
 fn tc_2703_a_cargo_deny_scan_records_under_its_own_tool() {
     let dir = repo();

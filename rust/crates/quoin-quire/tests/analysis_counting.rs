@@ -350,8 +350,9 @@ impl Recorded {
                 observation: {
                     let mut observation =
                         admitted_run(path, report.get("run_kind").and_then(Value::as_str));
-                    observation.current_formal_rule_status =
-                        self.current_formal_rule_status.clone();
+                    observation
+                        .current_formal_rule_status
+                        .clone_from(&self.current_formal_rule_status);
                     observation
                 },
             })

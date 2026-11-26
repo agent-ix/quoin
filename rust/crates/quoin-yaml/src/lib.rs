@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The one YAML reader on the quoin boundary.
 //!
 //! Every YAML document quoin reads — a module `manifest.yaml`, a bundle

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The machinery behind `quoin dossier` (FR-191, PLAT-1614): the document
 //! registry, the gap model and its deterministic order, the `DossierDocument`
 //! frontmatter and `Gaps` writer, `generate` / `check`, and the export
@@ -189,6 +191,119 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["DOS-SW", "DOS-DL", "DOS-SDS", "DOS-DEV"]
         );
+    }
+
+    #[cfg(not(feature = "test-stubs"))]
+    #[trace("FR-191-AC-18")]
+    #[test]
+    fn the_m1_and_m2_registry_selects_and_exports_ten_documents_in_dossier_order() {
+        use std::path::PathBuf;
+
+        use crate::engine::Rendered;
+        use crate::export::{ExportOptions, quire_args};
+        use crate::registry::{DocumentSpec, Generated, Generator, Inputs};
+        struct Complete(DocumentSpec);
+
+        impl Generator for Complete {
+            fn spec(&self) -> DocumentSpec {
+                self.0
+            }
+
+            fn generate(&self, _inputs: &Inputs) -> Result<Generated, SourceFailure> {
+                Ok(Generated {
+                    body: format!("# {}", self.0.id),
+                    document_version: None,
+                    gaps: Vec::new(),
+                })
+            }
+        }
+
+        let expected = [
+            "DOS-SRS",
+            "DOS-ARCH",
+            "DOS-TRACE",
+            "DOS-RMM",
+            "DOS-VR",
+            "DOS-SOUP",
+            "DOS-ANOM",
+            "DOS-RISK",
+            "DOS-RMP",
+            "DOS-REL",
+        ];
+        let generators = builtin_generators(crate::testing::sources())
+            .into_iter()
+            .take(expected.len())
+            .map(|generator| Box::new(Complete(generator.spec())) as Box<dyn Generator>)
+            .collect();
+        let registry = registry_of(generators).unwrap();
+        let out = tempfile::tempdir().unwrap();
+        let inputs = Inputs {
+            scope: out.path().to_owned(),
+            modules: Vec::new(),
+            clause_bindings: Vec::new(),
+            pack: None,
+            soup_binding: None,
+            soup_records: None,
+            soup_support: None,
+            snapshot: None,
+            release_verify: None,
+            as_of: Some("2026-11-26T00:00:00Z".to_owned()),
+            version: "1.0".to_owned(),
+            producer_version: "test-quoin-version".to_owned(),
+        };
+        let report = generate(&registry, &[], out.path(), &inputs).unwrap();
+        let ids = report
+            .documents
+            .iter()
+            .map(|document| document.id.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(ids, expected);
+        for id in expected {
+            assert!(out.path().join(format!("{id}.md")).is_file(), "{id}");
+        }
+
+        let reverse = registry
+            .select(&[
+                "release-record".to_owned(),
+                "risk-management-plan".to_owned(),
+                "risk-management".to_owned(),
+                "anomalies".to_owned(),
+                "soup".to_owned(),
+                "verification-report".to_owned(),
+                "rmm".to_owned(),
+                "trace-matrix".to_owned(),
+                "architecture".to_owned(),
+                "srs".to_owned(),
+            ])
+            .unwrap();
+        let rendered = reverse
+            .iter()
+            .map(|generator| Rendered {
+                spec: generator.spec(),
+                path: PathBuf::from(out.path()).join(format!("{}.md", generator.spec().id)),
+                text: String::new(),
+                gaps: Vec::new(),
+            })
+            .collect::<Vec<_>>();
+        let options = ExportOptions {
+            to: "pdf".to_owned(),
+            output: out.path().join("bundle.pdf"),
+            release: None,
+            approvals: Vec::new(),
+            modules: Vec::new(),
+            template: None,
+            quire: PathBuf::from("quire"),
+        };
+        let args = quire_args(
+            &rendered,
+            &options,
+            "0123456789012345678901234567890123456789",
+        );
+        assert_eq!(
+            args[1..1 + expected.len()],
+            expected.map(|id| out.path().join(format!("{id}.md")).display().to_string())
+        );
+        assert!(args.windows(2).any(|pair| pair == ["--bundle-id", "DOS"]));
     }
 
     #[cfg(feature = "test-stubs")]

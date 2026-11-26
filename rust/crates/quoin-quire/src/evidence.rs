@@ -249,7 +249,7 @@ fn audit_outcome(report: &quoin_finding_types::AuditReport, id: &str) -> AuditOu
 /// of the retained runs cannot be built.
 #[implements("FR-153")]
 pub fn compute(request: &Request) -> Result<Outcome> {
-    compute_with(request, |_, _, _| Ok(())).map(|(outcome, ())| outcome)
+    compute_with(request, CoveragePurpose::Strict, |_, _, _| Ok(())).map(|(outcome, ())| outcome)
 }
 
 /// Count the requested obligations and derive design rows from the same coverage.
@@ -260,13 +260,30 @@ pub fn compute(request: &Request) -> Result<Outcome> {
 pub fn compute_for_matrix(
     request: &Request,
 ) -> Result<(Outcome, crate::design_matrix::DesignMatrix)> {
-    compute_with(request, |spec, registry, report| {
-        crate::design_matrix::for_coverage(request.scope.scope.as_path(), spec, registry, report)
-    })
+    compute_with(
+        request,
+        CoveragePurpose::DesignMatrix,
+        |spec, registry, report| {
+            crate::design_matrix::for_coverage(
+                request.scope.scope.as_path(),
+                spec,
+                registry,
+                report,
+            )
+        },
+    )
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CoveragePurpose {
+    Strict,
+    DesignMatrix,
+}
+
+#[implements("FR-165-AC-21")]
 fn compute_with<T>(
     request: &Request,
+    purpose: CoveragePurpose,
     finish: impl FnOnce(&quire_rs::Spec, &quire_rs::Registry, &quire_rs::CoverageReport) -> Result<T>,
 ) -> Result<(Outcome, T)> {
     let Walked {
@@ -274,10 +291,18 @@ fn compute_with<T>(
         spec,
         graph,
         notices,
-    } = coverage::walk(&request.scope)?;
+    } = match purpose {
+        CoveragePurpose::Strict => coverage::walk(&request.scope)?,
+        CoveragePurpose::DesignMatrix => coverage::walk_for_design_matrix(&request.scope)?,
+    };
     // The shared walk checked this registry already; the model is read again
     // here, so ask again before reading it (FR-029).
-    crate::modules::require_complete_model(&registry)?;
+    match purpose {
+        CoveragePurpose::Strict => crate::modules::require_complete_model(&registry)?,
+        CoveragePurpose::DesignMatrix => {
+            crate::modules::require_design_matrix_compatible_model(&registry)?;
+        }
+    }
     let model = registry
         .traceability()
         .ok_or(Error::TraceabilityModelUndeclared)?;
@@ -290,144 +315,22 @@ fn compute_with<T>(
         request.scope.scope.as_path(),
         model,
         &sources,
-        InventoryOptions::default(),
+        InventoryOptions {
+            model_policy: match purpose {
+                CoveragePurpose::Strict => {
+                    quire_rs::obligation::inventory::InventoryModelPolicy::Strict
+                }
+                CoveragePurpose::DesignMatrix => {
+                    quire_rs::obligation::inventory::InventoryModelPolicy::DesignMatrix
+                }
+            },
+            ..InventoryOptions::default()
+        },
     );
     let entries: Vec<CriterionEntry<'_>> = selected.entries().collect();
     let audit = audit_report(request, &entries)?;
 
-    let mut accepted: Vec<(usize, Decision)> = Vec::new();
-    let mut pending: Vec<Pending> = Vec::new();
-    for (requested_index, id) in request.requested.iter().enumerate() {
-        let requested_identity = request
-            .requested_targets
-            .get(requested_index)
-            .and_then(Option::as_ref);
-        let found = ordinals_stating(&entries, id);
-        let matched = if let Some(identity) = requested_identity {
-            found.iter().copied().find(|ordinal| {
-                entries.get(*ordinal).is_some_and(|entry| {
-                    let actual = target_locus(entry.identity());
-                    same_target_identity(&actual, identity)
-                })
-            })
-        } else {
-            None
-        };
-        let (ordinal, method) = match (requested_identity, matched, found.as_slice()) {
-            (Some(_), Some(ordinal), _) => (
-                ordinal,
-                entries
-                    .get(ordinal)
-                    .and_then(|entry| entry.obligation().method.clone()),
-            ),
-            (Some(identity), None, [ordinal]) => {
-                pending.push(Pending {
-                    entry: Some(*ordinal),
-                    requested: id.clone(),
-                    cause: CauseCode::SelectionMismatch,
-                    locator: None,
-                    detail: format!(
-                        "requested target {}:{}:{}:{} is not the selected FR-078 target",
-                        identity.source, identity.document, identity.id, identity.origin
-                    ),
-                });
-                continue;
-            }
-            (Some(_), None, []) => {
-                pending.push(Pending::unresolved(
-                    id,
-                    CauseCode::InvalidTarget,
-                    "no selected obligation has this id",
-                ));
-                continue;
-            }
-            (Some(_), None, _) => {
-                pending.push(Pending::unresolved(
-                    id,
-                    CauseCode::AmbiguousTarget,
-                    "more than one selected row has this id and no exact target identity matched",
-                ));
-                continue;
-            }
-            (None, _, [ordinal]) => (
-                *ordinal,
-                entries
-                    .get(*ordinal)
-                    .and_then(|entry| entry.obligation().method.clone()),
-            ),
-            (None, _, []) => {
-                pending.push(Pending::unresolved(
-                    id,
-                    CauseCode::InvalidTarget,
-                    "no selected obligation has this id",
-                ));
-                continue;
-            }
-            (None, _, _) => {
-                pending.push(Pending::unresolved(
-                    id,
-                    CauseCode::AmbiguousTarget,
-                    "more than one selected row has this id",
-                ));
-                continue;
-            }
-        };
-        if let Some(requested_identity) = requested_identity {
-            let conflicting = request.runs.iter().find(|run| {
-                run.record.entries.iter().any(|entry| {
-                    entry
-                        .trace_ids
-                        .iter()
-                        .flatten()
-                        .any(|trace_id| trace_id == id)
-                }) && run
-                    .observation
-                    .selected_target
-                    .as_ref()
-                    .is_some_and(|target| {
-                        target.id == *id && !same_target_identity(target, requested_identity)
-                    })
-            });
-            if let Some(run) = conflicting {
-                pending.push(Pending {
-                    entry: Some(ordinal),
-                    requested: id.clone(),
-                    cause: CauseCode::SelectionMismatch,
-                    locator: Some(RunLocator {
-                        record: run.file.clone(),
-                        run: format!("{}/{}", run.record.suite, run.record.timestamp),
-                        entry: run
-                            .record
-                            .entries
-                            .first()
-                            .map_or_else(String::new, |entry| entry.symbol.to_string()),
-                    }),
-                    detail: format!("requested target {}:{}:{}:{} conflicts with the admitted target {}:{}:{}:{}", requested_identity.source, requested_identity.document, requested_identity.id, requested_identity.origin, conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.source.as_str()), conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.document.as_str()), conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.id.as_str()), conflicting.and_then(|run| run.observation.selected_target.as_ref()).map_or("", |target| target.origin.as_str())),
-                });
-                continue;
-            }
-        }
-        let about = audit_outcome(&audit, id);
-        let answer = qualify::qualify(&qualify::Request {
-            obligation: id,
-            declared_method: method.as_deref(),
-            runs: &request.runs,
-            audit: Some(&about),
-            host: &request.host,
-        });
-        match answer {
-            Qualification::Qualified(decisions) => {
-                accepted.extend(decisions.into_iter().map(|decision| (ordinal, decision)));
-            }
-            Qualification::NotQualified(refusals) => {
-                pending.extend(
-                    refusals
-                        .into_iter()
-                        .map(|refusal| Pending::refused(ordinal, id, refusal)),
-                );
-            }
-        }
-    }
+    let (accepted, pending) = resolve_requests(request, &entries, &audit);
 
     let report = with_backing(&selected, &entries, &accepted, &pending, |backing| {
         quire_rs::coverage::compute_with_evidence(
@@ -436,6 +339,12 @@ fn compute_with<T>(
             &graph,
             request.scope.scope.as_path(),
             backing,
+            match purpose {
+                CoveragePurpose::Strict => quire_rs::coverage::EvidenceCoverageMode::Strict,
+                CoveragePurpose::DesignMatrix => {
+                    quire_rs::coverage::EvidenceCoverageMode::DesignMatrix
+                }
+            },
         )
         .map_err(coverage::coverage_error)
     })?;
@@ -450,6 +359,177 @@ fn compute_with<T>(
         },
         extra,
     ))
+}
+
+#[implements("FR-153-AC-1")]
+#[implements("FR-153-AC-2")]
+fn resolve_requests(
+    request: &Request,
+    entries: &[CriterionEntry<'_>],
+    audit: &quoin_finding_types::AuditReport,
+) -> (Vec<(usize, Decision)>, Vec<Pending>) {
+    let mut accepted = Vec::new();
+    let mut pending = Vec::new();
+    for (index, id) in request.requested.iter().enumerate() {
+        let (decisions, refusals) = resolve_request(request, entries, audit, index, id);
+        accepted.extend(decisions);
+        pending.extend(refusals);
+    }
+    (accepted, pending)
+}
+
+#[implements("FR-153-AC-1")]
+#[implements("FR-153-AC-2")]
+fn resolve_request(
+    request: &Request,
+    entries: &[CriterionEntry<'_>],
+    audit: &quoin_finding_types::AuditReport,
+    requested_index: usize,
+    id: &str,
+) -> (Vec<(usize, Decision)>, Vec<Pending>) {
+    let identity = request
+        .requested_targets
+        .get(requested_index)
+        .and_then(Option::as_ref);
+    let (ordinal, method) = match select_requested_entry(entries, id, identity) {
+        Ok(selected) => selected,
+        Err(refusal) => return (Vec::new(), vec![*refusal]),
+    };
+    if let Some(identity) = identity
+        && let Some(refusal) = conflicting_selection(request, ordinal, id, identity)
+    {
+        return (Vec::new(), vec![refusal]);
+    }
+    let about = audit_outcome(audit, id);
+    let answer = qualify::qualify(&qualify::Request {
+        obligation: id,
+        declared_method: method.as_deref(),
+        runs: &request.runs,
+        audit: Some(&about),
+        host: &request.host,
+    });
+    match answer {
+        Qualification::Qualified(decisions) => (
+            decisions
+                .into_iter()
+                .map(|decision| (ordinal, decision))
+                .collect(),
+            Vec::new(),
+        ),
+        Qualification::NotQualified(refusals) => (
+            Vec::new(),
+            refusals
+                .into_iter()
+                .map(|refusal| Pending::refused(ordinal, id, refusal))
+                .collect(),
+        ),
+    }
+}
+
+#[implements("FR-116-AC-19")]
+fn select_requested_entry(
+    entries: &[CriterionEntry<'_>],
+    id: &str,
+    identity: Option<&quoin_quire_types::TargetLocus>,
+) -> std::result::Result<(usize, Option<String>), Box<Pending>> {
+    let found = ordinals_stating(entries, id);
+    let matched = identity.and_then(|identity| {
+        found.iter().copied().find(|ordinal| {
+            entries.get(*ordinal).is_some_and(|entry| {
+                let actual = target_locus(entry.identity());
+                same_target_identity(&actual, identity)
+            })
+        })
+    });
+    let ordinal = match (identity, matched, found.as_slice()) {
+        (Some(_), Some(ordinal), _) => ordinal,
+        (None, _, [ordinal]) => *ordinal,
+        (Some(identity), None, [ordinal]) => {
+            return Err(Box::new(Pending {
+                entry: Some(*ordinal),
+                requested: id.to_owned(),
+                cause: CauseCode::SelectionMismatch,
+                locator: None,
+                detail: format!(
+                    "requested target {}:{}:{}:{} is not the selected FR-078 target",
+                    identity.source, identity.document, identity.id, identity.origin
+                ),
+            }));
+        }
+        (Some(_), None, []) | (None, _, []) => {
+            return Err(Box::new(Pending::unresolved(
+                id,
+                CauseCode::InvalidTarget,
+                "no selected obligation has this id",
+            )));
+        }
+        (Some(_), None, _) => {
+            return Err(Box::new(Pending::unresolved(
+                id,
+                CauseCode::AmbiguousTarget,
+                "more than one selected row has this id and no exact target identity matched",
+            )));
+        }
+        (None, _, _) => {
+            return Err(Box::new(Pending::unresolved(
+                id,
+                CauseCode::AmbiguousTarget,
+                "more than one selected row has this id",
+            )));
+        }
+    };
+    let method = entries
+        .get(ordinal)
+        .and_then(|entry| entry.obligation().method.clone());
+    Ok((ordinal, method))
+}
+
+#[implements("FR-116-AC-19")]
+fn conflicting_selection(
+    request: &Request,
+    ordinal: usize,
+    id: &str,
+    identity: &quoin_quire_types::TargetLocus,
+) -> Option<Pending> {
+    let run = request.runs.iter().find(|run| {
+        run.record.entries.iter().any(|entry| {
+            entry
+                .trace_ids
+                .iter()
+                .flatten()
+                .any(|trace_id| trace_id == id)
+        }) && run
+            .observation
+            .selected_target
+            .as_ref()
+            .is_some_and(|target| target.id == id && !same_target_identity(target, identity))
+    })?;
+    let admitted = run.observation.selected_target.as_ref();
+    Some(Pending {
+        entry: Some(ordinal),
+        requested: id.to_owned(),
+        cause: CauseCode::SelectionMismatch,
+        locator: Some(RunLocator {
+            record: run.file.clone(),
+            run: format!("{}/{}", run.record.suite, run.record.timestamp),
+            entry: run
+                .record
+                .entries
+                .first()
+                .map_or_else(String::new, |entry| entry.symbol.to_string()),
+        }),
+        detail: format!(
+            "requested target {}:{}:{}:{} conflicts with the admitted target {}:{}:{}:{}",
+            identity.source,
+            identity.document,
+            identity.id,
+            identity.origin,
+            admitted.map_or("", |target| target.source.as_str()),
+            admitted.map_or("", |target| target.document.as_str()),
+            admitted.map_or("", |target| target.id.as_str()),
+            admitted.map_or("", |target| target.origin.as_str())
+        ),
+    })
 }
 
 /// Build the engine's input over borrowed views and run `use_backing` on it.

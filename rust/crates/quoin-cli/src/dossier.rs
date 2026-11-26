@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
+use ix_trace_rs::implements;
 use quoin_assurance::matrix::MatrixOutput;
 use quoin_core::protocol::{Diagnostic, Response, canonical_json};
 use quoin_dossier::{
@@ -187,12 +188,19 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 ///
 /// The model is read by several sources (the matrix, the design matrix, the
 /// flow report), so the one question is put once, up front, over the same scope
-/// and module selection they use, and every dossier command is refused when a
-/// declaration was dropped, whichever document kinds it selects. Any other
-/// failure to resolve the modules is not this refusal and is left to the
-/// source that needs the modules to report it.
+/// and module selection they use. Only an architecture-only generate/check may
+/// continue when the loader dropped required relations; that document reports
+/// each relation while retaining valid siblings. Every other dossier selection
+/// stays strict. Module-resolution failures are left to the source that needs
+/// the modules to report them.
+#[implements("FR-193-AC-10")]
+#[implements("FR-193-AC-11")]
 fn dropped_declarations(arguments: &ArgMatches) -> Option<Response> {
-    let (_, selected) = arguments.subcommand()?;
+    let (subcommand, selected) = arguments.subcommand()?;
+    let architecture_only = matches!(subcommand, "generate" | "check")
+        && selected.get_many::<String>("doc").is_some_and(|mut docs| {
+            docs.next().is_some_and(|doc| doc == "architecture") && docs.next().is_none()
+        });
     let scope = quoin_quire::ids::ScopeRoot::open(
         text(selected, "scope").unwrap_or_else(|| ".".to_owned()),
     )
@@ -208,7 +216,12 @@ fn dropped_declarations(arguments: &ArgMatches) -> Option<Response> {
         quoin_quire::ModuleSelection::Closed(modules)
     };
     let registry = selection.resolve(&scope, &mut Vec::new()).ok()?;
-    let error = quoin_quire::modules::require_complete_model(&registry).err()?;
+    let incomplete = if architecture_only {
+        quoin_quire::modules::require_design_matrix_compatible_model(&registry)
+    } else {
+        quoin_quire::modules::require_complete_model(&registry)
+    };
+    let error = incomplete.err()?;
     match crate::core_runtime::Failure::from_quire(&error, "dossier") {
         crate::core_runtime::Failure::Refused(response) => Some(response),
         crate::core_runtime::Failure::Message(_) => None,

@@ -15,9 +15,10 @@
 //! `DIVERGENCE.md` for where the two validators disagree and what each
 //! disagreement costs the user.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
+use ix_trace_rs::implements;
 use serde_json::Value;
 
 use crate::contract::{
@@ -181,6 +182,7 @@ pub struct SemanticValidators {
     semantic_block: SchemaValidator,
     sweep_report: SchemaValidator,
     semantic_core_dir: PathBuf,
+    module_manifest_keys: BTreeSet<String>,
 }
 
 impl SemanticValidators {
@@ -193,6 +195,16 @@ impl SemanticValidators {
     pub fn load(semantic_root: &Path) -> Result<Self, SemanticError> {
         let manifest_schema_path = module_manifest_schema_path(semantic_root);
         let manifest_schema = read_json(&manifest_schema_path)?;
+        let module_manifest_keys = manifest_schema
+            .get("properties")
+            .and_then(Value::as_object)
+            .ok_or(SemanticError::VendoredSchemaIncomplete {
+                path: manifest_schema_path.clone(),
+                pointer: "/properties",
+            })?
+            .keys()
+            .cloned()
+            .collect();
         let block_schema = manifest_schema
             .get("properties")
             .and_then(|p| p.get("semantic"))
@@ -208,6 +220,7 @@ impl SemanticValidators {
             semantic_block: SchemaValidator::compile(&manifest_schema_path, block_schema, &[])?,
             sweep_report: SchemaValidator::compile(&sweep_path, &sweep_schema, &[])?,
             semantic_core_dir: semantic_core_dir(semantic_root),
+            module_manifest_keys,
         })
     }
 
@@ -303,6 +316,7 @@ fn json_text(value: &Value) -> String {
 /// the YAML, exactly as the TypeScript's caller has.
 #[must_use]
 #[allow(clippy::too_many_lines)]
+#[implements("FR-099-AC-5")]
 pub fn read_semantic_block(
     manifest: &Value,
     module_root: &Path,
@@ -311,6 +325,16 @@ pub fn read_semantic_block(
     let Some(manifest_map) = manifest.as_object() else {
         return SemanticReadResult::nothing();
     };
+    if let Some(key) = manifest_map
+        .keys()
+        .find(|key| !validators.module_manifest_keys.contains(*key))
+    {
+        return SemanticReadResult::refusal(SemanticDiagnostic::error(
+            DiagnosticCode::UnknownKey,
+            format!("manifest.{key}"),
+            format!("unknown key in module manifest: {key}"),
+        ));
+    }
     let Some(raw) = manifest_map.get("semantic") else {
         return SemanticReadResult::nothing();
     };

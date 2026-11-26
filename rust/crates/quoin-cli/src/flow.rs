@@ -6,12 +6,14 @@
 
 pub(crate) mod provider;
 
+use std::ffi::OsStr;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::{Command as ProcessCommand, Stdio};
 use std::time::{Duration, Instant};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 use serde_json::Value;
 
@@ -261,14 +263,58 @@ try {
     })
 }
 
+#[implements("FR-099-AC-10")]
 fn executable_path(program: &str) -> Result<PathBuf, LaunchFailure> {
     let path = std::env::var_os("PATH").ok_or_else(|| {
         LaunchFailure::Local("PATH is unavailable while resolving ix-flow".to_owned())
     })?;
-    std::env::split_paths(&path)
+    executable_path_in(program, &path)
+}
+
+#[implements("FR-099-AC-10")]
+fn executable_path_in(program: &str, path: &OsStr) -> Result<PathBuf, LaunchFailure> {
+    std::env::split_paths(path)
         .map(|directory| directory.join(program))
-        .find(|candidate| candidate.is_file())
-        .ok_or_else(|| LaunchFailure::Local("could not locate ix-flow on PATH".to_owned()))
+        .find(|candidate| {
+            let Ok(metadata) = candidate.metadata() else {
+                return false;
+            };
+            if !metadata.is_file() {
+                return false;
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                metadata.permissions().mode() & 0o111 != 0
+            }
+            #[cfg(not(unix))]
+            {
+                true
+            }
+        })
+        .ok_or_else(|| {
+            LaunchFailure::Local("could not resolve ix-flow executable on PATH".to_owned())
+        })
+}
+
+#[implements("FR-099-AC-10")]
+fn resolve_program(program: &OsStr) -> Result<PathBuf, LaunchFailure> {
+    let path = std::path::Path::new(program);
+    let candidate = if path.components().count() > 1 || path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        executable_path(path.to_str().ok_or_else(|| {
+            LaunchFailure::Local(
+                "could not resolve ix-flow executable: program name is not UTF-8".to_owned(),
+            )
+        })?)?
+    };
+    candidate.canonicalize().map_err(|error| {
+        LaunchFailure::Local(format!(
+            "could not resolve ix-flow executable {}: {error}",
+            candidate.display()
+        ))
+    })
 }
 
 fn instance_id(result: &Value) -> Result<&str, String> {
@@ -317,7 +363,24 @@ fn runner(home: &std::path::Path, operation: &str) -> ProcessCommand {
     command
 }
 
+#[implements("FR-099-AC-10")]
 fn execute(command: &mut ProcessCommand) -> Result<String, LaunchFailure> {
+    // Resolve PATH once, then spawn the canonical executable so a later PATH
+    // change or symlink swap cannot redirect this child launch.
+    let resolved = resolve_program(command.get_program())?;
+    let mut resolved_command = ProcessCommand::new(resolved);
+    resolved_command.args(command.get_args());
+    for (key, value) in command.get_envs() {
+        if let Some(value) = value {
+            resolved_command.env(key, value);
+        } else {
+            resolved_command.env_remove(key);
+        }
+    }
+    if let Some(directory) = command.get_current_dir() {
+        resolved_command.current_dir(directory);
+    }
+    *command = resolved_command;
     let mut child = command
         .arg("--json")
         .stdin(Stdio::null())
@@ -383,15 +446,32 @@ fn execute(command: &mut ProcessCommand) -> Result<String, LaunchFailure> {
         } else {
             message.trim().to_owned()
         };
+        let termination = match status.code() {
+            Some(code) => format!("ix-flow exited with status {code}"),
+            None => {
+                #[cfg(unix)]
+                {
+                    use std::os::unix::process::ExitStatusExt;
+                    status.signal().map_or_else(
+                        || "ix-flow terminated without an exit status".to_owned(),
+                        |signal| format!("ix-flow terminated by signal {signal}"),
+                    )
+                }
+                #[cfg(not(unix))]
+                {
+                    "ix-flow terminated without an exit status".to_owned()
+                }
+            }
+        };
         return Err(LaunchFailure::Child(
             status
                 .code()
                 .and_then(|c| u8::try_from(c).ok())
                 .unwrap_or(1),
             if message.is_empty() {
-                "ix-flow failed".to_owned()
+                termination
             } else {
-                message
+                format!("{termination}: {message}")
             },
         ));
     }
@@ -442,7 +522,10 @@ fn node_program() -> &'static str {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test assertions may panic")]
 mod tests {
-    use super::{command, instance_id, run};
+    use super::{
+        LaunchFailure, ProcessCommand, command, executable_path_in, execute, instance_id, run,
+        skill_path,
+    };
     use ix_trace_rs::trace;
 
     /// Provenance: PLAT-1249
@@ -503,5 +586,102 @@ mod tests {
             e.message
                 .contains("--path <installed-quoin-skill-directory>")
         }));
+    }
+
+    #[trace("FR-099-AC-7")]
+    #[test]
+    fn workflow_path_argument_must_name_the_skill_and_selected_definition() {
+        let directory = tempfile::tempdir().expect("skill directory is created");
+        let definition = directory.path().join("workflows/review");
+        std::fs::create_dir_all(&definition).expect("workflow directory is created");
+        std::fs::write(directory.path().join("SKILL.md"), "# Review skill\n")
+            .expect("skill document is written");
+        std::fs::write(definition.join("def.yaml"), "name: review\n")
+            .expect("workflow definition is written");
+        let path_text = directory.path().to_string_lossy().into_owned();
+        let arguments = command("review")
+            .try_get_matches_from(["review", "--path", &path_text])
+            .expect("path argument parses");
+        assert_eq!(
+            skill_path("review", &arguments).expect("complete skill path is accepted"),
+            directory.path().canonicalize().expect("canonical path")
+        );
+
+        std::fs::remove_file(definition.join("def.yaml")).expect("definition is removed");
+        assert!(skill_path("review", &arguments).is_err_and(|error| {
+            error.contains("must contain SKILL.md and workflows/review/def.yaml")
+        }));
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-099-AC-10")]
+    #[test]
+    fn ix_flow_exit_signal_and_spawn_failures_have_distinct_diagnostics() {
+        let exited = execute(&mut ProcessCommand::new("sh").arg("-c").arg("exit 7"));
+        assert!(
+            matches!(exited, Err(LaunchFailure::Child(7, message)) if message.contains("exited with status 7"))
+        );
+
+        let signaled = execute(&mut ProcessCommand::new("sh").arg("-c").arg("kill -TERM $$"));
+        assert!(
+            matches!(signaled, Err(LaunchFailure::Child(_, message)) if message.contains("terminated by signal 15"))
+        );
+
+        let mut missing = ProcessCommand::new("definitely-not-an-ix-flow-executable");
+        let spawned = execute(&mut missing);
+        assert!(
+            matches!(spawned, Err(LaunchFailure::Local(message)) if message.contains("could not resolve ix-flow executable"))
+        );
+
+        let directory = tempfile::tempdir().expect("non-executable fixture directory");
+        let non_executable = directory.path().join("ix-flow");
+        std::fs::write(&non_executable, "not executable").expect("fixture is written");
+        let mut permissions = std::fs::metadata(&non_executable)
+            .expect("fixture metadata")
+            .permissions();
+        use std::os::unix::fs::PermissionsExt;
+        permissions.set_mode(0o600);
+        std::fs::set_permissions(&non_executable, permissions).expect("fixture is not executable");
+        let spawn_failure = execute(&mut ProcessCommand::new(&non_executable));
+        assert!(
+            matches!(spawn_failure, Err(LaunchFailure::Local(message)) if message.contains("could not start ix-flow"))
+        );
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-099-AC-10")]
+    #[test]
+    fn ix_flow_path_lookup_skips_non_executable_candidates() {
+        let directory = tempfile::tempdir().expect("runner search roots are created");
+        let first = directory.path().join("first");
+        let second = directory.path().join("second");
+        std::fs::create_dir(&first).expect("first search root is created");
+        std::fs::create_dir(&second).expect("second search root is created");
+
+        let shadow = first.join("ix-flow");
+        std::fs::write(&shadow, "not executable").expect("shadow candidate is written");
+        let mut permissions = std::fs::metadata(&shadow)
+            .expect("shadow metadata")
+            .permissions();
+        use std::os::unix::fs::PermissionsExt;
+        permissions.set_mode(0o600);
+        std::fs::set_permissions(&shadow, permissions).expect("shadow is not executable");
+
+        let runner = second.join("ix-flow");
+        std::fs::write(&runner, "#!/bin/sh\nexit 0\n").expect("runner candidate is written");
+        let mut permissions = std::fs::metadata(&runner)
+            .expect("runner metadata")
+            .permissions();
+        permissions.set_mode(0o700);
+        std::fs::set_permissions(&runner, permissions).expect("runner is executable");
+
+        let path = std::env::join_paths([first, second]).expect("PATH is valid");
+        let selected = executable_path_in("ix-flow", &path);
+        assert!(selected.is_ok(), "later executable is selected");
+        assert_eq!(
+            selected.ok(),
+            Some(runner),
+            "the later executable must be selected over the non-executable shadow"
+        );
     }
 }

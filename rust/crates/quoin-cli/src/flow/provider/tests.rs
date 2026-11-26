@@ -36,6 +36,8 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 #[cfg(unix)]
 use std::path::{Path, PathBuf};
+#[cfg(unix)]
+use std::process::Command;
 
 #[cfg(unix)]
 type ExpectedClaimSpan = (String, String, u64, u64);
@@ -1090,7 +1092,7 @@ fn analysis_invariant_uses_valid_package_and_draft_only_selection() {
 }
 
 #[cfg(unix)]
-#[trace("FR-189-AC-16")]
+#[trace("FR-189-AC-13", "FR-189-AC-16")]
 #[test]
 fn analysis_invariant_keeps_contract_package_v1_input_supported() {
     let (directory, request, context) = formalization_fixture();
@@ -1099,7 +1101,8 @@ fn analysis_invariant_keeps_contract_package_v1_input_supported() {
     let draft = spans.first().expect("draft span");
     let request = analysis_request(request, &package, std::slice::from_ref(&draft.0));
     let status = status_for_rules(directory.path(), &[status_rule(draft, "draft")]);
-    let (analyzer, log, _) = analyzer_stub(directory.path(), &[("consistency", "satisfied")]);
+    let (analyzer, log, selection_path) =
+        analyzer_stub(directory.path(), &[("consistency", "satisfied")]);
     let z3 = executable(directory.path(), "z3", "exit 0");
     let cvc5 = executable(directory.path(), "cvc5", "exit 0");
     let result = analysis_consistent_with_tools(
@@ -1123,6 +1126,67 @@ fn analysis_invariant_keeps_contract_package_v1_input_supported() {
         !Path::new(report_dir).join("analysis-package.json").exists(),
         "existing v1 input remains the analyzer package"
     );
+    assert_eq!(
+        result.get("classification").and_then(Value::as_str),
+        Some("consistent")
+    );
+    let selection: Value =
+        serde_json::from_slice(&fs::read(selection_path).expect("selection capture"))
+            .expect("selection json");
+    let selected = selection
+        .get("spans")
+        .and_then(Value::as_array)
+        .expect("selection spans");
+    assert_eq!(selected.len(), 1);
+    assert_eq!(selected[0]["identity"], "qsl/rule.native");
+    assert_eq!(selected[0]["start"], draft.2);
+    assert_eq!(selected[0]["end"], draft.3);
+}
+
+#[cfg(unix)]
+#[trace("FR-189-AC-14")]
+#[test]
+fn analysis_invariant_refuses_an_empty_drafted_selection_before_analyzer() {
+    let (directory, mut request, context) = formalization_fixture();
+    let claims = [("approved-symbol", "qsl/approved.native")];
+    let (package, spans) = contract_analysis_package(directory.path(), &claims);
+    request.analysis_package = Some(package.to_string_lossy().into_owned());
+    request.engineering_assurance = Some("/tmp/engineering-assurance".to_owned());
+    request.allowed_signers = Some("/tmp/allowed-signers".to_owned());
+    let approved = spans.first().expect("approved peer span");
+    let status = status_for_rules(directory.path(), &[status_rule(approved, "approved")]);
+    let marker = directory.path().join("analyzer-called");
+    let analyzer = executable(
+        directory.path(),
+        "analyzer-must-not-run",
+        &format!("touch '{}'\nexit 0", marker.display()),
+    );
+    let z3 = executable(directory.path(), "z3", "exit 0");
+    let cvc5 = executable(directory.path(), "cvc5", "exit 0");
+
+    let failure = analysis_consistent_with_tools(
+        &request,
+        &context,
+        &analysis_tools(&status, &analyzer, &z3, &cvc5),
+    )
+    .expect_err("an empty drafted selection cannot pass analysis");
+    assert_eq!(failure.code.to_string(), "analysis_package_invalid");
+    assert!(
+        failure.message.contains("no source span for selection"),
+        "failure identifies the missing selection span: {failure:?}"
+    );
+    assert!(
+        !marker.exists(),
+        "analyzer must not run without a draft span"
+    );
+    let control = Command::new(&analyzer)
+        .status()
+        .expect("invoke analyzer stub control");
+    assert!(
+        control.success(),
+        "analyzer stub control exits successfully"
+    );
+    assert!(marker.exists(), "analyzer stub control creates its marker");
 }
 
 #[cfg(unix)]
@@ -2010,6 +2074,7 @@ fn the_retry_guard_requires_four_recorded_consecutive_failures() {
     assert!(super::retries_exhausted(&make_instance(4, 1)).is_err());
 }
 
+#[trace("FR-099-AC-7")]
 #[test]
 fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -2085,7 +2150,68 @@ fn formalize_workflow_gates_approval_and_has_no_terminal_outgoing_edges() {
     }
 }
 
-#[trace("FR-209-AC-5", "FR-209-AC-6", "FR-209-AC-7")]
+#[trace("FR-189-AC-9")]
+#[test]
+fn formalize_provider_dispatches_the_three_domain_invariants() {
+    let (_directory, request, context) = formalization_fixture();
+    let instance = serde_json::from_value(json!({
+        "defName": "formalize",
+        "items": {
+            "quoin_context": [{
+                "id": "dispatch-test",
+                "repo_root": context.repo_root,
+                "config_root": context.config_root,
+                "targets": []
+            }],
+            "formalization_request": [{
+                "requirement_id": request.requirement_id,
+                "draft_path": request.draft_path,
+                "analysis_package": request.analysis_package,
+                "drafted_symbols": request.drafted_symbols
+            }]
+        },
+        "gateConfig": {}
+    }))
+    .expect("formalize instance");
+
+    for (invariant, expected_code) in [
+        ("qsl_check_passes", "qsl_check_unavailable"),
+        (
+            "analysis_consistent_with_approved",
+            "analysis_package_invalid",
+        ),
+        ("formal_rule_approved", "formal_rule_trust_inputs_invalid"),
+    ] {
+        let failure = check_with_details(&instance, invariant)
+            .expect_err("valid request metadata reaches the selected formalize handler");
+        assert_eq!(
+            failure.code.to_string(),
+            expected_code,
+            "{invariant} must reach its own handler"
+        );
+    }
+
+    let skill_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../skills/formalize-requirement/SKILL.md");
+    let skill = std::fs::read_to_string(skill_path).expect("read formalize skill");
+    assert!(skill.contains("ix-flow-invariant-provider:"));
+    assert!(skill.contains("command: quoin"));
+    assert!(skill.contains("args: [workflow-invariants]"));
+    assert!(skill.contains("request-protocol: quoin.workflow-invariants/v1"));
+    assert!(skill.contains("result-protocol: quoin.workflow-invariants-result/v1"));
+    for invariant in [
+        "qsl_check_passes",
+        "analysis_consistent_with_approved",
+        "formal_rule_approved",
+    ] {
+        assert!(
+            skill.contains(&format!("- {invariant}")),
+            "provider metadata names {invariant}"
+        );
+    }
+}
+
+#[trace("FR-099-AC-7", "FR-209-AC-5", "FR-209-AC-6", "FR-209-AC-7")]
 #[test]
 fn design_gate_workflow_routes_four_denials_and_gates_human_decisions() {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

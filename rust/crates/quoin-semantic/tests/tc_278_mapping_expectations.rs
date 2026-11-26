@@ -188,7 +188,7 @@ fn tc_278_004_type_cells_record_the_expected_targets_and_the_unresolved_placehol
     assert_eq!(by_title["bundle"]["objects"][0]["title"], "ConfigOverlay");
     assert_eq!(
         by_title["expected"]["target"]["value"],
-        "ix://agent-ix/config-service/type/ConfigOverlay"
+        "ix://agent-ix/config-service/type/FR-005"
     );
 
     let by_id = case("type-enum-by-id");

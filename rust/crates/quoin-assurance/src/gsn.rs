@@ -117,6 +117,10 @@ pub struct Unmapped {
 }
 
 /// Convert a derived assurance case to deterministic GSN nodes and edges.
+///
+/// # Errors
+/// Returns a description when a claim cannot be represented or the resulting
+/// GSN model fails validation.
 pub fn from_case(case: &AssuranceCase) -> Result<GsnCase, String> {
     let mut builder = Builder {
         nodes: Vec::new(),
@@ -160,15 +164,21 @@ pub fn from_case(case: &AssuranceCase) -> Result<GsnCase, String> {
 
 /// Convert a derived case and attach source-owned TVK facts for exact retained
 /// run matches. A missing report never causes tool identity to be guessed.
+///
+/// # Errors
+/// Returns a description when source facts cannot be serialized or the result
+/// fails GSN validation.
 pub fn from_case_with_validation_report(
     case: &AssuranceCase,
     run_records: &[serde_json::Value],
     report: Option<&serde_json::Value>,
 ) -> Result<GsnCase, String> {
     let mut model = from_case(case)?;
-    let mut strategy_index = next_index(&model.nodes, "S");
-    let mut goal_index = next_index(&model.nodes, "G");
-    let mut context_index = next_index(&model.nodes, "C");
+    let mut indexes = ToolConfidenceIndexes {
+        strategy: next_index(&model.nodes, "S"),
+        goal: next_index(&model.nodes, "G"),
+        context: next_index(&model.nodes, "C"),
+    };
     let solution_sources = model
         .nodes
         .iter()
@@ -198,205 +208,295 @@ pub fn from_case_with_validation_report(
             continue;
         };
         for suite in &evidence.suites {
-            let Some(at) = suite.at.as_deref() else {
-                append_missing_tool_source(
-                    &mut model,
-                    &parent,
-                    &source,
-                    &suite.suite,
-                    format!(
-                        "retained run timestamp not available for suite {}",
-                        suite.suite
-                    ),
-                    &mut goal_index,
-                );
-                continue;
-            };
-            let matching_run = run_records.iter().find(|record| {
-                record.get("suite").and_then(serde_json::Value::as_str) == Some(&suite.suite)
-                    && record.get("timestamp").and_then(serde_json::Value::as_str) == Some(at)
-            });
-            let Some(run) = matching_run else {
-                append_missing_tool_source(
-                    &mut model,
-                    &parent,
-                    &source,
-                    &suite.suite,
-                    format!(
-                        "no retained run record matches suite {} at {at}",
-                        suite.suite
-                    ),
-                    &mut goal_index,
-                );
-                continue;
-            };
-            let Some(tool) = run.get("tool").and_then(serde_json::Value::as_str) else {
-                append_missing_tool_source(
-                    &mut model,
-                    &parent,
-                    &source,
-                    &suite.suite,
-                    format!(
-                        "retained run record for suite {} at {at} has no tool identity",
-                        suite.suite
-                    ),
-                    &mut goal_index,
-                );
-                continue;
-            };
-            let tool_row = report
-                .and_then(|value| value.get("tools"))
-                .and_then(serde_json::Value::as_array)
-                .into_iter()
-                .flatten()
-                .find(|row| row.get("tool").and_then(serde_json::Value::as_str) == Some(tool));
-            let package_identity = tool_row
-                .and_then(|row| row.get("packageIdentity"))
-                .and_then(serde_json::Value::as_str);
-            let displayed_identity = package_identity.unwrap_or(tool);
-            let strategy_id = format!("S{strategy_index}");
-            strategy_index += 1;
-            model.nodes.push(GsnNode {
-                id: strategy_id.clone(),
-                kind: "strategy".to_owned(),
-                source: format!("tool-confidence:{source}:{displayed_identity}"),
-                statement: format!("Tool evidence for {displayed_identity}"),
-                status: "open".to_owned(),
-                open_reason: None,
-                undeveloped: None,
-                evidence: None,
-                source_data: Some(serde_json::json!({"producerRun":run})),
-            });
-            model.edges.push(GsnEdge {
-                kind: "supported_by".to_owned(),
-                from: parent.clone(),
-                to: strategy_id.clone(),
-            });
-            let mut gaps = Vec::new();
-            let mut add_fact = |id: &str, statement: String, fact: serde_json::Value| {
-                let context_id = format!("C{context_index}");
-                context_index += 1;
-                model.nodes.push(GsnNode {
-                    id: context_id.clone(),
-                    kind: "context".to_owned(),
-                    source: id.to_owned(),
-                    statement,
-                    status: "supported".to_owned(),
-                    open_reason: None,
-                    undeveloped: None,
-                    evidence: None,
-                    source_data: Some(fact),
-                });
-                model.edges.push(GsnEdge {
-                    kind: "in_context_of".to_owned(),
-                    from: strategy_id.clone(),
-                    to: context_id,
-                });
-            };
-            match tool_row {
-                None => gaps.push("validation-report tool entry not provided".to_owned()),
-                Some(row) => {
-                    if package_identity.is_none() {
-                        gaps.push("tool package identity not provided".to_owned());
-                    }
-                    if let Some(intended_use) = row.get("intendedUse") {
-                        let id = intended_use
-                            .get("id")
-                            .and_then(serde_json::Value::as_str)
-                            .unwrap_or("IntendedUse");
-                        let statement = serde_json::to_string(intended_use)
-                            .map_err(|error| error.to_string())?;
-                        add_fact(id, statement, intended_use.clone());
-                    } else {
-                        gaps.push("IntendedUse record not provided".to_owned());
-                    }
-                    if let Some(validation_id) = row
-                        .get("validationReportId")
-                        .and_then(serde_json::Value::as_str)
-                    {
-                        add_fact(
-                            validation_id,
-                            "retained validation report".to_owned(),
-                            serde_json::json!({"id": validation_id}),
-                        );
-                    } else {
-                        gaps.push("validation report reference not provided".to_owned());
-                    }
-                    let self_tests = row
-                        .get("selfTestRuns")
-                        .and_then(serde_json::Value::as_array);
-                    if let Some(self_tests) = self_tests.filter(|items| !items.is_empty()) {
-                        for self_test in self_tests {
-                            let id = self_test
-                                .get("id")
-                                .and_then(serde_json::Value::as_str)
-                                .unwrap_or("self-test run");
-                            let statement = serde_json::to_string(self_test)
-                                .map_err(|error| error.to_string())?;
-                            add_fact(id, statement, self_test.clone());
-                        }
-                    } else {
-                        gaps.push("retained self-test run not provided".to_owned());
-                    }
-                    if let Some(anomalies) =
-                        row.get("anomalies").and_then(serde_json::Value::as_array)
-                    {
-                        if anomalies.is_empty() {
-                            add_fact(
-                                "anomaly-inventory",
-                                "none known".to_owned(),
-                                serde_json::json!({"anomalies": []}),
-                            );
-                        }
-                        for anomaly in anomalies {
-                            let mut anomaly_fact = anomaly.clone();
-                            if let Some(fields) = anomaly_fact.as_object_mut() {
-                                fields.remove("fixingChange");
-                                fields.remove("rationaleChange");
-                            }
-                            let id = anomaly
-                                .get("id")
-                                .and_then(serde_json::Value::as_str)
-                                .unwrap_or("Anomaly");
-                            let statement = serde_json::to_string(&anomaly_fact)
-                                .map_err(|error| error.to_string())?;
-                            add_fact(id, statement, anomaly_fact);
-                        }
-                    } else {
-                        gaps.push("Anomaly inventory not provided".to_owned());
-                    }
-                }
-            }
-            if !gaps.is_empty() {
-                let gap_id = format!("G{goal_index}");
-                goal_index += 1;
-                let reason = gaps.join("; ");
-                model.nodes.push(GsnNode {
-                    id: gap_id.clone(),
-                    kind: "goal".to_owned(),
-                    source: format!("tool-confidence-gap:{source}"),
-                    statement: "Required tool-confidence source facts are incomplete".to_owned(),
-                    status: "open".to_owned(),
-                    open_reason: Some(reason),
-                    undeveloped: Some(true),
-                    evidence: None,
-                    source_data: None,
-                });
-                model.edges.push(GsnEdge {
-                    kind: "supported_by".to_owned(),
-                    from: strategy_id,
-                    to: gap_id,
-                });
-            } else {
-                // Source facts describe the tool; they never become a confidence verdict.
-                if let Some(node) = model.nodes.iter_mut().find(|node| node.id == strategy_id) {
-                    node.undeveloped = Some(true);
-                }
-            }
+            append_tool_suite(
+                &mut model,
+                suite,
+                &mut indexes,
+                &ToolSuiteContext {
+                    parent: &parent,
+                    source: &source,
+                    run_records,
+                    report,
+                },
+            )?;
         }
     }
     validate(&model)?;
     Ok(model)
+}
+
+#[derive(Default)]
+struct ToolConfidenceIndexes {
+    strategy: usize,
+    goal: usize,
+    context: usize,
+}
+
+struct ToolSuiteContext<'a> {
+    parent: &'a str,
+    source: &'a str,
+    run_records: &'a [serde_json::Value],
+    report: Option<&'a serde_json::Value>,
+}
+
+fn append_tool_suite(
+    model: &mut GsnCase,
+    suite: &crate::case::SuiteRef,
+    indexes: &mut ToolConfidenceIndexes,
+    context: &ToolSuiteContext<'_>,
+) -> Result<(), String> {
+    let Some(at) = suite.at.as_deref() else {
+        append_missing_tool_source(
+            model,
+            context.parent,
+            context.source,
+            &suite.suite,
+            format!(
+                "retained run timestamp not available for suite {}",
+                suite.suite
+            ),
+            &mut indexes.goal,
+        );
+        return Ok(());
+    };
+    let matching_run = context.run_records.iter().find(|record| {
+        record.get("suite").and_then(serde_json::Value::as_str) == Some(&suite.suite)
+            && record.get("timestamp").and_then(serde_json::Value::as_str) == Some(at)
+    });
+    let Some(run) = matching_run else {
+        append_missing_tool_source(
+            model,
+            context.parent,
+            context.source,
+            &suite.suite,
+            format!(
+                "no retained run record matches suite {} at {at}",
+                suite.suite
+            ),
+            &mut indexes.goal,
+        );
+        return Ok(());
+    };
+    let Some(tool) = run.get("tool").and_then(serde_json::Value::as_str) else {
+        append_missing_tool_source(
+            model,
+            context.parent,
+            context.source,
+            &suite.suite,
+            format!(
+                "retained run record for suite {} at {at} has no tool identity",
+                suite.suite
+            ),
+            &mut indexes.goal,
+        );
+        return Ok(());
+    };
+    let tool_row = context
+        .report
+        .and_then(|value| value.get("tools"))
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .find(|row| row.get("tool").and_then(serde_json::Value::as_str) == Some(tool));
+    let package_identity = tool_row
+        .and_then(|row| row.get("packageIdentity"))
+        .and_then(serde_json::Value::as_str);
+    let displayed_identity = package_identity.unwrap_or(tool);
+    let strategy_id = format!("S{}", indexes.strategy);
+    indexes.strategy += 1;
+    model.nodes.push(GsnNode {
+        id: strategy_id.clone(),
+        kind: "strategy".to_owned(),
+        source: format!("tool-confidence:{}:{displayed_identity}", context.source),
+        statement: format!("Tool evidence for {displayed_identity}"),
+        status: "open".to_owned(),
+        open_reason: None,
+        undeveloped: None,
+        evidence: None,
+        source_data: Some(serde_json::json!({"producerRun":run})),
+    });
+    model.edges.push(GsnEdge {
+        kind: "supported_by".to_owned(),
+        from: context.parent.to_owned(),
+        to: strategy_id.clone(),
+    });
+    let gaps = append_tool_facts(model, &strategy_id, tool_row, package_identity, indexes)?;
+    finish_tool_strategy(
+        model,
+        &strategy_id,
+        context.source,
+        &gaps,
+        &mut indexes.goal,
+    );
+    Ok(())
+}
+
+fn append_tool_facts(
+    model: &mut GsnCase,
+    strategy_id: &str,
+    tool_row: Option<&serde_json::Value>,
+    package_identity: Option<&str>,
+    indexes: &mut ToolConfidenceIndexes,
+) -> Result<Vec<String>, String> {
+    let mut gaps = Vec::new();
+    let mut add_fact = |id: &str, statement: String, fact: serde_json::Value| {
+        let context_id = format!("C{}", indexes.context);
+        indexes.context += 1;
+        model.nodes.push(GsnNode {
+            id: context_id.clone(),
+            kind: "context".to_owned(),
+            source: id.to_owned(),
+            statement,
+            status: "supported".to_owned(),
+            open_reason: None,
+            undeveloped: None,
+            evidence: None,
+            source_data: Some(fact),
+        });
+        model.edges.push(GsnEdge {
+            kind: "in_context_of".to_owned(),
+            from: strategy_id.to_owned(),
+            to: context_id,
+        });
+    };
+    let Some(row) = tool_row else {
+        return Ok(vec!["validation-report tool entry not provided".to_owned()]);
+    };
+    if package_identity.is_none() {
+        gaps.push("tool package identity not provided".to_owned());
+    }
+    append_intended_use(row, &mut add_fact, &mut gaps)?;
+    append_validation_report_ref(row, &mut add_fact, &mut gaps);
+    append_self_tests(row, &mut add_fact, &mut gaps)?;
+    append_anomalies(row, &mut add_fact, &mut gaps)?;
+    Ok(gaps)
+}
+
+fn append_intended_use(
+    row: &serde_json::Value,
+    add_fact: &mut impl FnMut(&str, String, serde_json::Value),
+    gaps: &mut Vec<String>,
+) -> Result<(), String> {
+    if let Some(intended_use) = row.get("intendedUse") {
+        let id = intended_use
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("IntendedUse");
+        let statement = serde_json::to_string(intended_use).map_err(|error| error.to_string())?;
+        add_fact(id, statement, intended_use.clone());
+    } else {
+        gaps.push("IntendedUse record not provided".to_owned());
+    }
+    Ok(())
+}
+
+fn append_validation_report_ref(
+    row: &serde_json::Value,
+    add_fact: &mut impl FnMut(&str, String, serde_json::Value),
+    gaps: &mut Vec<String>,
+) {
+    if let Some(validation_id) = row
+        .get("validationReportId")
+        .and_then(serde_json::Value::as_str)
+    {
+        add_fact(
+            validation_id,
+            "retained validation report".to_owned(),
+            serde_json::json!({"id": validation_id}),
+        );
+    } else {
+        gaps.push("validation report reference not provided".to_owned());
+    }
+}
+
+fn append_self_tests(
+    row: &serde_json::Value,
+    add_fact: &mut impl FnMut(&str, String, serde_json::Value),
+    gaps: &mut Vec<String>,
+) -> Result<(), String> {
+    if let Some(self_tests) = row
+        .get("selfTestRuns")
+        .and_then(serde_json::Value::as_array)
+        .filter(|items| !items.is_empty())
+    {
+        for self_test in self_tests {
+            let id = self_test
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("self-test run");
+            let statement = serde_json::to_string(self_test).map_err(|error| error.to_string())?;
+            add_fact(id, statement, self_test.clone());
+        }
+    } else {
+        gaps.push("retained self-test run not provided".to_owned());
+    }
+    Ok(())
+}
+
+fn append_anomalies(
+    row: &serde_json::Value,
+    add_fact: &mut impl FnMut(&str, String, serde_json::Value),
+    gaps: &mut Vec<String>,
+) -> Result<(), String> {
+    let Some(anomalies) = row.get("anomalies").and_then(serde_json::Value::as_array) else {
+        gaps.push("Anomaly inventory not provided".to_owned());
+        return Ok(());
+    };
+    if anomalies.is_empty() {
+        add_fact(
+            "anomaly-inventory",
+            "none known".to_owned(),
+            serde_json::json!({"anomalies": []}),
+        );
+    }
+    for anomaly in anomalies {
+        let mut fact = anomaly.clone();
+        if let Some(fields) = fact.as_object_mut() {
+            fields.remove("fixingChange");
+            fields.remove("rationaleChange");
+        }
+        let id = anomaly
+            .get("id")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("Anomaly");
+        let statement = serde_json::to_string(&fact).map_err(|error| error.to_string())?;
+        add_fact(id, statement, fact);
+    }
+    Ok(())
+}
+
+fn finish_tool_strategy(
+    model: &mut GsnCase,
+    strategy_id: &str,
+    source: &str,
+    gaps: &[String],
+    goal_index: &mut usize,
+) {
+    if gaps.is_empty() {
+        // Source facts describe the tool; they never become a confidence verdict.
+        if let Some(node) = model.nodes.iter_mut().find(|node| node.id == strategy_id) {
+            node.undeveloped = Some(true);
+        }
+        return;
+    }
+    let gap_id = format!("G{goal_index}");
+    *goal_index += 1;
+    model.nodes.push(GsnNode {
+        id: gap_id.clone(),
+        kind: "goal".to_owned(),
+        source: format!("tool-confidence-gap:{source}"),
+        statement: "Required tool-confidence source facts are incomplete".to_owned(),
+        status: "open".to_owned(),
+        open_reason: Some(gaps.join("; ")),
+        undeveloped: Some(true),
+        evidence: None,
+        source_data: None,
+    });
+    model.edges.push(GsnEdge {
+        kind: "supported_by".to_owned(),
+        from: strategy_id.to_owned(),
+        to: gap_id,
+    });
 }
 
 fn append_missing_tool_source(
@@ -466,18 +566,19 @@ fn append_global_context(
             .get("id")
             .or_else(|| record.get("obligation"))
             .and_then(serde_json::Value::as_str)
-            .map(str::to_owned)
-            .unwrap_or_else(|| format!("{label} {}", index + 1));
+            .map_or_else(|| format!("{label} {}", index + 1), str::to_owned);
         let statement = serde_json::to_string(&record).map_err(|error| error.to_string())?;
         let node = builder.push(
             "context",
             "C",
             &id,
-            statement,
-            "supported",
-            None,
-            None,
-            Some(record),
+            NodeContent {
+                statement,
+                status: "supported",
+                reason: None,
+                undeveloped: None,
+                source_data: Some(record),
+            },
         );
         for root in roots {
             builder.edges.push(GsnEdge {
@@ -495,6 +596,276 @@ struct Builder {
     edges: Vec<GsnEdge>,
     ids: BTreeMap<String, String>,
     counters: BTreeMap<String, usize>,
+}
+
+struct NodeContent {
+    statement: String,
+    status: &'static str,
+    reason: Option<String>,
+    undeveloped: Option<bool>,
+    source_data: Option<serde_json::Value>,
+}
+
+fn append_authored_reasoning(
+    b: &mut Builder,
+    root_source: &str,
+    root: &str,
+    reasoning_rows: &[serde_json::Value],
+    unmapped_extra: &mut Vec<Unmapped>,
+) -> Result<(), String> {
+    let strategy_ids = authored_strategy_ids(b, reasoning_rows)?;
+    append_authored_links(
+        b,
+        root_source,
+        root,
+        reasoning_rows,
+        &strategy_ids,
+        unmapped_extra,
+    )
+}
+
+fn authored_strategy_ids(
+    b: &mut Builder,
+    reasoning_rows: &[serde_json::Value],
+) -> Result<BTreeMap<String, String>, String> {
+    let mut strategy_ids = BTreeMap::new();
+    for reasoning in reasoning_rows {
+        let source = str_field(reasoning, "id")?;
+        let criteria_rows = reasoning
+            .get("criteria")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        let has_nested_reasoning = reasoning_rows.iter().any(|candidate| {
+            candidate
+                .get("supports")
+                .and_then(serde_json::Value::as_str)
+                == Some(source)
+        });
+        let strategy = b.push(
+            "strategy",
+            "S",
+            source,
+            NodeContent {
+                statement: str_field(reasoning, "statement")?.to_owned(),
+                status: status(reasoning),
+                reason: criteria_rows
+                    .iter()
+                    .find_map(|c| c.get("reason").and_then(serde_json::Value::as_str))
+                    .map(str::to_owned),
+                undeveloped: (criteria_rows.is_empty() && !has_nested_reasoning).then_some(true),
+                source_data: Some(reasoning.clone()),
+            },
+        );
+        strategy_ids.insert(source.to_owned(), strategy.clone());
+    }
+    Ok(strategy_ids)
+}
+
+fn append_authored_links(
+    b: &mut Builder,
+    root_source: &str,
+    root: &str,
+    reasoning_rows: &[serde_json::Value],
+    strategy_ids: &BTreeMap<String, String>,
+    unmapped_extra: &mut Vec<Unmapped>,
+) -> Result<(), String> {
+    for reasoning in reasoning_rows {
+        let source = str_field(reasoning, "id")?;
+        let strategy = strategy_ids.get(source).ok_or("missing strategy node")?;
+        let target = str_field(reasoning, "supports")?;
+        let target_id = if target == root_source {
+            root.to_owned()
+        } else if let Some(id) = strategy_ids.get(target) {
+            id.clone()
+        } else {
+            unmapped_extra.push(Unmapped {
+                source: source.to_owned(),
+                reason: format!("supports target {target} has no GSN node"),
+            });
+            continue;
+        };
+        b.edges.push(GsnEdge {
+            kind: "supported_by".to_owned(),
+            from: target_id,
+            to: strategy.clone(),
+        });
+        let criteria_rows = reasoning
+            .get("criteria")
+            .and_then(serde_json::Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        for criterion in &criteria_rows {
+            let criterion_text = str_field(criterion, "criterion")?;
+            let source = format!("{source}:{criterion_text}");
+            let reason = criterion
+                .get("reason")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned);
+            let has_evidence = criterion
+                .get("decision")
+                .and_then(|d| d.get("evidenceRefs"))
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|refs| !refs.is_empty());
+            let goal = b.push(
+                "goal",
+                "G",
+                &source,
+                NodeContent {
+                    statement: criterion_text.to_owned(),
+                    status: status(criterion),
+                    reason: reason.clone(),
+                    undeveloped: (!has_evidence).then_some(true),
+                    source_data: Some(criterion.clone()),
+                },
+            );
+            b.edges.push(GsnEdge {
+                kind: "supported_by".to_owned(),
+                from: strategy.clone(),
+                to: goal.clone(),
+            });
+            if let Some(decision) = criterion.get("decision") {
+                for reference in decision
+                    .get("evidenceRefs")
+                    .and_then(serde_json::Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(serde_json::Value::as_str)
+                {
+                    b.cite(
+                        &goal,
+                        reference,
+                        status(criterion),
+                        reason.clone(),
+                        serde_json::json!({"evidenceRef": reference, "decision": decision}),
+                    );
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn append_authored_assumptions(
+    value: &serde_json::Value,
+    b: &mut Builder,
+    root: &str,
+) -> Result<(), String> {
+    for assumption in value
+        .get("assumptions")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let id = str_field(assumption, "id")?;
+        let node = b.push(
+            "assumption",
+            "A",
+            id,
+            NodeContent {
+                statement: str_field(assumption, "statement")?.to_owned(),
+                status: status(assumption),
+                reason: assumption
+                    .get("reason")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_owned),
+                undeveloped: None,
+                source_data: Some(assumption.clone()),
+            },
+        );
+        b.edges.push(GsnEdge {
+            kind: "in_context_of".to_owned(),
+            from: root.to_owned(),
+            to: node,
+        });
+    }
+    Ok(())
+}
+
+fn append_authored_participants(
+    value: &serde_json::Value,
+    b: &mut Builder,
+    root: &str,
+) -> Result<(), String> {
+    for participant in value
+        .get("participants")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let id = str_field(participant, "id")?;
+        let node = b.push(
+            "context",
+            "C",
+            id,
+            NodeContent {
+                statement: format!(
+                    "{} ({})",
+                    str_field(participant, "role")?,
+                    str_field(participant, "authority")?
+                ),
+                status: "supported",
+                reason: None,
+                undeveloped: None,
+                source_data: Some(participant.clone()),
+            },
+        );
+        b.edges.push(GsnEdge {
+            kind: "in_context_of".to_owned(),
+            from: root.to_owned(),
+            to: node,
+        });
+    }
+    Ok(())
+}
+
+fn append_authored_challenges(value: &serde_json::Value, b: &mut Builder) -> Result<(), String> {
+    for challenge in value
+        .get("challenges")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let id = str_field(challenge, "id")?;
+        let target = str_field(challenge, "target")?;
+        let open = challenge.get("status").and_then(serde_json::Value::as_str) == Some("open");
+        let kind = if open {
+            "counter_claim"
+        } else {
+            "justification"
+        };
+        let prefix = if open { "CC" } else { "J" };
+        let node = b.push(
+            kind,
+            prefix,
+            id,
+            NodeContent {
+                statement: str_field(challenge, "statement")?.to_owned(),
+                status: if open { "open" } else { "supported" },
+                reason: challenge
+                    .get("reason")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::to_owned),
+                undeveloped: None,
+                source_data: Some(challenge.clone()),
+            },
+        );
+        let target_id = b
+            .ids
+            .get(target)
+            .cloned()
+            .unwrap_or_else(|| target.to_owned());
+        b.edges.push(GsnEdge {
+            kind: if open { "challenges" } else { "in_context_of" }.to_owned(),
+            from: if open {
+                node.clone()
+            } else {
+                target_id.clone()
+            },
+            to: if open { target_id } else { node },
+        });
+    }
+    Ok(())
 }
 
 impl Builder {
@@ -588,6 +959,10 @@ impl Builder {
 }
 
 /// Convert the authored view returned by FR-047 to GSN.
+///
+/// # Errors
+/// Returns a description when an authored field is malformed or the resulting
+/// GSN model fails validation.
 pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
     let mut b = Builder {
         nodes: Vec::new(),
@@ -611,15 +986,19 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
         "goal",
         "G",
         root_source,
-        str_field(top, "statement")?,
-        status(top),
-        top.get("reasons")
-            .and_then(serde_json::Value::as_array)
-            .and_then(|v| v.first())
-            .and_then(serde_json::Value::as_str)
-            .map(str::to_owned),
-        (reasoning_rows.is_empty() && evidence_refs.is_none_or(Vec::is_empty)).then_some(true),
-        Some(top.clone()),
+        NodeContent {
+            statement: str_field(top, "statement")?.to_owned(),
+            status: status(top),
+            reason: top
+                .get("reasons")
+                .and_then(serde_json::Value::as_array)
+                .and_then(|v| v.first())
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned),
+            undeveloped: (reasoning_rows.is_empty() && evidence_refs.is_none_or(Vec::is_empty))
+                .then_some(true),
+            source_data: Some(top.clone()),
+        },
     );
     for evidence_ref in evidence_refs.into_iter().flatten() {
         let reference = str_field(evidence_ref, "reference")?;
@@ -639,203 +1018,17 @@ pub fn from_authored(value: &serde_json::Value) -> Result<GsnCase, String> {
             evidence_ref.clone(),
         );
     }
-    let mut strategy_ids = BTreeMap::new();
     let mut unmapped_extra = Vec::new();
-    for reasoning in &reasoning_rows {
-        let source = str_field(reasoning, "id")?;
-        let criteria_rows = reasoning
-            .get("criteria")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        let has_nested_reasoning = reasoning_rows.iter().any(|candidate| {
-            candidate
-                .get("supports")
-                .and_then(serde_json::Value::as_str)
-                == Some(source)
-        });
-        let strategy = b.push(
-            "strategy",
-            "S",
-            source,
-            str_field(reasoning, "statement")?,
-            status(reasoning),
-            criteria_rows
-                .iter()
-                .find_map(|c| c.get("reason").and_then(serde_json::Value::as_str))
-                .map(str::to_owned),
-            (criteria_rows.is_empty() && !has_nested_reasoning).then_some(true),
-            Some(reasoning.clone()),
-        );
-        strategy_ids.insert(source.to_owned(), strategy.clone());
-    }
-    for reasoning in &reasoning_rows {
-        let source = str_field(reasoning, "id")?;
-        let strategy = strategy_ids.get(source).ok_or("missing strategy node")?;
-        let target = str_field(reasoning, "supports")?;
-        let target_id = if target == root_source {
-            root.clone()
-        } else if let Some(id) = strategy_ids.get(target) {
-            id.clone()
-        } else {
-            unmapped_extra.push(Unmapped {
-                source: source.to_owned(),
-                reason: format!("supports target {target} has no GSN node"),
-            });
-            continue;
-        };
-        b.edges.push(GsnEdge {
-            kind: "supported_by".to_owned(),
-            from: target_id,
-            to: strategy.clone(),
-        });
-        let criteria_rows = reasoning
-            .get("criteria")
-            .and_then(serde_json::Value::as_array)
-            .cloned()
-            .unwrap_or_default();
-        for criterion in &criteria_rows {
-            let criterion_text = str_field(criterion, "criterion")?;
-            let source = format!("{}:{}", source, criterion_text);
-            let reason = criterion
-                .get("reason")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_owned);
-            let has_evidence = criterion
-                .get("decision")
-                .and_then(|d| d.get("evidenceRefs"))
-                .and_then(serde_json::Value::as_array)
-                .is_some_and(|refs| !refs.is_empty());
-            let goal = b.push(
-                "goal",
-                "G",
-                &source,
-                criterion_text,
-                status(criterion),
-                reason.clone(),
-                (!has_evidence).then_some(true),
-                Some(criterion.clone()),
-            );
-            b.edges.push(GsnEdge {
-                kind: "supported_by".to_owned(),
-                from: strategy.clone(),
-                to: goal.clone(),
-            });
-            if let Some(decision) = criterion.get("decision") {
-                for reference in decision
-                    .get("evidenceRefs")
-                    .and_then(serde_json::Value::as_array)
-                    .into_iter()
-                    .flatten()
-                    .filter_map(serde_json::Value::as_str)
-                {
-                    b.cite(
-                        &goal,
-                        reference,
-                        status(criterion),
-                        reason.clone(),
-                        serde_json::json!({"evidenceRef": reference, "decision": decision}),
-                    );
-                }
-            }
-        }
-    }
-    for assumption in value
-        .get("assumptions")
-        .and_then(serde_json::Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        let id = str_field(assumption, "id")?;
-        let node = b.push(
-            "assumption",
-            "A",
-            id,
-            str_field(assumption, "statement")?,
-            status(assumption),
-            assumption
-                .get("reason")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_owned),
-            None,
-            Some(assumption.clone()),
-        );
-        b.edges.push(GsnEdge {
-            kind: "in_context_of".to_owned(),
-            from: root.clone(),
-            to: node,
-        });
-    }
-    for participant in value
-        .get("participants")
-        .and_then(serde_json::Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        let id = str_field(participant, "id")?;
-        let node = b.push(
-            "context",
-            "C",
-            id,
-            format!(
-                "{} ({})",
-                str_field(participant, "role")?,
-                str_field(participant, "authority")?
-            ),
-            "supported",
-            None,
-            None,
-            Some(participant.clone()),
-        );
-        b.edges.push(GsnEdge {
-            kind: "in_context_of".to_owned(),
-            from: root.clone(),
-            to: node,
-        });
-    }
-    for challenge in value
-        .get("challenges")
-        .and_then(serde_json::Value::as_array)
-        .into_iter()
-        .flatten()
-    {
-        let id = str_field(challenge, "id")?;
-        let target = str_field(challenge, "target")?;
-        let open = challenge.get("status").and_then(serde_json::Value::as_str) == Some("open");
-        let kind = if open {
-            "counter_claim"
-        } else {
-            "justification"
-        };
-        let prefix = if open { "CC" } else { "J" };
-        let node = b.push(
-            kind,
-            prefix,
-            id,
-            str_field(challenge, "statement")?,
-            if open { "open" } else { "supported" },
-            challenge
-                .get("reason")
-                .and_then(serde_json::Value::as_str)
-                .map(str::to_owned),
-            None,
-            Some(challenge.clone()),
-        );
-        let target_id = b
-            .ids
-            .get(target)
-            .cloned()
-            .unwrap_or_else(|| target.to_owned());
-        b.edges.push(GsnEdge {
-            kind: if open { "challenges" } else { "in_context_of" }.to_owned(),
-            from: if open {
-                node.clone()
-            } else {
-                target_id.clone()
-            },
-            to: if open { target_id } else { node },
-        });
-    }
+    append_authored_reasoning(
+        &mut b,
+        root_source,
+        &root,
+        &reasoning_rows,
+        &mut unmapped_extra,
+    )?;
+    append_authored_assumptions(value, &mut b, &root)?;
+    append_authored_participants(value, &mut b, &root)?;
+    append_authored_challenges(value, &mut b)?;
     let unmapped = value
         .get("relationships")
         .and_then(serde_json::Value::as_array)
@@ -894,17 +1087,7 @@ impl Builder {
         });
     }
 
-    fn push(
-        &mut self,
-        kind: &str,
-        prefix: &str,
-        source: &str,
-        statement: impl Into<String>,
-        status: &str,
-        reason: Option<String>,
-        undeveloped: Option<bool>,
-        source_data: Option<serde_json::Value>,
-    ) -> String {
+    fn push(&mut self, kind: &str, prefix: &str, source: &str, content: NodeContent) -> String {
         if let Some(existing) = self.ids.get(source) {
             return existing.clone();
         }
@@ -916,12 +1099,12 @@ impl Builder {
             id: id.clone(),
             kind: kind.to_owned(),
             source: source.to_owned(),
-            statement: statement.into(),
-            status: status.to_owned(),
-            open_reason: reason,
-            undeveloped,
+            statement: content.statement,
+            status: content.status.to_owned(),
+            open_reason: content.reason,
+            undeveloped: content.undeveloped,
             evidence: None,
-            source_data,
+            source_data: content.source_data,
         });
         id
     }
@@ -942,14 +1125,16 @@ fn status(value: &serde_json::Value) -> &'static str {
 }
 
 /// Validate the WF-1..8 graph constraints; errors name rules and affected ids.
+///
+/// # Errors
+/// Returns a description of every graph constraint violation.
 pub fn validate(model: &GsnCase) -> Result<(), String> {
-    let mut duplicate_ids = BTreeSet::new();
-    let mut by_id = BTreeMap::new();
-    for node in &model.nodes {
-        if by_id.insert(node.id.as_str(), node).is_some() {
-            duplicate_ids.insert(node.id.as_str());
-        }
-    }
+    let duplicate_ids = duplicate_node_ids(model);
+    let by_id: BTreeMap<&str, &GsnNode> = model
+        .nodes
+        .iter()
+        .map(|node| (node.id.as_str(), node))
+        .collect();
     let mut errors = Vec::new();
     if !duplicate_ids.is_empty() {
         errors.push(format!(
@@ -962,7 +1147,7 @@ pub fn validate(model: &GsnCase) -> Result<(), String> {
         let to = by_id.get(edge.to.as_str());
         if from.is_none() {
             errors.push(format!("WF-6 missing source {}", edge.from));
-        };
+        }
         if to.is_none() {
             errors.push(format!("WF-6 missing target {}", edge.to));
             continue;
@@ -1004,6 +1189,28 @@ pub fn validate(model: &GsnCase) -> Result<(), String> {
             _ => errors.push(format!("unknown edge kind {}", edge.kind)),
         }
     }
+    validate_node_rules(model, &mut errors);
+    let mut visiting = Vec::new();
+    let mut visited = BTreeSet::new();
+    for node in &model.nodes {
+        if node.kind == "goal" || node.kind == "strategy" {
+            cycle(
+                node.id.as_str(),
+                model,
+                &mut visiting,
+                &mut visited,
+                &mut errors,
+            );
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("; "))
+    }
+}
+
+fn validate_node_rules(model: &GsnCase, errors: &mut Vec<String>) {
     let outgoing = |id: &str, kind: &str| {
         model
             .edges
@@ -1038,24 +1245,17 @@ pub fn validate(model: &GsnCase) -> Result<(), String> {
             ));
         }
     }
-    let mut visiting = Vec::new();
-    let mut visited = BTreeSet::new();
+}
+
+fn duplicate_node_ids(model: &GsnCase) -> Vec<&str> {
+    let mut seen = BTreeSet::new();
+    let mut duplicates = BTreeSet::new();
     for node in &model.nodes {
-        if node.kind == "goal" || node.kind == "strategy" {
-            cycle(
-                node.id.as_str(),
-                model,
-                &mut visiting,
-                &mut visited,
-                &mut errors,
-            );
+        if !seen.insert(node.id.as_str()) {
+            duplicates.insert(node.id.as_str());
         }
     }
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(errors.join("; "))
-    }
+    duplicates.into_iter().collect()
 }
 
 fn cycle(
@@ -1069,7 +1269,7 @@ fn cycle(
         return;
     }
     if let Some(start) = visiting.iter().position(|candidate| candidate == id) {
-        let mut cycle_ids = visiting[start..].to_vec();
+        let mut cycle_ids = visiting.iter().skip(start).cloned().collect::<Vec<_>>();
         cycle_ids.push(id.to_owned());
         errors.push(format!(
             "WF-4 supported_by cycle: {}",
@@ -1090,6 +1290,9 @@ fn cycle(
 }
 
 /// Render a GSN model as a Mermaid flowchart.
+///
+/// # Errors
+/// Returns a description when the model fails graph validation.
 pub fn render_diagram(model: &GsnCase) -> Result<String, String> {
     validate(model)?;
     let mut lines = vec![
@@ -1290,7 +1493,7 @@ mod tests {
             .expect("case context maps to a GSN context");
         assert_eq!(context.kind, "context");
         assert!(model.edges.iter().any(|edge| edge.kind == "in_context_of"
-            && edge.from == model.roots[0]
+            && edge.from == *model.roots.first().expect("root exists")
             && edge.to == context.id));
     }
 
@@ -1404,12 +1607,12 @@ mod tests {
         let original_root = converted
             .nodes
             .iter()
-            .find(|node| node.id == converted.roots[0])
+            .find(|node| node.id == *converted.roots.first().expect("root exists"))
             .expect("root");
         let changed_root = changed
             .nodes
             .iter()
-            .find(|node| node.id == changed.roots[0])
+            .find(|node| node.id == *changed.roots.first().expect("root exists"))
             .expect("root");
         assert_eq!(
             original_root.status, changed_root.status,
@@ -1487,7 +1690,7 @@ mod tests {
         "FR-223-AC-5"
     )]
     #[test]
-    fn rejects_context_endpoints_terminal_nodes_development_and_bad_references() {
+    fn rejects_context_endpoints_and_terminal_nodes() {
         let in_context_bad = model(
             vec![
                 node("A1", "assumption", None),
@@ -1536,7 +1739,12 @@ mod tests {
         for id in ["Sn1", "C1", "A1", "J1", "CC1"] {
             assert!(terminal_error.contains(id), "{terminal_error}");
         }
+    }
 
+    /// The remaining WF rules are checked independently for readable failures.
+    #[trace("FR-222-AC-5", "FR-222-AC-6", "FR-222-AC-7")]
+    #[test]
+    fn rejects_development_and_reference_rules() {
         let undeveloped_missing = model(vec![node("G1", "goal", None)], Vec::new());
         assert!(
             validate(&undeveloped_missing)
@@ -1582,7 +1790,11 @@ mod tests {
             validate(&undeveloped_with_support).expect_err("undeveloped goal has no children");
         assert!(undeveloped_error.contains("WF-7"));
         assert!(undeveloped_error.contains("G1"), "{undeveloped_error}");
+    }
 
+    #[trace("FR-222-AC-8", "FR-222-AC-9")]
+    #[test]
+    fn rejects_counterclaim_rules() {
         let counterclaim_without_edge = model(
             vec![
                 node("CC1", "counter_claim", None),
@@ -1635,7 +1847,11 @@ mod tests {
         assert!(bad_target_error.contains("WF-8"));
         assert!(bad_target_error.contains("CC1"));
         assert!(bad_target_error.contains("Sn1"));
+    }
 
+    #[trace("FR-222-AC-2", "FR-222-AC-3", "FR-222-AC-5")]
+    #[test]
+    fn reports_accumulated_graph_errors_and_terminal_children() {
         let accumulated = model(
             vec![
                 node("G1", "goal", Some(true)),
@@ -1681,7 +1897,6 @@ mod tests {
             );
         }
     }
-
     /// Provenance: agent-ix/quoin#PLAT-1447.
     #[trace(
         "FR-234-AC-6",
@@ -1721,7 +1936,7 @@ mod tests {
                 .iter()
                 .filter(|edge| edge.kind == "challenges"
                     && edge.from == challenge.id
-                    && edge.to == model.roots[0])
+                    && edge.to == *model.roots.first().expect("root exists"))
                 .count(),
             1
         );
@@ -1795,7 +2010,7 @@ mod tests {
             "assumptions":[], "participants":[], "challenges":[], "relationships":[]
         });
         let result = super::from_authored(&view).expect("authored support graph is valid");
-        let root = &result.roots[0];
+        let root = result.roots.first().expect("root exists");
         let strategy_one = result
             .nodes
             .iter()
@@ -1827,17 +2042,14 @@ mod tests {
             2,
             "each citation keeps its claim-specific resolution"
         );
+        assert!(result.edges.iter().any(|edge| edge.from == *root
+            && edge.to == evidence.first().expect("first evidence exists").id));
         assert!(
             result
                 .edges
                 .iter()
-                .any(|edge| edge.from == *root && edge.to == evidence[0].id)
-        );
-        assert!(
-            result
-                .edges
-                .iter()
-                .any(|edge| edge.from == evidence_criterion.id && edge.to == evidence[1].id)
+                .any(|edge| edge.from == evidence_criterion.id
+                    && edge.to == evidence.get(1).expect("second evidence exists").id)
         );
         let missing = result
             .nodes

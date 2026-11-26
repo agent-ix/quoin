@@ -11,8 +11,13 @@
 )]
 
 use ix_trace_rs::trace;
+use serde_json::Value;
 use std::fs;
 use std::process::Command;
+
+fn json_at<'a>(value: &'a Value, pointer: &str) -> &'a Value {
+    value.pointer(pointer).unwrap_or(&Value::Null)
+}
 
 const MODULE: &str = "name: iso\n\
     artifact_types:\n\
@@ -160,14 +165,14 @@ fn tc_1915_reported_unowned_values_match_the_bundle_projection() {
     let output = run(&repo, &home, &module, false);
     assert!(output.status.success(), "advisory gaps should exit 0");
     let payload: serde_json::Value = serde_json::from_slice(&output.stdout).expect("JSON output");
-    let unowned: Vec<&str> = payload["findings"]
+    let unowned: Vec<&str> = json_at(&payload, "/findings")
         .as_array()
         .expect("findings array")
         .iter()
-        .filter(|finding| finding["kind"] == "unowned")
-        .filter_map(|finding| finding["value"].as_str())
+        .filter(|finding| finding.get("kind").and_then(Value::as_str) == Some("unowned"))
+        .filter_map(|finding| finding.get("value").and_then(Value::as_str))
         .collect();
     assert_eq!(unowned, vec!["reliability"]);
-    assert_eq!(payload["rollups"][0]["owned"], 1);
-    assert_eq!(payload["rollups"][0]["unowned"], 1);
+    assert_eq!(json_at(&payload, "/rollups/0/owned"), 1);
+    assert_eq!(json_at(&payload, "/rollups/0/unowned"), 1);
 }

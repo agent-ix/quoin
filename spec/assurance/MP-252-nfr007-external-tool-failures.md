@@ -10,11 +10,23 @@ definition_version: nfr007.external-failure-exit-v1
 ground_truth_kind: mechanical
 statistical_design:
   population: every workflow command crossed with each way ix-flow can fail, namely absent from PATH, an old or unreadable version, a hang in the handshake or the run, a non-zero exit, output that is not JSON, empty or over the bound, an error payload, a missing instance id, and a failing context step
-  sampling: complete census of the pairs; the workflow commands are those whose `--help` begins `Start the Quoin-owned specification workflow`
+  sampling: complete census of the pairs; the workflow commands are those whose `--help` begins `Start a Quoin-owned workflow`
   repetitions: 1
   estimator: proportion
   population_set:
     ids:
+      - "design-gate:ix-flow-absent"
+      - "design-gate:ix-flow-fails-the-context"
+      - "design-gate:ix-flow-fails-the-run"
+      - "design-gate:ix-flow-floods-its-output"
+      - "design-gate:ix-flow-hangs-the-handshake"
+      - "design-gate:ix-flow-hangs-the-run"
+      - "design-gate:ix-flow-omits-the-instance-id"
+      - "design-gate:ix-flow-prints-garbage"
+      - "design-gate:ix-flow-prints-nothing"
+      - "design-gate:ix-flow-reports-an-error-payload"
+      - "design-gate:ix-flow-reports-an-old-version"
+      - "design-gate:ix-flow-reports-no-version"
       - "formalize:ix-flow-absent"
       - "formalize:ix-flow-fails-the-context"
       - "formalize:ix-flow-fails-the-run"
@@ -74,8 +86,8 @@ and `quoin update` fetches over HTTP.
 
 ## Decision Use
 
-Decide whether `quoin formalize`, `quoin review`, and `quoin to-plan` hide an
-`ix-flow` failure.
+Decide whether `quoin design-gate`, `quoin formalize`, `quoin review`, and
+`quoin to-plan` hide an `ix-flow` failure.
 
 ## Population
 

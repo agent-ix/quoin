@@ -263,13 +263,13 @@ fn approved_claim_selection_builder_excludes_draft_spans() {
             {"symbol":"qsl:rules/a.qsl::ApprovedAgain","path":"rules/a.qsl","declaration_range":{"start":50,"end":81},"state":"approved"}
         ]
     });
-    let selection = build_approved_claim_selection(&status, "package-authority").unwrap();
+    let selection = build_approved_claim_selection(&status, "quoin").unwrap();
     assert_eq!(selection["protocol"], "filament-analyze.claim-selection/v1");
     assert_eq!(selection["spans"].as_array().unwrap().len(), 2);
     assert_eq!(
         selection["spans"][0],
         json!({
-        "authority":"package-authority", "identity":"rules/a.qsl", "start":12, "end":34
+            "authority":"quoin", "identity":"rules/a.qsl", "start":12, "end":34
         })
     );
     assert_eq!(selection["spans"][1]["start"], 50);

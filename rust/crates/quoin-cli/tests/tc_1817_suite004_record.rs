@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 use std::fs;
 use std::process::Command;
 
-const MODULE: &str = r##"name: wave2-suite004-fixture
+const MODULE: &str = r"name: wave2-suite004-fixture
 version: 0.1.0
 description: Fixture for the retained SUITE-004 run test
 artifact_types:
@@ -34,7 +34,7 @@ traceability:
       target: acceptance-criterion
       statement_column: Criteria
       method_column: Verification
-"##;
+";
 
 const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: Fixture\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|---|---|---|\n| FR-001-AC-1 | The retained tool evidence is complete. | Test |\n";
 

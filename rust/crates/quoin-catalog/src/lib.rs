@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The installed specification-module catalog (quoin#373, Stage 8).
 //!
 //! This crate owns the projection from module manifests to the artifact/object
@@ -12,6 +14,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use ix_trace_rs::implements;
 use quoin_semantic::{SemanticBlock, SemanticDiagnostic};
 use serde::Serialize;
 use serde_json::Value;
@@ -119,7 +122,7 @@ pub enum EntryKind {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Duplicate {
-    /// The namespace in which the collision occurred.
+    /// The namespace of the first declaration in this name collision.
     pub kind: EntryKind,
     /// The duplicate name, preserving its first declaration spelling.
     pub name: String,
@@ -347,17 +350,22 @@ fn skeleton_path(root: &str, type_name: &str, names: &[String]) -> Option<String
         .map(|name| join(&join(root, "skeletons"), name))
 }
 
+#[implements("FR-099-AC-12")]
 fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
     // A `BTreeMap` would make output deterministic, but not compatible: the
     // TypeScript implementation used a `Map`, so duplicate groups were emitted
     // in the order their first type declaration appeared. Keep that observable
     // declaration order while sorting only the MODULE names, as it did.
-    let mut grouped: Vec<(EntryKind, String, Vec<String>)> = Vec::new();
+    // `find_entry` resolves by case-folded name alone, across artifact and
+    // object entries. The duplicate gate must use that same identity or it
+    // could miss a collision that resolution treats as one type.
+    let mut grouped: Vec<(EntryKind, String, Vec<String>, usize)> = Vec::new();
     for entry in entries {
-        if let Some((_, _, modules)) = grouped
+        if let Some((_, _, modules, declarations)) = grouped
             .iter_mut()
-            .find(|(kind, name, _)| *kind == entry.kind && *name == entry.name)
+            .find(|(_, name, _, _)| name.to_lowercase() == entry.name.to_lowercase())
         {
+            *declarations += 1;
             if !modules.contains(&entry.module_name) {
                 modules.push(entry.module_name.clone());
             }
@@ -366,13 +374,14 @@ fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
                 entry.kind,
                 entry.name.clone(),
                 vec![entry.module_name.clone()],
+                1,
             ));
         }
     }
     grouped
         .into_iter()
-        .filter_map(|(kind, name, mut modules)| {
-            (modules.len() > 1).then(|| {
+        .filter_map(|(kind, name, mut modules, declarations)| {
+            (declarations > 1).then(|| {
                 modules.sort_by(|left, right| left.encode_utf16().cmp(right.encode_utf16()));
                 Duplicate {
                     kind,
@@ -392,6 +401,7 @@ fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
     reason = "in a test, a panic IS the failure report; the production lints stand"
 )]
 mod tests {
+    use ix_trace_rs::trace;
     use serde_json::json;
 
     use super::{EntryKind, ModuleDocument, build, find_entry};
@@ -497,6 +507,7 @@ mod tests {
         );
     }
 
+    #[trace("FR-099-AC-3")]
     #[test]
     fn tc_373_catalog_deduplicates_roots_names_and_reports_duplicate_types() {
         let document = |root: &str, name: &str| ModuleDocument {
@@ -523,6 +534,57 @@ mod tests {
             find_entry(&catalog, "fr").map(|entry| entry.module_name.as_str()),
             Some("one")
         );
+    }
+
+    #[trace("FR-099-AC-12")]
+    #[test]
+    fn tc_1915_duplicate_types_use_the_resolvers_case_fold() {
+        let document = |root: &str, module: &str, type_name: &str| ModuleDocument {
+            root: root.to_owned(),
+            manifest: format!("name: {module}\nartifact_types: [{{name: {type_name}}}]\n"),
+            skeleton_names: Vec::new(),
+        };
+        let object_document = |root: &str, module: &str, type_name: &str| ModuleDocument {
+            root: root.to_owned(),
+            manifest: format!("name: {module}\nobject_types: [{{name: {type_name}}}]\n"),
+            skeleton_names: Vec::new(),
+        };
+        let catalog = build(
+            &[
+                document("/modules/one", "one", "FR"),
+                document("/modules/two", "two", "fr"),
+                object_document("/modules/three", "three", "fr"),
+            ],
+            &[],
+        )
+        .expect("both manifests are valid");
+
+        let [duplicate] = catalog.duplicates.as_slice() else {
+            panic!("case-folded type declarations form one duplicate group");
+        };
+        assert_eq!(duplicate.name, "FR");
+        assert_eq!(duplicate.modules, ["one", "three", "two"]);
+        assert_eq!(
+            find_entry(&catalog, "FR").map(|entry| entry.module_name.as_str()),
+            find_entry(&catalog, "fr").map(|entry| entry.module_name.as_str()),
+            "the resolver and duplicate check must use the same case-fold rule"
+        );
+
+        let same_module = build(
+            &[ModuleDocument {
+                root: "/modules/same".to_owned(),
+                manifest: "name: same\nartifact_types: [{name: CollisionT}]\nobject_types: [{name: collisiont}]\n"
+                    .to_owned(),
+                skeleton_names: Vec::new(),
+            }],
+            &[],
+        )
+        .expect("one module may declare both kinds");
+        let [duplicate] = same_module.duplicates.as_slice() else {
+            panic!("same-module cross-kind declarations are duplicates to the resolver");
+        };
+        assert_eq!(duplicate.name, "CollisionT");
+        assert_eq!(duplicate.modules, ["same"]);
     }
 
     #[test]

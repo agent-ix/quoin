@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+#![forbid(unsafe_code)]
+
 //! The assurance-case view (quoin#384, Stage 5 of the burn-down).
 //!
 //! Ported from `src/assurance/`, which its own header describes as "strictly a

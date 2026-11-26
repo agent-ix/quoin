@@ -63,20 +63,236 @@ fn tc_375_every_rust_file_carries_the_agpl_spdx_header() {
 }
 
 /// Provenance: quoin#375
+#[trace("NFR-027-AC-2", "NFR-027-AC-9", "NFR-027-M-2")]
 #[test]
 fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {
-    // The style doc says there is no exception. An exception added without
-    // editing this test — and the reason in the root Cargo.toml — fails here.
+    // The policy has one source of truth. Per-crate overrides are rejected;
+    // exceptions need an explicit workspace-level decision instead.
     let root = workspace_root();
-    let mut without = Vec::new();
+    let root_manifest = std::fs::read_to_string(root.join("Cargo.toml")).unwrap();
+    assert!(has_single_workspace_lint_policy(&root_manifest));
+    assert!(!has_single_workspace_lint_policy(
+        "[workspace.lints.rust]\nunsafe_code = \"forbid\"\n"
+    ));
+    assert!(!crate_uses_workspace_lints(
+        "[lints]\nworkspace = true\n[lints.rust]\nunsafe_code = \"allow\"\n"
+    ));
+
+    let mut crates = Vec::new();
     for entry in std::fs::read_dir(root.join("crates")).unwrap() {
         let manifest = entry.unwrap().path().join("Cargo.toml");
-        let text = std::fs::read_to_string(&manifest).unwrap();
-        if !text.contains("[lints]\nworkspace = true") {
-            without.push(manifest.strip_prefix(&root).unwrap().display().to_string());
+        if manifest.exists() {
+            crates.push(manifest);
         }
     }
-    assert_eq!(without, Vec::<String>::new());
+    eprintln!(
+        "NFR-027 workspace-lint manifest population: {}",
+        crates.len()
+    );
+    assert!(
+        !crates.is_empty(),
+        "inconclusive: no crate manifests were scanned"
+    );
+
+    let mut violations = Vec::new();
+    for manifest in &crates {
+        let text = std::fs::read_to_string(manifest).unwrap();
+        if !crate_uses_workspace_lints(&text) {
+            violations.push(manifest.strip_prefix(&root).unwrap().display().to_string());
+        }
+    }
+    assert!(
+        violations.is_empty(),
+        "crate manifests missing workspace lint opt-in or adding per-crate overrides: {violations:?}"
+    );
+}
+
+fn has_single_workspace_lint_policy(manifest: &str) -> bool {
+    manifest.matches("[workspace.lints.").count() == 2
+        && manifest.contains("[workspace.lints.rust]")
+        && manifest.contains("[workspace.lints.clippy]")
+}
+
+fn crate_uses_workspace_lints(manifest: &str) -> bool {
+    manifest.contains("[lints]\nworkspace = true")
+        && !manifest.contains("[lints.rust]")
+        && !manifest.contains("[lints.clippy]")
+}
+
+/// Every Rust library and executable is a crate root, so each one opts into
+/// the compiler-level unsafe prohibition at the boundary.
+#[trace("NFR-027-AC-1", "NFR-027-AC-9", "NFR-027-M-1")]
+#[test]
+fn tc_nfr_027_every_crate_root_forbids_unsafe() {
+    let root = workspace_root();
+    let mut roots = Vec::new();
+    for entry in std::fs::read_dir(root.join("crates")).unwrap() {
+        let crate_dir = entry.unwrap().path();
+        let src = crate_dir.join("src");
+        for filename in ["lib.rs", "main.rs"] {
+            let path = src.join(filename);
+            if path.exists() {
+                roots.push(path);
+            }
+        }
+    }
+
+    let mut missing = Vec::new();
+    for path in &roots {
+        let source = std::fs::read_to_string(path).unwrap();
+        if !root_forbids_unsafe(&source) {
+            missing.push(path.strip_prefix(&root).unwrap().display().to_string());
+        }
+    }
+    eprintln!("NFR-027 crate-root population: {}", roots.len());
+    assert!(
+        !roots.is_empty(),
+        "inconclusive: no crate roots were scanned"
+    );
+    assert!(
+        missing.is_empty(),
+        "crate roots missing unsafe prohibition: {missing:?}"
+    );
+    assert!(root_forbids_unsafe("#![forbid(unsafe_code)]\nfn main() {}"));
+
+    let temp = tempfile::tempdir().unwrap();
+    let healthy = temp.path().join("healthy.rs");
+    std::fs::write(&healthy, "#![forbid(unsafe_code)]\npub fn safe() {}\n").unwrap();
+    let healthy_output = std::process::Command::new("rustc")
+        .args(["--crate-type=lib", "--emit=metadata", "--out-dir"])
+        .arg(temp.path())
+        .arg(&healthy)
+        .output()
+        .unwrap();
+    assert!(
+        healthy_output.status.success(),
+        "healthy control failed to compile: {}",
+        String::from_utf8_lossy(&healthy_output.stderr)
+    );
+
+    let source = temp.path().join("forbidden.rs");
+    std::fs::write(
+        &source,
+        "#![forbid(unsafe_code)]\npub fn planted() { unsafe {} }\n",
+    )
+    .unwrap();
+    let output = std::process::Command::new("rustc")
+        .args(["--crate-type=lib", "--emit=metadata", "--out-dir"])
+        .arg(temp.path())
+        .arg(&source)
+        .output()
+        .unwrap();
+    assert!(
+        !output.status.success(),
+        "rustc accepted a planted unsafe block under #![forbid(unsafe_code)]"
+    );
+}
+
+fn root_forbids_unsafe(source: &str) -> bool {
+    source
+        .lines()
+        .any(|line| line.trim() == "#![forbid(unsafe_code)]")
+}
+
+/// CI keeps the declared format, lint, build, test, and dependency lanes live.
+#[trace("NFR-027-AC-8", "NFR-027-AC-9")]
+#[test]
+fn tc_nfr_027_ci_runs_the_rust_gates_without_softening_them() {
+    let repository = workspace_root().parent().unwrap().to_path_buf();
+    let makefile = std::fs::read_to_string(repository.join("Makefile")).unwrap();
+    let workflow =
+        std::fs::read_to_string(repository.join(".github/workflows/build-test.yml")).unwrap();
+    eprintln!("NFR-027 CI gate-config population: 2 files");
+
+    assert!(ci_runs_rust_gates(&makefile, &workflow));
+    let narrow_test = makefile.replace(
+        "cargo test --workspace --locked",
+        "cargo test --workspace -p quoin-core",
+    );
+    assert!(!ci_runs_rust_gates(&narrow_test, &workflow));
+    let disabled_lint = workflow.replace(
+        "      - name: Format and lint\n        run: make rust-lint",
+        "      - name: Format and lint\n        if: false\n        run: make rust-lint",
+    );
+    assert!(!ci_runs_rust_gates(&makefile, &disabled_lint));
+    let disabled_job = workflow.replace(
+        "  rust:\n    name: Rust",
+        "  rust:\n    if: false\n    name: Rust",
+    );
+    assert!(!ci_runs_rust_gates(&makefile, &disabled_job));
+}
+
+fn ci_runs_rust_gates(makefile: &str, workflow: &str) -> bool {
+    makefile.contains("rust-gate: rust-lint rust-deny rust-test workflow-test")
+        && makefile.contains("cargo fmt --all --check")
+        && makefile.contains("cargo clippy --workspace --all-targets --all-features")
+        && makefile.contains("-D warnings")
+        && makefile.contains("cargo build --workspace --locked")
+        && has_full_workspace_test_recipe(makefile)
+        && makefile.contains("cargo deny check")
+        && required_workflow_job(workflow, "rust", "name: Rust")
+        && required_workflow_step(workflow, "Format and lint", "run: make rust-lint")
+        && required_workflow_step(workflow, "Build", "run: make rust-build")
+        && required_workflow_step(workflow, "Test", "run: make rust-test")
+        && required_workflow_job(workflow, "rust-deny", "cargo-deny-action")
+        && !workflow.contains("continue-on-error")
+}
+
+fn has_full_workspace_test_recipe(makefile: &str) -> bool {
+    makefile.lines().any(|line| {
+        line.trim() == "cd $(RUST_DIR) && cargo test --workspace --locked $(CARGO_TARGET_FLAG)"
+    })
+}
+
+fn required_workflow_step(workflow: &str, name: &str, command: &str) -> bool {
+    let marker = format!("- name: {name}");
+    let Some(start) = workflow.find(&marker) else {
+        return false;
+    };
+    let line_start = workflow[..start].rfind('\n').map_or(0, |index| index + 1);
+    let indent = workflow[line_start..start].len();
+    let mut block_end = workflow.len();
+    let tail = &workflow[line_start..];
+    let mut lines = tail.split_inclusive('\n');
+    let mut consumed = lines.next().map_or(0, str::len);
+    for line in lines {
+        let content = line.trim_end_matches('\n');
+        if content.trim_start().starts_with("- name:")
+            && content.len() - content.trim_start().len() == indent
+        {
+            block_end = line_start + consumed;
+            break;
+        }
+        consumed += line.len();
+    }
+    let block = &workflow[line_start..block_end];
+    block.lines().any(|line| line.contains(command))
+        && !block
+            .lines()
+            .any(|line| line.trim_start().starts_with("if:"))
+        && !block.contains("continue-on-error")
+}
+
+fn required_workflow_job(workflow: &str, name: &str, command: &str) -> bool {
+    let marker = format!("{name}:");
+    let Some(start) = workflow.lines().position(|line| line.trim() == marker) else {
+        return false;
+    };
+    let lines: Vec<_> = workflow.lines().collect();
+    let indent = lines[start].len() - lines[start].trim_start().len();
+    let mut block = vec![lines[start]];
+    for line in lines.iter().skip(start + 1) {
+        let current_indent = line.len() - line.trim_start().len();
+        if !line.trim().is_empty() && current_indent <= indent {
+            break;
+        }
+        block.push(line);
+    }
+    block.iter().any(|line| line.contains(command))
+        && !block
+            .iter()
+            .any(|line| line.trim_start().starts_with("if:"))
+        && !block.iter().any(|line| line.contains("continue-on-error"))
 }
 
 // ---------------------------------------------------------------------------

@@ -21,10 +21,15 @@ use quoin_evidence::adapters::{
     parse_entries, parse_junit, parse_sbom, select_adapter,
 };
 
+type AdapterCheck = (
+    &'static str,
+    fn(&str) -> Result<AdapterResult, EvidenceError>,
+);
+
 #[trace("FR-033-AC-3")]
 #[test]
 fn tc_1915_each_run_adapter_is_registered_with_its_summary_and_parser() {
-    let expected: &[(&str, fn(&str) -> Result<AdapterResult, EvidenceError>)] = &[
+    let expected: &[AdapterCheck] = &[
         ("entries", parse_entries),
         ("junit", parse_junit),
         ("cargo-mutants", parse_cargo_mutants),

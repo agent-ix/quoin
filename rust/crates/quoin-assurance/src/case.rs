@@ -606,9 +606,9 @@ fn context_for(id: &str, by_id: &BTreeMap<String, &serde_json::Value>) -> Vec<Ca
             if found.is_some() && !valid {
                 return None;
             }
-            let (kind, title) = found
-                .and_then(|doc| doc.get("frontmatter"))
-                .map(|frontmatter| {
+            let (kind, title) = found.and_then(|doc| doc.get("frontmatter")).map_or_else(
+                || ("object".to_owned(), target.clone()),
+                |frontmatter| {
                     let kind = frontmatter
                         .get("type")
                         .and_then(serde_json::Value::as_str)
@@ -618,8 +618,8 @@ fn context_for(id: &str, by_id: &BTreeMap<String, &serde_json::Value>) -> Vec<Ca
                         .and_then(serde_json::Value::as_str)
                         .unwrap_or(&target);
                     (kind.to_owned(), title.to_owned())
-                })
-                .unwrap_or_else(|| ("object".to_owned(), target.clone()));
+                },
+            );
             Some(CaseNode {
                 id: target.clone(),
                 kind: NodeKind::Context,

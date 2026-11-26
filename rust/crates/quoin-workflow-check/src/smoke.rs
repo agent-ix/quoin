@@ -99,8 +99,17 @@ fn selection(set: &str, lenses: &[&str]) -> Value {
     json!({"review_set":set,"selected_analyses":lenses,"assurance_profiles":[],"profile_disposition":"No applicable profile in this synthetic repository."})
 }
 fn review(analysis: &str, severity: &str) -> String {
+    review_with_revision(analysis, severity, "v1")
+}
+fn review_with_revision(analysis: &str, severity: &str, revision: &str) -> String {
     format!(
-        "---\nid: SR-001\ntitle: Synthetic review\ntype: SpecReview\nanalysis: {analysis}\n---\n# Review\n\n## Summary\nSynthetic outcome.\n\n## Findings\n\n| ID | Severity | Summary | Refs |\n| --- | --- | --- | --- |\n| FND-001 | {severity} | Synthetic finding | FR-001 |\n"
+        "---\nid: SR-001\ntitle: Synthetic review\ntype: SpecReview\nanalysis: {analysis}\npackRevision: {revision}\n---\n# Review\n\n## Summary\nSynthetic outcome.\n\n## Findings\n\n| ID | Severity | Summary | Refs |\n| --- | --- | --- | --- |\n| FND-001 | {severity} | Synthetic finding | FR-001 |\n"
+    )
+}
+fn profile(revision: &str, mode: &str, operations: &[&str]) -> String {
+    format!(
+        "---\nid: AP-001\ntitle: Synthetic profile\ntype: AssuranceProfile\nstatus: active\nprofileRevision: {revision}\nreview_policy:\n  mode: {mode}\n  operations: [{}]\n---\n# Profile\n",
+        operations.join(", ")
     )
 }
 fn simple(kind: &str, id: &str) -> String {
@@ -110,6 +119,7 @@ fn schema(kind: &str) -> Value {
     let mut properties = json!({"id":{"type":"string","minLength":1},"title":{"type":"string","minLength":1},"type":{"const":kind}});
     let mut required = vec!["id", "title", "type"];
     if let Some(map) = properties.as_object_mut() {
+        map.insert("packRevision".to_owned(), json!({"const":"v1"}));
         if kind == "SpecReview" {
             map.insert(
                 "analysis".to_owned(),
@@ -118,6 +128,7 @@ fn schema(kind: &str) -> Value {
             required.push("analysis");
         }
         if kind == "AssuranceProfile" {
+            map.insert("profileRevision".to_owned(), json!({"const":"v1"}));
             map.insert(
                 "status".to_owned(),
                 json!({"enum":["active","proposed","retired"]}),
@@ -130,6 +141,19 @@ fn schema(kind: &str) -> Value {
 
 impl Harness {
     fn new(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
+        Self::new_with_plugin_version(binary, runner, plugin, crlf, false)
+    }
+    #[cfg(test)]
+    fn new_for_formalize(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
+        Self::new_with_plugin_version(binary, runner, plugin, crlf, true)
+    }
+    fn new_with_plugin_version(
+        binary: &str,
+        runner: &str,
+        plugin: &str,
+        crlf: bool,
+        normalize_copied_manifest: bool,
+    ) -> Result<Self> {
         let scratch = tempfile::tempdir().map_err(|e| e.to_string())?;
         let root = scratch.path().join("unrelated repo with spaces");
         let home = scratch.path().join("fresh home");
@@ -168,11 +192,21 @@ impl Harness {
         }
         for directory in [".codex-plugin", ".claude-plugin"] {
             copy_tree(&plugin.join(directory), &installed_plugin.join(directory))?;
-            let manifest: Value = serde_json::from_slice(
-                &fs::read(installed_plugin.join(directory).join("plugin.json"))
-                    .map_err(|e| e.to_string())?,
-            )
-            .map_err(|e| e.to_string())?;
+            let manifest_path = installed_plugin.join(directory).join("plugin.json");
+            let mut manifest: Value =
+                serde_json::from_slice(&fs::read(&manifest_path).map_err(|e| e.to_string())?)
+                    .map_err(|e| e.to_string())?;
+            // The FR-189 workflow behavior tests use current skills with the
+            // Rust binary built from this workspace. A recent plugin-only
+            // release advanced the source manifests independently, so normalize
+            // only the temporary copies and preserve the source-version check.
+            if normalize_copied_manifest {
+                manifest["version"] = json!(env!("CARGO_PKG_VERSION"));
+                write(
+                    &manifest_path,
+                    serde_json::to_vec(&manifest).map_err(|e| e.to_string())?,
+                )?;
+            }
             require(
                 manifest.get("version").and_then(Value::as_str) == Some(env!("CARGO_PKG_VERSION")),
                 "plugin manifest must match the release checker version",
@@ -269,6 +303,14 @@ impl Harness {
         self.flow_with_tools(args, None)
     }
     fn flow_with_tools(&self, args: &[&str], tools: Option<(&Path, &Path)>) -> Result<Output> {
+        self.flow_with_analysis_tools(args, tools, None)
+    }
+    fn flow_with_analysis_tools(
+        &self,
+        args: &[&str],
+        tools: Option<(&Path, &Path)>,
+        analysis_tools: Option<(&Path, &Path, &Path)>,
+    ) -> Result<Output> {
         let mut command =
             self.command(Path::new(if cfg!(windows) { "node.exe" } else { "node" }))?;
         command
@@ -283,6 +325,12 @@ impl Harness {
             command
                 .env("FSL_DRIVER_BIN", fsl)
                 .env("QUIRE_DRIVER_BIN", quire);
+        }
+        if let Some((analyzer, z3, cvc5)) = analysis_tools {
+            command
+                .env("FILAMENT_ANALYZE_BIN", analyzer)
+                .env("Z3_BIN", z3)
+                .env("CVC5_BIN", cvc5);
         }
         command.output().map_err(|e| e.to_string())
     }
@@ -347,6 +395,18 @@ pub(super) fn run(binary: &str, runner: &str, plugin: &str) -> Result<()> {
 }
 
 fn lifecycle(h: &Harness) -> Result<()> {
+    let started = review_base_lifecycle(h)?;
+    review_scenarios(h, &started)?;
+    plan_scenario(h)?;
+    formalize_scenarios(h)?;
+    runner_failures(h)?;
+    println!(
+        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, host-capable ix-flow package, review/profile/plan validation and explicit human acceptance"
+    );
+    Ok(())
+}
+
+fn review_base_lifecycle(h: &Harness) -> Result<Value> {
     let started = h.start("review", "smoke-base")?;
     require(
         text(&started, "/current_phase")? == "intake",
@@ -373,6 +433,16 @@ fn lifecycle(h: &Harness) -> Result<()> {
         .map_err(|e| e.to_string())?;
     passed(&convenience)?;
     h.answers("smoke-base", "request", &selection("base", &[]))?;
+    let recorded = passed(&h.flow(&["status", "smoke-base"])?)?;
+    let request = recorded
+        .pointer("/data/items/operation_request/0")
+        .ok_or("review answers were not recorded in the run")?;
+    require(
+        request.get("assurance_profiles") == Some(&json!([]))
+            && request.get("profile_disposition").and_then(Value::as_str)
+                == Some("No applicable profile in this synthetic repository."),
+        format!("the run records the explicit no-profile disposition: {request}"),
+    )?;
     h.advance("smoke-base", "analyses_run")?;
     h.advance("smoke-base", "reviews_rendered")?;
     refused(
@@ -383,6 +453,20 @@ fn lifecycle(h: &Harness) -> Result<()> {
     refused(
         &h.flow(&["advance", "smoke-base", "validated"])?,
         "WORKFLOW_DOCUMENT_UNAVAILABLE",
+    )?;
+    fs::create_dir_all(h.root.join("spec/reviews/base.md")).map_err(|error| error.to_string())?;
+    refused(
+        &h.flow(&["advance", "smoke-base", "validated"])?,
+        "WORKFLOW_DOCUMENT_UNAVAILABLE",
+    )?;
+    fs::remove_dir_all(h.root.join("spec/reviews/base.md")).map_err(|error| error.to_string())?;
+    write(
+        &h.root.join("spec/reviews/base.md"),
+        "---\nid: SR-001\ntitle: Synthetic review\ntype: SpecReview\nanalysis: base\n",
+    )?;
+    refused(
+        &h.flow(&["advance", "smoke-base", "validated"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
     )?;
     write(
         &h.root.join("spec/reviews/base.md"),
@@ -400,8 +484,21 @@ fn lifecycle(h: &Harness) -> Result<()> {
         &h.flow(&["advance", "smoke-base", "validated"])?,
         "WORKFLOW_DOCUMENT_INVALID",
     )?;
+    let review_schema = h.module().join("schemas/SpecReview.json");
+    let mut live_review_schema = schema("SpecReview");
+    live_review_schema["properties"]["packRevision"]["const"] = json!("v2");
+    write(&review_schema, live_review_schema.to_string())?;
     write(&h.root.join("spec/reviews/base.md"), review("base", "low"))?;
+    refused(
+        &h.flow(&["advance", "smoke-base", "validated"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+    write(
+        &h.root.join("spec/reviews/base.md"),
+        review_with_revision("base", "low", "v2"),
+    )?;
     h.advance("smoke-base", "validated")?;
+    write(&review_schema, schema("SpecReview").to_string())?;
     write(
         &h.root.join("spec/reviews/base.md"),
         review("integrity", "low"),
@@ -434,14 +531,7 @@ fn lifecycle(h: &Harness) -> Result<()> {
         )? == "accepted",
         "acceptance must persist",
     )?;
-    review_scenarios(h, &started)?;
-    plan_scenario(h)?;
-    formalize_scenarios(h)?;
-    runner_failures(h)?;
-    println!(
-        "owned workflow smoke passed: installed plugin skills, relocated binary, live catalog, host-capable ix-flow package, review/profile/plan validation and explicit human acceptance"
-    );
-    Ok(())
+    Ok(started)
 }
 
 #[cfg(test)]
@@ -847,6 +937,249 @@ fn formalize_retry_scenario(
     Ok(())
 }
 
+#[cfg(test)]
+fn git(repo: &Path, args: &[&str]) -> Result<String> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo)
+        .args(args)
+        .output()
+        .map_err(|error| error.to_string())?;
+    require(
+        output.status.success(),
+        format!(
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ),
+    )?;
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
+}
+
+#[cfg(test)]
+fn formalize_analysis_fixture(h: &Harness) -> Result<(PathBuf, PathBuf, PathBuf, PathBuf)> {
+    let module = json!({
+        "name": "formalize-workflow-fixture",
+        "version": "0.1.0",
+        "description": "workflow smoke fixture",
+        "artifact_types": [{"name":"FR"}],
+        "traceability": {
+            "trace_tags": {
+                "formalizes": [{
+                    "name": "formalizes",
+                    "language": "qsl",
+                    "syntax": "comment",
+                    "pattern": "^// formalizes: (.+)$"
+                }]
+            }
+        }
+    });
+    write(
+        &h.root.join("manifest.yaml"),
+        serde_yaml_ng::to_string(&module).map_err(|e| e.to_string())?,
+    )?;
+    let draft = "language qsl\nprofile core\n// formalizes: FR-001\nrule P1 { check x }\n";
+    write(&h.root.join("qsl/rule.native"), draft)?;
+    write(
+        &h.root.join("spec/FR-001.md"),
+        "---\nid: FR-001\ntype: FR\n---\n\n## Description\n\nSynthetic requirement.\n",
+    )?;
+    git(&h.root, &["init", "-q"])?;
+    git(&h.root, &["config", "user.name", "workflow smoke"])?;
+    git(
+        &h.root,
+        &["config", "user.email", "workflow-smoke@example.invalid"],
+    )?;
+    git(
+        &h.root,
+        &["add", "manifest.yaml", "qsl/rule.native", "spec/FR-001.md"],
+    )?;
+    git(
+        &h.root,
+        &["commit", "-q", "-m", "formalize workflow fixture"],
+    )?;
+
+    let mut package: Value = serde_json::from_slice(include_bytes!(
+        "../../quoin-cli/tests/fixtures/formal-rules/checked-package-v2-success.json"
+    ))
+    .map_err(|error| error.to_string())?;
+    let node_count = {
+        let nodes = package
+            .pointer_mut("/semantic_graph/nodes")
+            .and_then(Value::as_array_mut)
+            .ok_or("checked fixture has no semantic nodes")?;
+        nodes.retain(|node| {
+            node.pointer("/node_id/path/0").and_then(Value::as_str) != Some("claim/approved")
+        });
+        nodes.len()
+    };
+    let operand_rows = package
+        .pointer_mut("/semantic_graph/operand_rows")
+        .and_then(Value::as_array_mut)
+        .ok_or("checked fixture has no operand rows")?;
+    if operand_rows.len() != node_count + 1 {
+        return Err("checked fixture node and operand row counts did not align".to_owned());
+    }
+    operand_rows.remove(4);
+    let declaration_start = draft.find("rule P1").ok_or("draft declaration missing")?;
+    let declaration_end = draft.trim_end().len();
+    let source_map = package
+        .get_mut("source_map")
+        .and_then(Value::as_array_mut)
+        .ok_or("checked fixture has no source map")?;
+    source_map.retain(|entry| {
+        entry.pointer("/node_id/path/0").and_then(Value::as_str) != Some("claim/approved")
+    });
+    for entry in source_map {
+        if entry.pointer("/node_id/path/0").and_then(Value::as_str) == Some("claim/draft") {
+            let region = entry
+                .pointer_mut("/regions/0")
+                .ok_or("draft claim region missing")?;
+            region["source"]["identity"] = json!("qsl/rule.native");
+            region["start"] = json!(declaration_start);
+            region["end"] = json!(declaration_end);
+        }
+    }
+    let sources = package
+        .pointer_mut("/lock/sources")
+        .and_then(Value::as_array_mut)
+        .ok_or("checked fixture has no source list")?;
+    sources.retain(|source| {
+        source.get("identity").and_then(Value::as_str) != Some("approved/rule.native")
+    });
+    for source in sources {
+        if source.get("identity").and_then(Value::as_str) == Some("draft/rule.native") {
+            source["identity"] = json!("qsl/rule.native");
+        }
+    }
+    let package_path = h.scratch.path().join("formalize-analysis-package.json");
+    write(
+        &package_path,
+        serde_json::to_vec(&package).map_err(|e| e.to_string())?,
+    )?;
+    let allowed_signers = h.scratch.path().join("allowed-signers");
+    write(&allowed_signers, "fixture\n")?;
+    let tools = h.scratch.path().join("formalize analysis tools");
+    fs::create_dir_all(&tools).map_err(|e| e.to_string())?;
+    let ea = executable(
+        &tools,
+        "engineering-assurance",
+        "if [ \"$1\" = \"--version\" ]; then printf 'engineering-assurance 0.8.2\\n'; exit 0; fi\nexit 99",
+        "if \"%~1\"==\"--version\" (echo engineering-assurance 0.8.2& exit /b 0)\r\nexit /b 99",
+    )?;
+    Ok((package_path, ea, allowed_signers, tools))
+}
+
+#[cfg(test)]
+fn analyzer_for_status(directory: &Path, status: &str) -> Result<PathBuf> {
+    let body = format!(
+        r#"while [ "$#" -gt 0 ]; do case "$1" in --output) output="$2"; shift 2 ;; --request) mode="$2"; shift 2 ;; *) shift ;; esac; done
+printf '{{"analysisKind":"%s","differential":{{"disposition":"agreement","agreedStatus":"{status}"}},"selection":{{"selected":["claim/draft"],"excluded":[]}}}}' "$mode" > "$output"
+exit {exit_code}"#,
+        exit_code = if status == "satisfied" { 0 } else { 1 }
+    );
+    executable(directory, "filament-analyze", &body, "exit /b 99")
+}
+
+#[cfg(test)]
+fn formalize_analysis_scenario(
+    h: &Harness,
+    id: &str,
+    analyzer_status: &str,
+    expected_phase: &str,
+) -> Result<()> {
+    let (package, ea, allowed_signers, tools) = formalize_analysis_fixture(h)?;
+    let fsl = executable(
+        &tools,
+        "fsl-check",
+        "printf '%s\\n' '{\"format\":\"filament-outcome/1\",\"operation\":\"check\",\"category\":\"success\",\"diagnostics\":[]}'; exit 0",
+        "exit /b 0",
+    )?;
+    let quire = executable(
+        &tools,
+        "quire-trace",
+        "printf '%s\\n' '{\"query\":{\"kind\":\"file\",\"path\":\"qsl/rule.native\"},\"claims\":{\"formalizes\":[{\"trace_id\":\"FR-001\",\"path\":\"qsl/rule.native\",\"symbol\":\"P1\"}]}}'; exit 0",
+        "exit /b 0",
+    )?;
+    let analyzer = analyzer_for_status(&tools, analyzer_status)?;
+    let z3 = executable(&tools, "z3", "exit 0", "exit /b 0")?;
+    let cvc5 = executable(&tools, "cvc5", "exit 0", "exit /b 0")?;
+    h.start("formalize", id)?;
+    h.answers(
+        id,
+        "request",
+        &json!({
+            "requirement_id": "FR-001",
+            "draft_path": "qsl/rule.native",
+            "analysis_package": package,
+            "engineering_assurance": ea,
+            "allowed_signers": allowed_signers
+        }),
+    )?;
+    let checked = passed(&h.flow_with_tools(&["advance", id, "checked"], Some((&fsl, &quire)))?)?;
+    require(
+        text(&checked, "/current_phase")? == "checked",
+        "clean formalization reaches checked",
+    )?;
+    let status = passed(&h.flow(&["status", id])?)?;
+    let request_item = status
+        .pointer("/data/items/formalization_request/0")
+        .ok_or("formalization request is missing")?;
+    let item_id = request_item
+        .get("id")
+        .and_then(Value::as_str)
+        .ok_or("formalization request has no item id")?;
+    passed(&h.flow(&[
+        "update-item",
+        id,
+        "formalization_request",
+        item_id,
+        "--patch",
+        &json!({"drafted_symbols":["qsl:qsl/rule.native::P1"]}).to_string(),
+    ])?)?;
+    h.advance(id, "analysed")?;
+    let outcome = h.flow_with_analysis_tools(
+        &["advance", id, "awaiting_approval"],
+        None,
+        Some((&analyzer, &z3, &cvc5)),
+    )?;
+    if expected_phase == "awaiting_approval" {
+        let result = passed(&outcome)?;
+        require(
+            text(&result, "/current_phase")? == expected_phase,
+            "a clean analysis reaches awaiting_approval",
+        )?;
+    } else {
+        let failure: Value = serde_json::from_slice(&outcome.stdout).map_err(|e| e.to_string())?;
+        require(
+            failure.to_string().contains("draft_claims_inconsistent"),
+            format!("refuted analysis reports the failing claim: {failure}"),
+        )?;
+        let diagnostic = failure.to_string();
+        passed(&h.flow(&[
+            "add-item",
+            id,
+            "formalization_failure",
+            "--item",
+            &json!({"id":"analysis-failure-1","diagnostic":diagnostic}).to_string(),
+        ])?)?;
+        h.advance(id, expected_phase)?;
+        let status = passed(&h.flow(&["status", id])?)?;
+        require(
+            text(&status, "/current_phase")? == expected_phase,
+            format!("failed analysis returns to {expected_phase}: {status}"),
+        )?;
+        let after_recording = passed(&h.flow(&["status", id])?)?;
+        require(
+            after_recording
+                .pointer("/data/items/formalization_failure")
+                .and_then(Value::as_array)
+                .is_some_and(|items| items.len() == 1),
+            "failed analysis increments the recorded retry count",
+        )?;
+    }
+    Ok(())
+}
+
 fn review_scenarios(h: &Harness, started: &Value) -> Result<()> {
     h.start("review", "smoke-all")?;
     h.answers("smoke-all", "request", &selection("all", &["integrity"]))?;
@@ -869,16 +1202,103 @@ fn review_scenarios(h: &Harness, started: &Value) -> Result<()> {
     }
     h.advance("smoke-all", "validated")?;
     h.start("review", "smoke-profile")?;
+    let profile_schema = h.module().join("schemas/AssuranceProfile.json");
     write(
         &h.root.join("spec/profile.md"),
-        "---\nid: AP-001\ntitle: Synthetic profile\ntype: AssuranceProfile\nstatus: active\nreview_policy:\n  mode: require\n  operations: [spec-review]\n---\n# Profile\n",
+        profile("v1", "require", &["spec-review", "code-review"]),
     )?;
-    let mut answers = selection("base", &[]);
+    let mut answers = selection("subset", &["integrity"]);
     if let Some(map) = answers.as_object_mut() {
         map.insert("assurance_profiles".to_owned(), json!(["spec/profile.md"]));
+        map.insert(
+            "profile_disposition".to_owned(),
+            json!("The active profile applies to spec-review; code-review remains a separate operation."),
+        );
     }
     h.answers("smoke-profile", "request", &answers)?;
+    let profile_run = passed(&h.flow(&["status", "smoke-profile"])?)?;
+    let recorded = profile_run
+        .pointer("/data/items/operation_request/0")
+        .ok_or("review profile answers were not recorded in the run")?;
+    require(
+        recorded.get("assurance_profiles") == Some(&json!(["spec/profile.md"]))
+            && recorded.get("profile_disposition").and_then(Value::as_str)
+                == Some(
+                    "The active profile applies to spec-review; code-review remains a separate operation.",
+                ),
+        format!("the run records profile paths and applicability: {recorded}"),
+    )?;
+    let mut live_profile_schema = schema("AssuranceProfile");
+    live_profile_schema["properties"]["profileRevision"]["const"] = json!("v2");
+    write(&profile_schema, live_profile_schema.to_string())?;
+    refused(
+        &h.flow(&["advance", "smoke-profile", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+    write(
+        &h.root.join("spec/profile.md"),
+        profile("v2", "require", &["spec-review", "code-review"]),
+    )?;
     h.advance("smoke-profile", "analyses_run")?;
+    h.advance("smoke-profile", "reviews_rendered")?;
+    write(&h.root.join("spec/reviews/base.md"), review("base", "low"))?;
+    write(
+        &h.root.join("spec/reviews/integrity.md"),
+        review("integrity", "low"),
+    )?;
+    h.add("smoke-profile", "base", "spec/reviews/base.md")?;
+    h.add("smoke-profile", "integrity", "spec/reviews/integrity.md")?;
+    h.advance("smoke-profile", "validated")?;
+    write(&profile_schema, schema("AssuranceProfile").to_string())?;
+
+    h.start("review", "smoke-obsolete-profile")?;
+    write(
+        &h.root.join("spec/obsolete-profile.md"),
+        profile("v1", "require", &["spec-review"]).replace(
+            "---\n# Profile\n",
+            "review_selection: [all]\n---\n# Profile\n",
+        ),
+    )?;
+    let mut obsolete = selection("base", &[]);
+    obsolete["assurance_profiles"] = json!(["spec/obsolete-profile.md"]);
+    h.answers("smoke-obsolete-profile", "request", &obsolete)?;
+    refused(
+        &h.flow(&["advance", "smoke-obsolete-profile", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+
+    h.start("review", "smoke-invalid-profile-policy")?;
+    write(
+        &h.root.join("spec/invalid-profile.md"),
+        profile("v1", "automatic", &["spec-review"]),
+    )?;
+    let mut invalid_policy = selection("base", &[]);
+    invalid_policy["assurance_profiles"] = json!(["spec/invalid-profile.md"]);
+    h.answers("smoke-invalid-profile-policy", "request", &invalid_policy)?;
+    refused(
+        &h.flow(&["advance", "smoke-invalid-profile-policy", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+
+    h.start("review", "smoke-profile-invents-severity")?;
+    let mut invented = profile("v1", "recommend", &["spec-review"]);
+    invented = invented.replace(
+        "  operations: [spec-review]",
+        "  operations: [spec-review]\n  severity: high",
+    );
+    write(&h.root.join("spec/invented-profile.md"), invented)?;
+    let mut invented_policy = selection("base", &[]);
+    invented_policy["assurance_profiles"] = json!(["spec/invented-profile.md"]);
+    h.answers(
+        "smoke-profile-invents-severity",
+        "request",
+        &invented_policy,
+    )?;
+    refused(
+        &h.flow(&["advance", "smoke-profile-invents-severity", "analyses_run"])?,
+        "WORKFLOW_DOCUMENT_INVALID",
+    )?;
+
     let runtime = text(started, "/data/skillPath/absolute")?;
     passed(&h.flow(&[
         "run",
@@ -1043,9 +1463,36 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
 mod tests {
     use super::{
         Harness, design_gate_context_seeded, design_gate_incompatible_host_refused,
-        design_gate_missing_host_refused, formalize_scenarios,
+        design_gate_missing_host_refused, formalize_analysis_scenario, formalize_scenarios,
     };
     use ix_trace_rs::trace;
+
+    #[cfg(feature = "workflow-test")]
+    use super::{review_base_lifecycle, review_scenarios};
+
+    #[cfg(feature = "workflow-test")]
+    #[trace(
+        "FR-095-AC-1",
+        "FR-095-AC-3",
+        "FR-095-AC-4",
+        "FR-095-AC-5",
+        "FR-095-AC-6",
+        "FR-095-AC-7",
+        "FR-095-AC-8",
+        "FR-095-AC-9",
+        "FR-095-CON-2",
+        "FR-095-CON-3"
+    )]
+    #[test]
+    fn fr095_review_workflow_enforces_live_contracts() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new(&binary, &runner, &plugin, false).expect("review smoke harness");
+        let started = review_base_lifecycle(&harness).expect("base review lifecycle");
+        review_scenarios(&harness, &started).expect("review contract scenarios");
+    }
 
     #[trace("FR-020-AC-6")]
     #[test]
@@ -1083,14 +1530,35 @@ mod tests {
         design_gate_incompatible_host_refused(&harness).expect("incompatible host API is refused");
     }
 
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-189-AC-2", "FR-189-AC-3", "FR-189-AC-9")]
     #[test]
-    #[ignore = "run by make workflow-test with the current ix-flow runtime"]
     fn formalize_failures_return_to_drafting_with_diagnostics() {
         let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        let harness =
+            Harness::new_for_formalize(&binary, &runner, &plugin, false).expect("smoke harness");
         formalize_scenarios(&harness).expect("formalize ix-flow scenarios");
+    }
+
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-189-AC-11")]
+    #[test]
+    fn formalize_refuted_analysis_returns_to_drafting_with_retry_record() {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        let harness = Harness::new_for_formalize(&binary, &runner, &plugin, false)
+            .expect("formalize smoke harness");
+        formalize_analysis_scenario(
+            &harness,
+            "smoke-formalize-refuted-analysis",
+            "refuted",
+            "drafting",
+        )
+        .expect("refuted analysis returns to drafting and records a retry");
     }
 }

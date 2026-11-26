@@ -132,7 +132,7 @@ fn kinds() -> [String; 1] {
     ["verification-report".to_owned()]
 }
 
-#[trace("FR-196-AC-1", "FR-196-AC-3")]
+#[trace("FR-191-AC-19", "FR-196-AC-1", "FR-196-AC-3")]
 #[test]
 fn the_report_titles_rows_from_the_repository_and_flags_the_failed_run() {
     let out = tempfile::tempdir().unwrap();
@@ -160,6 +160,30 @@ fn the_report_titles_rows_from_the_repository_and_flags_the_failed_run() {
             ("evidence_failed", "FR-001-AC-2")
         ]
     );
+
+    let json = serde_json::to_value(&report).unwrap();
+    let json_gaps = json["documents"][0]["gaps"].as_array().unwrap();
+    assert_eq!(json_gaps.len(), document.gaps.len());
+    let mut prior_bullet_end = 0;
+    for (gap, json_gap) in document.gaps.iter().zip(json_gaps) {
+        assert_eq!(json_gap["gap_kind"], gap.gap_kind.as_str());
+        assert_eq!(json_gap["subject"], gap.subject);
+        assert_eq!(json_gap["detail"], gap.detail);
+        let bullet = format!(
+            "- `{}` {}: {}",
+            gap.gap_kind.as_str(),
+            gap.subject,
+            gap.detail
+        );
+        let bullet_at = text
+            .find(&bullet)
+            .unwrap_or_else(|| panic!("missing {bullet:?} in {text}"));
+        assert!(
+            bullet_at >= prior_bullet_end,
+            "gap order changed in Markdown: {text}"
+        );
+        prior_bullet_end = bullet_at + bullet.len();
+    }
 }
 
 #[trace("FR-196-AC-8")]

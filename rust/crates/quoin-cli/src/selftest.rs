@@ -154,7 +154,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let retained_location = retained_location
         .to_str()
         .ok_or_else(|| "self-test run record destination is not valid UTF-8".to_owned())?;
-    let record = run_record(tool_version, &timestamp, results, retained_location);
+    let record = run_record(&tool_version, &timestamp, &results, retained_location);
     let mut bytes = serde_json::to_string_pretty(&record)
         .map_err(|error| format!("serialize self-test run record: {error}"))?
         .into_bytes();
@@ -163,8 +163,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let stdout_record =
         retain_run_record(&bytes, store_path.as_deref(), explicit_output.as_deref())?;
 
-    let failed = record["results"]
-        .as_array()
+    let failed = record
+        .get("results")
+        .and_then(serde_json::Value::as_array)
         .is_some_and(|results| results.iter().any(|result| result["status"] != "pass"));
     let rendered = stdout_record.unwrap_or_default();
     let payload = serde_json::json!({
@@ -185,9 +186,9 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 }
 
 fn run_record(
-    tool_version: String,
+    tool_version: &str,
     timestamp: &str,
-    results: Vec<CaseResult>,
+    results: &[CaseResult],
     retained_location: &str,
 ) -> serde_json::Value {
     run_record_with_anomaly_documents(
@@ -200,16 +201,16 @@ fn run_record(
 }
 
 fn run_record_with_anomaly_documents(
-    tool_version: String,
+    tool_version: &str,
     timestamp: &str,
-    results: Vec<CaseResult>,
+    results: &[CaseResult],
     retained_location: &str,
     anomaly_documents: Option<&[crate::validation::EmbeddedFile]>,
 ) -> serde_json::Value {
     serde_json::json!({
         "schemaVersion": 1,
         "tool": "quoin",
-        "toolVersion": tool_version.clone(),
+        "toolVersion": tool_version,
         "os": std::env::consts::OS,
         "architecture": std::env::consts::ARCH,
         "suite": "SELFTEST",
@@ -217,7 +218,7 @@ fn run_record_with_anomaly_documents(
         "results": results,
         "retainedLocation": retained_location,
         "validationInputs": crate::validation::embedded_inputs_value(),
-        "anomalySet": crate::validation::anomaly_set_value(&tool_version, anomaly_documents),
+        "anomalySet": crate::validation::anomaly_set_value(tool_version, anomaly_documents),
     })
 }
 
@@ -445,27 +446,23 @@ fn run_case(case: &EmbeddedCase, quoin_binary: &Path, timeout: Duration) -> Case
         );
     }
 
-    let expected_exit = match embedded_file(case, "expected/exit_code")
+    let Some(expected_exit) = embedded_file(case, "expected/exit_code")
         .and_then(|bytes| std::str::from_utf8(bytes).ok())
         .map(str::trim)
         .and_then(|value| value.parse::<i32>().ok())
-    {
-        Some(code) => code,
-        None => {
-            return case_error(
-                case,
-                criteria,
-                "invalid expected exit code".to_owned(),
-                &stderr,
-            );
-        }
+    else {
+        return case_error(
+            case,
+            criteria,
+            "invalid expected exit code".to_owned(),
+            &stderr,
+        );
     };
     let mut differences = Vec::new();
     let actual_exit = output.status.code();
     if actual_exit != Some(expected_exit) {
         differences.push(format!(
-            "exit code expected {expected_exit}, got {:?}",
-            actual_exit
+            "exit code expected {expected_exit}, got {actual_exit:?}"
         ));
     }
     if actual_exit.is_some_and(|code| code != 0) {
@@ -966,9 +963,9 @@ mod tests {
             },
         ];
         let record = run_record(
-            "quoin 0.1.0".to_owned(),
+            "quoin 0.1.0",
             "2026-11-25T12:00:00Z",
-            results,
+            &results,
             "/repo/spec/evidence/runs/SELFTEST/run.json",
         );
 
@@ -1009,23 +1006,23 @@ mod tests {
             },
         ];
         let retained = run_record_with_anomaly_documents(
-            version.to_owned(),
+            version,
             "2026-11-25T12:00:00Z",
-            Vec::new(),
+            &[],
             "/repo/spec/evidence/runs/SELFTEST/run.json",
             Some(&authored_documents),
         );
         let empty = run_record_with_anomaly_documents(
-            version.to_owned(),
+            version,
             "2026-11-25T12:00:00Z",
-            Vec::new(),
+            &[],
             "/repo/spec/evidence/runs/SELFTEST/empty.json",
             Some(&[]),
         );
         let absent = run_record_with_anomaly_documents(
-            version.to_owned(),
+            version,
             "2026-11-25T12:00:00Z",
-            Vec::new(),
+            &[],
             "/repo/spec/evidence/runs/SELFTEST/absent.json",
             None,
         );
