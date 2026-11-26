@@ -1311,8 +1311,7 @@ fn append_known_anomalies(report: &ValidationReport, lines: &mut Vec<String>) {
     }
 }
 
-#[implements("FR-217-AC-13")]
-#[implements("FR-217-AC-14")]
+#[implements("FR-217-AC-1")]
 fn append_external_tools(report: &ValidationReport, lines: &mut Vec<String>) {
     lines.extend([String::new(), "## External tools".to_owned(), String::new()]);
     if let Some(index) = &report.external_tools_index {
