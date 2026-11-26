@@ -230,7 +230,10 @@ fn malformed_key_tables_report_their_specific_refusals() {
         } else {
             "assessment"
         };
-        assert_eq!(output["availability"]["recordKeys"][key]["state"], "unavailable", "{id}");
+        assert_eq!(
+            output["availability"]["recordKeys"][key]["state"], "unavailable",
+            "{id}"
+        );
         assert!(output["record"].get(key).is_none(), "{id}");
     }
     let (_, output, _) = run_fixture("second-section");
