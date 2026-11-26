@@ -314,7 +314,7 @@ fn multi_component_promotion_with_discharges_refuses_before_writing() {
     let requirement = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../spec/functional/FR-141-promote-sbom-components-to-soup-records.md");
     std::fs::copy(requirement, spec.join("FR-141.md")).unwrap();
-    let sbom = write(work.path(), "bom.json", &cyclonedx(&[]));
+    let sbom = write(work.path(), "bom.json", &cyclonedx(&three()));
     let out = work.path().join("soup");
     let run = with_module(
         &sbom,

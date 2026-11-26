@@ -23,13 +23,17 @@ use std::path::{Path, PathBuf};
 const AS_OF: &str = "2026-08-15T00:00:00Z";
 
 fn raw_source(inputs: &Inputs) -> Result<quoin_soup::DossierSource, quoin_soup::SoupError> {
+    let runtime = quoin_core::runtime::RuntimeSettings {
+        ix_home: Some(inputs.scope.join("test-ix-home")),
+        semantic_root: None,
+    };
     quoin_soup::dossier_source(
         &inputs.scope,
         inputs.soup_records.as_deref(),
         inputs.soup_binding.as_deref().unwrap(),
         inputs.as_of.as_deref().unwrap(),
         inputs.soup_support.as_deref(),
-        &quoin_core::runtime::RuntimeSettings::default(),
+        &runtime,
     )
 }
 

@@ -15,6 +15,7 @@
 //! Nothing here needs the `spec-objects-security` module: the report reads the
 //! `soup_record` files it is pointed at.
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
@@ -171,31 +172,69 @@ impl Repo {
                 "clauses": clauses.iter().map(clause).collect::<Vec<_>>(),
             }),
         );
-        let facts = self.write(
-            "facts.json",
-            &json!([{
-                "kind": "disposition", "clauseId": "C-DISP", "decision": "accepted_risk",
-                "owner": "risk-owner-1",
-                "rationale": "no reachable path", "approvalRef": "approval://CAB-7",
-                "attestation": {"attestedBy": "reviewer-1", "authority": "quality-lead",
-                    "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
-            }]),
-        );
-        let recorded = quoin(
-            self.home.path(),
-            &[
-                "evidence",
-                "record-discharge",
-                "--repo",
-                self.path().to_str().unwrap(),
-                "--binding",
-                binding.to_str().unwrap(),
-                "--facts",
-                facts.to_str().unwrap(),
-            ],
-        );
-        assert!(recorded.status.success(), "{}", text(&recorded.stderr));
+        self.ensure_clause_set(clauses);
+        if clauses.contains(&"C-DISP") {
+            let facts = self.write(
+                "facts.json",
+                &json!([{
+                    "kind": "disposition", "clauseId": "C-DISP", "decision": "accepted_risk",
+                    "owner": "risk-owner-1",
+                    "rationale": "no reachable path", "approvalRef": "approval://CAB-7",
+                    "attestation": {"attestedBy": "reviewer-1", "authority": "quality-lead",
+                        "attestedAt": "2026-08-01T00:00:00Z", "expiresAt": "2026-09-01T00:00:00Z"}
+                }]),
+            );
+            let recorded = quoin(
+                self.home.path(),
+                &[
+                    "evidence",
+                    "record-discharge",
+                    "--repo",
+                    self.path().to_str().unwrap(),
+                    "--binding",
+                    binding.to_str().unwrap(),
+                    "--facts",
+                    facts.to_str().unwrap(),
+                ],
+            );
+            assert!(recorded.status.success(), "{}", text(&recorded.stderr));
+        }
         binding
+    }
+
+    /// Install the synthetic owner of the binding's clause set into this
+    /// fixture's isolated IX_HOME. `record-discharge` refuses a set that no
+    /// installed module declares, even when the binding and facts are valid.
+    fn ensure_clause_set(&self, clauses: &[&str]) {
+        let marker = self.home.path().join("filament/modules/soup-clause-set");
+        if marker.exists() {
+            return;
+        }
+        let source = tempfile::tempdir().unwrap();
+        let module = source.path().join("soup-clause-set");
+        std::fs::create_dir_all(&module).unwrap();
+        std::fs::write(
+            module.join("manifest.yaml"),
+            "name: soup-clause-set\nversion: 0.1.0\nclause_sets:\n  - set.yaml\n",
+        )
+        .unwrap();
+        let mut set = String::from(
+            "schemaVersion: clause-set-v1\nauthority: example.invalid\nid: soup\ntitle: Synthetic SOUP set\nversion: \"1.0.0\"\nrights:\n  structure: original\n  text: none\nclauses:\n",
+        );
+        for clause in clauses {
+            writeln!(set, "  - id: {clause}\n    force: mandatory").unwrap();
+        }
+        std::fs::write(module.join("set.yaml"), set).unwrap();
+        let installed = Command::new(env!("CARGO_BIN_EXE_quoin"))
+            .args(["module", "install", &format!("path:{}", module.display())])
+            .env("IX_HOME", self.home.path())
+            .output()
+            .unwrap();
+        assert!(
+            installed.status.success(),
+            "installing the synthetic SOUP clause set failed: {}",
+            text(&installed.stderr)
+        );
     }
 
     fn report(&self, binding: &Path, extra: &[&str]) -> Output {
@@ -521,7 +560,14 @@ fn a_missing_binding_is_a_usage_error_and_a_foreign_clause_is_unresolved_with_it
         "pkg:cargo/stray@1.0.0",
         &["disposition_clause: \"C-NOT-IN-BINDING\""],
     );
-    repo.audit(&[("RUSTSEC-2026-0003", "stray", "1.0.0")]);
+    let later_audit = scan_record_at(
+        "cargo-audit",
+        "audit-stray",
+        &audit_document(&[("RUSTSEC-2026-0003", "stray", "1.0.0")]),
+        "2026-08-01T00:00:00.000Z",
+        false,
+    );
+    repo.store(&later_audit);
     let report = report_json(&repo, &binding, &[]);
     let resolution = &row(&report, "pkg:cargo/stray@1.0.0")["advisories"][0]["resolution"];
     assert_eq!(resolution["state"], "unresolved");
