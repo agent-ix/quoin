@@ -183,20 +183,24 @@ pub fn require_complete_model(registry: &Registry) -> Result<()> {
     registry.require_complete_model().map_err(Error::from)
 }
 
-/// Permit the design matrix to keep valid coverage rows when the loader drops
-/// only required relations; every other dropped declaration remains fatal.
+/// Permit the design matrix to keep valid rows when required relations are
+/// dropped only for undeclared endpoint record keys. Invalid or conflicting
+/// required relations, and every other dropped declaration, remain fatal.
 ///
 /// # Errors
 /// Returns [`Error::TraceabilityDeclarationsDropped`] when a dropped declaration
-/// is not a required relation.
+/// is not a relation dropped for an undeclared endpoint record key.
 #[implements("FR-193-AC-10")]
 #[implements("FR-193-AC-11")]
 #[implements("FR-165-AC-21")]
+#[implements("FR-206-AC-2")]
 pub fn require_design_matrix_compatible_model(registry: &Registry) -> Result<()> {
-    let has_non_relation_drop = registry.dropped_declarations().any(|(_, declaration)| {
+    let has_non_partial_relation_drop = registry.dropped_declarations().any(|(_, declaration)| {
         declaration.kind != quire_rs::traceability::DeclarationKind::RequiredRelation
+            || declaration.required_relation_cause
+                != Some(quire_rs::traceability::RequiredRelationDropCause::UndeclaredRecordKey)
     });
-    if has_non_relation_drop {
+    if has_non_partial_relation_drop {
         require_complete_model(registry)?;
     }
     Ok(())

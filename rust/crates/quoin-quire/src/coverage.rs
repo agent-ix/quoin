@@ -241,11 +241,13 @@ mod tests {
                     module: "m1".to_owned(),
                     kind: DeclarationKind::TraceabilitySection,
                     item: "traceability".to_owned(),
+                    required_relation_cause: None,
                 },
                 DroppedDeclarationRef {
                     module: "m2".to_owned(),
                     kind: DeclarationKind::FlowRule,
                     item: "bad".to_owned(),
+                    required_relation_cause: None,
                 },
             ]),
         ));
