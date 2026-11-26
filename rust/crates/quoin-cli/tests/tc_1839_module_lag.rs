@@ -43,8 +43,8 @@ fn home_with_lagging_module_at(lagging_ref: Option<&str>) -> tempfile::TempDir {
         std::fs::write(
             dir.join("manifest.yaml"),
             format!(
-                "name: {}\nversion: 1.0.0\nartifact_types:\n  - name: FR\n",
-                entry.name
+                "name: {}\nversion: 1.0.0\nartifact_types:\n  - name: {}\n",
+                entry.name, entry.name
             ),
         )
         .unwrap();
