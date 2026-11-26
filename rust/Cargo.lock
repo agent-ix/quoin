@@ -3512,6 +3512,7 @@ name = "quoin-quire"
 version = "0.31.1"
 dependencies = [
  "ix-trace-rs",
+ "quire-fixtures",
  "quire-rs",
  "quoin-auditor",
  "quoin-evidence",
