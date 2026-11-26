@@ -17,11 +17,12 @@ relationships:
 `quoin` SHALL invoke the external tool `ix-flow` by name from `PATH`, and its
 absence or non-zero exit SHALL surface as a non-zero `quoin` exit. The fixed
 process dependencies are `git`, `ix-flow`, `node`, `engineering-assurance`, the
-`quoin` executable used by `selftest`, and `/bin/sh` for the Linux self-test
-sandbox. Quoin may also start the operator's `$EDITOR` for `config edit` and tool
-paths explicitly supplied through configured runtime/capability inputs. `quire`
-is a library linked into `quoin`, not a process (FR-036-AC-8). `ix-flow` is not
-version-pinned, which is a known and accepted limitation.
+`quoin` executable used by `selftest`, `/bin/sh` for the Linux self-test sandbox,
+and the `quire` CLI used by dossier export. Quoin also uses linked quire-rs APIs;
+the `quire` CLI is a subprocess (FR-036-AC-8). Quoin may also start the
+operator's `$EDITOR` for `config edit` and tool paths explicitly supplied through
+configured runtime/capability inputs. `ix-flow` is not version-pinned, which is
+a known and accepted limitation.
 
 ## Scope
 

@@ -93,12 +93,13 @@ clippy lints is `agent-ix/quire-rs#178`.
 surface on top. A dependency in the other direction makes the engine unusable without the CLI.
 
 **Quoin's production process boundary is declared and checked.** Its fixed process dependencies are
-`git`, `ix-flow`, `node`, `engineering-assurance`, the `quoin` executable used by `selftest`, and
-`/bin/sh` used by the Linux self-test sandbox. It may also start the operator's `$EDITOR` for
-`config edit` and tool paths explicitly supplied through configured runtime/capability inputs.
-`quire` remains a linked library, not a subprocess. This is ADR-0011 invariant 1 made mechanical:
-quoin does not run conformance suites on the consumer's behalf. `git` is the repository inspection
-the corpus enumeration uses.
+`git`, `ix-flow`, `node`, `engineering-assurance`, the `quoin` executable used by `selftest`,
+`/bin/sh` used by the Linux self-test sandbox, and `quire` used by dossier export. Quoin also uses
+linked quire-rs APIs; the `quire` CLI is a subprocess for export. It may start the operator's
+`$EDITOR` for `config edit` and tool paths explicitly supplied through configured
+runtime/capability inputs. This is ADR-0011 invariant 1 made mechanical: quoin does not run
+conformance suites on the consumer's behalf. `git` is the repository inspection the corpus
+enumeration uses.
 
 The set is asserted **whole and sorted**, not as membership. A new binary fails by default rather than
 passing until someone remembers to extend a list — the failure mode of every denylist, and the one
@@ -120,7 +121,7 @@ behind a dynamic expression.
 | FR-036-AC-5 | The adapter is selected by `--adapter`, and by `--tool` for the tools emitting this shape (`audit-script`, `audit-static`, `import-linter`, `dependency-cruiser`, `make ci`). | Test |
 | FR-036-AC-6 | An architectural statement is advised `architecture-conformance`, with both halves of the catalog's rule matching. | Test |
 | FR-036-AC-7 | No workspace crate depends on `quoin-cli`: the CLI is a leaf and the engine crates load without it. | Test |
-| FR-036-AC-8 | The executables quoin's production code starts are limited to its fixed dependencies (`git`, `ix-flow`, `node`, `engineering-assurance`, `quoin`, and `/bin/sh`), the operator's own `$EDITOR` (`config edit`), and tool paths explicitly supplied through configured runtime/capability inputs; build scripts and the developer tools `quoin-suite-trace` and `quoin-workflow-check` are not part of the engine. | Test |
+| FR-036-AC-8 | The executables quoin's production code starts are limited to its fixed dependencies (`git`, `ix-flow`, `node`, `engineering-assurance`, `quoin`, `/bin/sh`, and `quire` for dossier export), the operator's own `$EDITOR` (`config edit`), and tool paths explicitly supplied through configured runtime/capability inputs; build scripts and the developer tools `quoin-suite-trace` and `quoin-workflow-check` are not part of the engine. | Test |
 | FR-036-AC-9 | A scan recorded under any tool the adapter claims, with or without `--adapter audit-script`, is accepted and written as a scan. | Test |
 
 ## Constraints
