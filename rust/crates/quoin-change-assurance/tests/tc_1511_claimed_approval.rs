@@ -30,7 +30,9 @@ use quoin_change_assurance::verify::verify_change_assurance;
 use quoin_jsonschema::SchemaValidator;
 use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{base_input, digest_of, history, json, member, record_text, replacing};
+use crate::common::{
+    OUTPUT, base_input, digest_of, history, json, member, record_text, replacing, sealed,
+};
 
 const KIND: &str = "change_assurance.review_decided";
 const POLICY_OFF: &str = r#"{"required": false, "signature_kinds": [], "approvers": []}"#;
@@ -101,11 +103,12 @@ fn policy_history(policies: &[&str]) -> VerificationInput {
     input.record_revision = Revision::new(revision_number, Subject::Record, "revision").unwrap();
     input.record_digest = digest_of(&input.record);
     input.parents = records;
-    input.attestations[0].attestation = replacing(
+    let updated_attestation = replacing(
         &input.attestations[0].attestation,
         "record_revision",
         revision.clone(),
     );
+    input.attestations[0].attestation = sealed(&updated_attestation, OUTPUT);
     input.decision_history = Some(history(&[event("event-1", 1, None).replace(
         r#""revision": 1,"#,
         &format!(r#""revision": {revision_number},"#),
