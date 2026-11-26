@@ -23,8 +23,8 @@ use quoin_auditor::catalog::{
 };
 use quoin_evidence::ids::{ObligationId, SuiteId, SymbolId};
 use quoin_evidence::types::{
-    Binding, MUTATION_SCORE_METRIC, MockInjection, Outcome, RunEntry, RunRecord,
-    STORE_SCHEMA_VERSION, Survivor,
+    Binding, Finding as ScanFinding, FindingRecord, MUTATION_SCORE_METRIC, MockInjection, Outcome,
+    RunEntry, RunRecord, STORE_SCHEMA_VERSION, Survivor,
 };
 use quoin_finding_types::{AuditReport, Finding, Severity};
 use quoin_quire_types::Obligation;
@@ -70,6 +70,20 @@ fn run_of(suite: &str, kind: Option<&str>, entries: Vec<RunEntry>) -> RunRecord 
         evidence_kind: kind.map(ToOwned::to_owned),
         timestamp: "2026-09-27T00:00:00Z".to_owned(),
         entries,
+    }
+}
+
+fn scan_of(suite: &str, rules_evaluated: u64) -> FindingRecord {
+    FindingRecord {
+        schema_version: STORE_SCHEMA_VERSION,
+        suite: SuiteId::new(suite),
+        tool: "semgrep 1.2.3".to_owned(),
+        evidence_kind: None,
+        timestamp: "2026-09-27T00:00:00Z".to_owned(),
+        ruleset: None,
+        rules_evaluated: Some(rules_evaluated),
+        findings: Vec::<ScanFinding>::new(),
+        evaluated: None,
     }
 }
 
@@ -151,6 +165,60 @@ fn a_passing_run_at_head_is_healthy_and_silent() {
     let out = report(&audited);
     assert!(out.findings.is_empty(), "{:?}", out.findings);
     assert_eq!(out.healthy, ["FR-9-AC-1"]);
+}
+
+/// A clean finding scan discharges its binding without becoming vacuous.
+#[trace("FR-034-AC-9")]
+#[test]
+fn tc_fr034_a_clean_scan_is_neither_undischarged_nor_vacuous() {
+    let obligation = "FR-034-AC-9";
+    let mut audited = input(
+        vec![ob(obligation, "a clean scan is evidence")],
+        vec![bind(obligation, "scanner", &[])],
+        vec![],
+    );
+    audited.scans = Some(vec![scan_of("scanner", 3)]);
+    audited.vacuous_scan_suites = Some(Vec::new());
+
+    let out = report(&audited);
+
+    assert!(
+        of_kind(&out, "undischarged", obligation).is_empty(),
+        "{:?}",
+        out.findings
+    );
+    assert!(
+        of_kind(&out, "vacuous-evidence", obligation).is_empty(),
+        "{:?}",
+        out.findings
+    );
+}
+
+/// Run-shaped checks use the run belonging to their binding's suite even when
+/// another suite's scan is also bound to the same obligation.
+#[trace("FR-034-AC-12")]
+#[test]
+fn tc_fr034_run_checks_stay_with_their_suite_beside_a_scan_binding() {
+    let obligation = "FR-034-AC-12";
+    let mut audited = input(
+        vec![ob(obligation, "run checks stay suite-scoped")],
+        vec![
+            bind(obligation, "scanner", &["scanner::criterion"]),
+            bind(obligation, "tests", &["tests::criterion"]),
+        ],
+        vec![run_of("tests", None, Vec::new())],
+    );
+    audited.scans = Some(vec![scan_of("scanner", 3)]);
+    audited.vacuous_scan_suites = Some(Vec::new());
+
+    let out = report(&audited);
+    let vacuous = of_kind(&out, "vacuous-evidence", obligation);
+
+    assert_eq!(vacuous.len(), 1, "{:?}", out.findings);
+    assert_eq!(
+        vacuous[0].summary,
+        "every symbol bound to FR-034-AC-12 was skipped or absent from its run: tests:tests::criterion. The row reads as covered and nothing was verified."
+    );
 }
 
 /// A missing recorded run is high severity.
