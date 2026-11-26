@@ -112,7 +112,7 @@ fn hazard_assessment_uses_the_shared_golden_and_reports_its_source() {
     assert_eq!(output["recordSources"][0]["key"], "assessment");
     let span = &output["recordSources"][0]["sourceSpan"];
     assert_eq!(span["startLine"], 8);
-    assert_eq!(span["endLine"], 11);
+    assert_eq!(span["endLine"], 12);
     let validator = compile_documents(&root, &fixture_case("assessment-row").2)
         .expect("fixture record schema compiles");
     assert!(validator.is_valid(&output["record"]));
