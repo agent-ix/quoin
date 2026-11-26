@@ -6,9 +6,9 @@
 use std::collections::BTreeMap;
 
 use ix_trace_rs::trace;
-use quire_rs::semantic::{compile_documents, module_schema_documents};
 use quire_rs::semantic::python_entry::extract_semantic_json;
-use serde_json::{json, Value};
+use quire_rs::semantic::{compile_documents, module_schema_documents};
+use serde_json::{Value, json};
 
 fn fixture_case(id: &str) -> (Value, Value, BTreeMap<String, Value>) {
     let fixtures = quire_fixtures::record_sections_json("cases.json");
@@ -68,13 +68,21 @@ fn diagnostics(output: &Value) -> Vec<(String, String)> {
         .map(|diagnostic| {
             (
                 diagnostic["code"].as_str().unwrap_or_default().to_string(),
-                diagnostic["reason"].as_str().unwrap_or_default().to_string(),
+                diagnostic["reason"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
             )
         })
         .collect()
 }
 
-fn synthetic(markdown: &str, schema: Value, mappings: &[&str], body_extraction: Option<Value>) -> Value {
+fn synthetic(
+    markdown: &str,
+    schema: Value,
+    mappings: &[&str],
+    body_extraction: Option<Value>,
+) -> Value {
     let mut request = json!({
         "markdown": markdown,
         "module": {
@@ -136,9 +144,12 @@ fn failure_analysis_table_maps_using_the_schema_property() {
         &["record-sections"],
         None,
     );
-    assert_eq!(output["record"]["analysis"], json!({
-        "effect": "Injury", "cause": "Seal failure", "detection": "Visual inspection"
-    }));
+    assert_eq!(
+        output["record"]["analysis"],
+        json!({
+            "effect": "Injury", "cause": "Seal failure", "detection": "Visual inspection"
+        })
+    );
     assert!(diagnostics(&output).is_empty());
 }
 
@@ -152,7 +163,10 @@ fn not_assessed_empty_cells_and_absent_assessment_follow_the_golden() {
     let (absent, output, _) = run_fixture("assessment-absent");
     assert!(absent["record"].is_null());
     assert!(output["record"].get("assessment").is_none());
-    assert_eq!(output["availability"]["recordKeys"]["assessment"]["state"], "not_applicable");
+    assert_eq!(
+        output["availability"]["recordKeys"]["assessment"]["state"],
+        "not_applicable"
+    );
 }
 
 #[trace("FR-121-AC-4")]
@@ -176,10 +190,19 @@ fn evidence_order_empty_table_and_frontmatter_status_use_shared_goldens() {
     assert_eq!(output["record"]["evidence"], case["record"]["evidence"]);
     let (_, empty, _) = run_fixture("evidence-header-only");
     assert_eq!(empty["record"]["evidence"], json!([]));
-    assert_eq!(empty["availability"]["recordKeys"]["evidence"]["state"], "available");
+    assert_eq!(
+        empty["availability"]["recordKeys"]["evidence"]["state"],
+        "available"
+    );
     let (_, frontmatter, _) = run_fixture("frontmatter-status-not-body-reader");
     assert!(frontmatter["record"].get("status").is_some());
-    assert!(!frontmatter["recordSources"].as_array().unwrap().iter().any(|source| source["key"] == "status"));
+    assert!(
+        !frontmatter["recordSources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|source| source["key"] == "status")
+    );
 }
 
 #[trace("FR-121-AC-6")]
@@ -194,14 +217,24 @@ fn malformed_key_tables_report_their_specific_refusals() {
         ("cell-type", "cell-type"),
     ] {
         let (_, output, _) = run_fixture(id);
-        assert!(diagnostics(&output).iter().any(|(code, actual)| {
-            code == "semantic.invalid-model-cell" && actual == reason
-        }), "{id}: {:?}", diagnostics(&output));
-        assert_eq!(output["availability"]["recordKeys"]["assessment"]["state"], "unavailable", "{id}");
+        assert!(
+            diagnostics(&output).iter().any(|(code, actual)| {
+                code == "semantic.invalid-model-cell" && actual == reason
+            }),
+            "{id}: {:?}",
+            diagnostics(&output)
+        );
+        assert_eq!(
+            output["availability"]["recordKeys"]["assessment"]["state"], "unavailable",
+            "{id}"
+        );
         assert!(output["record"].get("assessment").is_none(), "{id}");
     }
     let (_, output, _) = run_fixture("second-section");
-    assert!(diagnostics(&output).contains(&("semantic.duplicate-section".to_string(), "second-section".to_string())));
+    assert!(diagnostics(&output).contains(&(
+        "semantic.duplicate-section".to_string(),
+        "second-section".to_string()
+    )));
 }
 
 #[trace("FR-121-AC-7")]
@@ -209,13 +242,23 @@ fn malformed_key_tables_report_their_specific_refusals() {
 fn wrong_blocks_and_prose_only_sections_are_reported() {
     for id in ["list-under-table-key", "list-after-table"] {
         let (_, output, _) = run_fixture(id);
-        assert!(diagnostics(&output).iter().any(|(code, reason)| {
-            code == "semantic.feature-not-extractable" && reason == "assessment"
-        }), "{id}: {:?}", diagnostics(&output));
+        assert!(
+            diagnostics(&output).iter().any(|(code, reason)| {
+                code == "semantic.feature-not-extractable" && reason == "assessment"
+            }),
+            "{id}: {:?}",
+            diagnostics(&output)
+        );
     }
     let (_, output, _) = run_fixture("prose-only-section");
-    assert!(diagnostics(&output).contains(&("semantic.record-key-no-block".to_string(), "no-block".to_string())));
-    assert_eq!(output["availability"]["recordKeys"]["assessment"]["state"], "not_applicable");
+    assert!(diagnostics(&output).contains(&(
+        "semantic.record-key-no-block".to_string(),
+        "no-block".to_string()
+    )));
+    assert_eq!(
+        output["availability"]["recordKeys"]["assessment"]["state"],
+        "not_applicable"
+    );
 }
 
 #[trace("FR-121-AC-8")]
@@ -224,7 +267,12 @@ fn token_gate_and_unowned_headings_are_prose() {
     let (_, no_token, _) = run_fixture("no-token");
     assert!(no_token.get("record").is_none() || no_token["record"].is_null());
     assert!(diagnostics(&no_token).is_empty());
-    assert!(no_token.get("availability").and_then(|a| a.get("recordKeys")).is_none());
+    assert!(
+        no_token
+            .get("availability")
+            .and_then(|a| a.get("recordKeys"))
+            .is_none()
+    );
     let (_, prose, _) = run_fixture("prose-headings");
     assert!(diagnostics(&prose).is_empty());
 }
@@ -236,7 +284,10 @@ fn normalized_camel_case_and_ambiguous_keys_follow_goldens() {
     assert_eq!(output["record"], case["record"]);
     assert_eq!(output["record"]["retryPolicy"]["attempts"], 4);
     let (_, ambiguous, _) = run_fixture("key-ambiguous");
-    assert!(diagnostics(&ambiguous).contains(&("semantic.feature-not-extractable".to_string(), "key-ambiguous".to_string())));
+    assert!(diagnostics(&ambiguous).contains(&(
+        "semantic.feature-not-extractable".to_string(),
+        "key-ambiguous".to_string()
+    )));
 }
 
 fn status_schema() -> Value {
@@ -259,39 +310,87 @@ fn status_locator() -> Value {
 #[trace("FR-121-AC-10")]
 #[test]
 fn section_cannot_supply_a_missing_frontmatter_owned_key() {
-    let output = synthetic("# Item\n\n## Status\n\n`accepted`\n", status_schema(), &["record-sections"], Some(status_locator()));
-    assert!(diagnostics(&output).contains(&("semantic.feature-not-extractable".to_string(), "frontmatter-owned".to_string())));
+    let output = synthetic(
+        "# Item\n\n## Status\n\n`accepted`\n",
+        status_schema(),
+        &["record-sections"],
+        Some(status_locator()),
+    );
+    assert!(diagnostics(&output).contains(&(
+        "semantic.feature-not-extractable".to_string(),
+        "frontmatter-owned".to_string()
+    )));
     assert!(output["record"].get("status").is_none());
-    assert!(output["recordSources"].as_array().unwrap().iter().all(|source| source["key"] != "status"));
+    assert!(
+        output["recordSources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|source| source["key"] != "status")
+    );
     assert!(output["availability"]["recordKeys"].get("status").is_none());
 }
 
 #[trace("FR-121-AC-11")]
 #[test]
 fn frontmatter_value_wins_over_a_duplicate_section_without_duplicate_key_error() {
-    let output = synthetic("---\nstatus: accepted\n---\n# Item\n\n## Status\n\n`rejected`\n", status_schema(), &["record-sections"], Some(status_locator()));
-    assert!(diagnostics(&output).contains(&("semantic.feature-not-extractable".to_string(), "frontmatter-owned".to_string())));
-    assert!(!diagnostics(&output).iter().any(|(code, _)| code == "semantic.duplicate-record-key"));
+    let output = synthetic(
+        "---\nstatus: accepted\n---\n# Item\n\n## Status\n\n`rejected`\n",
+        status_schema(),
+        &["record-sections"],
+        Some(status_locator()),
+    );
+    assert!(diagnostics(&output).contains(&(
+        "semantic.feature-not-extractable".to_string(),
+        "frontmatter-owned".to_string()
+    )));
+    assert!(
+        !diagnostics(&output)
+            .iter()
+            .any(|(code, _)| code == "semantic.duplicate-record-key")
+    );
     assert_eq!(output["record"]["status"], "accepted");
 }
 
 #[trace("FR-121-AC-12")]
 #[test]
 fn frontmatter_projection_is_retained_without_a_section() {
-    let output = synthetic("---\nstatus: accepted\n---\n# Item\n", status_schema(), &["record-sections"], Some(status_locator()));
+    let output = synthetic(
+        "---\nstatus: accepted\n---\n# Item\n",
+        status_schema(),
+        &["record-sections"],
+        Some(status_locator()),
+    );
     assert_eq!(output["record"]["status"], "accepted");
     assert!(diagnostics(&output).is_empty());
-    assert!(output["recordSources"].as_array().unwrap().iter().all(|source| source["key"] != "status"));
+    assert!(
+        output["recordSources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|source| source["key"] != "status")
+    );
     assert!(output["availability"]["recordKeys"].get("status").is_none());
 }
 
 #[trace("FR-121-AC-13")]
 #[test]
 fn absent_optional_frontmatter_key_is_not_defaulted() {
-    let output = synthetic("# Item\n", status_schema(), &["record-sections"], Some(status_locator()));
+    let output = synthetic(
+        "# Item\n",
+        status_schema(),
+        &["record-sections"],
+        Some(status_locator()),
+    );
     assert!(output["record"].get("status").is_none());
     assert!(diagnostics(&output).is_empty());
-    assert!(output["recordSources"].as_array().unwrap().iter().all(|source| source["key"] != "status"));
+    assert!(
+        output["recordSources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|source| source["key"] != "status")
+    );
     assert!(output["availability"]["recordKeys"].get("status").is_none());
 }
 
@@ -305,16 +404,28 @@ fn another_declared_table_mapping_owns_its_heading() {
     }}});
     let output = synthetic(
         "---\nlabel: sample\n---\n# Item\n\n## Thresholds\n\n| Name |\n|---|\n| high |\n",
-        status_schema(), &["record-sections"], Some(extraction));
-    assert!(!diagnostics(&output).iter().any(|(_, reason)| reason == "thresholds"));
+        status_schema(),
+        &["record-sections"],
+        Some(extraction),
+    );
+    assert!(
+        !diagnostics(&output)
+            .iter()
+            .any(|(_, reason)| reason == "thresholds")
+    );
 }
 
 #[trace("FR-121-AC-15")]
 #[test]
 fn lifecycle_key_without_frontmatter_locator_still_reads_its_section() {
-    let output = synthetic("# Item\n\n## Status\n\n`accepted`\n", status_schema(), &["record-sections"], Some(json!({"yield_pattern": {"match": {
-        "label": {"from": "frontmatter_field", "path": ["label"], "required": false}
-    }}})));
+    let output = synthetic(
+        "# Item\n\n## Status\n\n`accepted`\n",
+        status_schema(),
+        &["record-sections"],
+        Some(json!({"yield_pattern": {"match": {
+            "label": {"from": "frontmatter_field", "path": ["label"], "required": false}
+        }}})),
+    );
     assert_eq!(output["record"]["status"], "accepted");
     assert!(diagnostics(&output).is_empty());
 }
@@ -322,7 +433,12 @@ fn lifecycle_key_without_frontmatter_locator_still_reads_its_section() {
 #[trace("FR-121-AC-16")]
 #[test]
 fn frontmatter_locator_does_not_enable_section_diagnostics_without_token() {
-    let output = synthetic("# Item\n\n## Status\n\n`accepted`\n", status_schema(), &[], Some(status_locator()));
+    let output = synthetic(
+        "# Item\n\n## Status\n\n`accepted`\n",
+        status_schema(),
+        &[],
+        Some(status_locator()),
+    );
     assert!(diagnostics(&output).is_empty());
     assert!(output.get("record").is_none() || output["record"].is_null());
 }
