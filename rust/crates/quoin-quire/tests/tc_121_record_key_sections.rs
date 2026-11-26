@@ -3,6 +3,14 @@
 //! Quoin's record-key mapping exercised through the pinned Quire engine.
 //! Golden markdown and expected outputs remain owned by quire-fixtures.
 
+#![allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    clippy::panic,
+    clippy::unwrap_used,
+    reason = "Integration cases treat invalid pinned test fixtures as test failures"
+)]
+
 use std::collections::BTreeMap;
 
 use ix_trace_rs::trace;
@@ -60,7 +68,15 @@ fn run_fixture(id: &str) -> (Value, Value, Value) {
     )
 }
 
-fn diagnostics(output: &Value) -> Vec<(String, String)> {
+fn line_of(markdown: &str, needle: &str) -> usize {
+    markdown
+        .lines()
+        .position(|line| line.contains(needle))
+        .expect("diagnostic snippet occurs in fixture")
+        + 1
+}
+
+fn diagnostics(output: &Value) -> Vec<(String, String, String, Option<usize>, Option<String>)> {
     output["diagnostics"]
         .as_array()
         .into_iter()
@@ -68,26 +84,45 @@ fn diagnostics(output: &Value) -> Vec<(String, String)> {
         .map(|diagnostic| {
             (
                 diagnostic["code"].as_str().unwrap_or_default().to_string(),
+                diagnostic["severity"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
                 diagnostic["reason"]
                     .as_str()
                     .unwrap_or_default()
                     .to_string(),
+                diagnostic["line"]
+                    .as_u64()
+                    .and_then(|line| usize::try_from(line).ok()),
+                diagnostic["section"].as_str().map(str::to_string),
             )
         })
         .collect()
 }
 
-fn synthetic(
+fn has_diagnostic(output: &Value, code: &str, severity: &str, reason: &str, line: usize) -> bool {
+    diagnostics(output).iter().any(|diagnostic| {
+        diagnostic.0 == code
+            && diagnostic.1 == severity
+            && diagnostic.2 == reason
+            && diagnostic.3 == Some(line)
+    })
+}
+
+fn synthetic_for(
     markdown: &str,
-    schema: Value,
+    schema: &Value,
     mappings: &[&str],
-    body_extraction: Option<Value>,
+    body_extraction: Option<&Value>,
+    package: &str,
+    object_type: Option<&str>,
 ) -> Value {
     let mut request = json!({
         "markdown": markdown,
         "module": {
             "contractVersion": "1.0.0",
-            "package": "acme/synthetic",
+            "package": package,
             "exports": [],
             "mappings": mappings,
         },
@@ -98,29 +133,46 @@ fn synthetic(
         "schemaDocuments": {},
     });
     if let Some(body_extraction) = body_extraction {
-        request["bodyExtraction"] = body_extraction;
+        request["bodyExtraction"] = body_extraction.clone();
+    }
+    if let Some(object_type) = object_type {
+        request["objectType"] = json!(object_type);
     }
     serde_json::to_value(extract_semantic_json(&request).expect("Quire extracts synthetic case"))
         .expect("semantic output serializes")
 }
 
-#[trace("FR-121-AC-1")]
+fn synthetic(
+    markdown: &str,
+    schema: &Value,
+    mappings: &[&str],
+    body_extraction: Option<&Value>,
+) -> Value {
+    synthetic_for(
+        markdown,
+        schema,
+        mappings,
+        body_extraction,
+        "acme/synthetic",
+        None,
+    )
+}
+
 #[test]
-fn hazard_assessment_uses_the_shared_golden_and_reports_its_source() {
+fn shared_assessment_golden_extracts_with_a_source_span() {
     let (case, output, root) = run_fixture("assessment-row");
     assert_eq!(output["record"], case["record"]);
     assert_eq!(output["recordSources"][0]["key"], "assessment");
     let span = &output["recordSources"][0]["sourceSpan"];
     assert_eq!(span["startLine"], 8);
     assert_eq!(span["endLine"], 12);
-    let validator = compile_documents(&root, &fixture_case("assessment-row").2)
-        .expect("fixture record schema compiles");
+    let (_, _, docs) = fixture_case("assessment-row");
+    let validator = compile_documents(&root, &docs).expect("fixture record schema compiles");
     assert!(validator.is_valid(&output["record"]));
 }
 
-#[trace("FR-121-AC-2")]
 #[test]
-fn failure_analysis_table_maps_using_the_schema_property() {
+fn synthetic_analysis_schema_validates_the_extracted_record() {
     let schema = json!({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "https://schemas.example.test/FailureMode.json",
@@ -140,16 +192,19 @@ fn failure_analysis_table_maps_using_the_schema_property() {
     });
     let output = synthetic(
         "# FM-1\n\n## Analysis\n\n| Effect | Cause | Detection |\n|---|---|---|\n| Injury | Seal failure | Visual inspection |\n",
-        schema,
+        &schema,
         &["record-sections"],
         None,
     );
+    let validator = compile_documents(&schema, &BTreeMap::new())
+        .expect("synthetic integration schema compiles");
     assert_eq!(
         output["record"]["analysis"],
         json!({
             "effect": "Injury", "cause": "Seal failure", "detection": "Visual inspection"
         })
     );
+    assert!(validator.is_valid(&output["record"]));
     assert!(diagnostics(&output).is_empty());
 }
 
@@ -169,9 +224,8 @@ fn not_assessed_empty_cells_and_absent_assessment_follow_the_golden() {
     );
 }
 
-#[trace("FR-121-AC-4")]
 #[test]
-fn accepted_status_requires_provenance_in_the_schema() {
+fn lifecycle_golden_provenance_rule_uses_its_declared_synthetic_schema() {
     let (valid_case, valid, root) = run_fixture("lifecycle-keys");
     let (invalid_case, invalid, _) = run_fixture("accepted-without-provenance");
     let (_, _, docs) = fixture_case("lifecycle-keys");
@@ -217,11 +271,20 @@ fn malformed_key_tables_report_their_specific_refusals() {
         ("nested-object-cell", "nested-object-cell"),
         ("cell-type", "cell-type"),
     ] {
-        let (_, output, _) = run_fixture(id);
+        let (case, output, _) = run_fixture(id);
+        let diagnostic = &case["diagnostics"][0];
+        let line = line_of(
+            case["artifact"].as_str().expect("fixture artifact"),
+            diagnostic["at"].as_str().expect("fixture locus"),
+        );
         assert!(
-            diagnostics(&output).iter().any(|(code, actual)| {
-                code == "semantic.invalid-model-cell" && actual == reason
-            }),
+            has_diagnostic(
+                &output,
+                "semantic.invalid-model-cell",
+                diagnostic["severity"].as_str().expect("fixture severity"),
+                reason,
+                line,
+            ),
             "{id}: {:?}",
             diagnostics(&output)
         );
@@ -235,32 +298,78 @@ fn malformed_key_tables_report_their_specific_refusals() {
             "{id}"
         );
         assert!(output["record"].get(key).is_none(), "{id}");
+        let mut error_lines: Vec<usize> = case["diagnostics"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|diagnostic| diagnostic["severity"] == "error")
+            .map(|diagnostic| {
+                line_of(
+                    case["artifact"].as_str().expect("fixture artifact"),
+                    diagnostic["at"].as_str().expect("fixture locus"),
+                )
+            })
+            .collect();
+        error_lines.sort_unstable();
+        error_lines.dedup();
+        let expected_lines = error_lines
+            .iter()
+            .map(usize::to_string)
+            .collect::<Vec<_>>()
+            .join(", ");
+        assert_eq!(
+            output["availability"]["recordKeys"][key]["reason"],
+            format!("entry-errors: lines {expected_lines}"),
+            "{id}"
+        );
     }
-    let (_, output, _) = run_fixture("second-section");
-    assert!(diagnostics(&output).contains(&(
-        "semantic.duplicate-section".to_string(),
-        "second-section".to_string()
-    )));
+    let (case, output, _) = run_fixture("second-section");
+    let diagnostic = &case["diagnostics"][0];
+    let line = line_of(
+        case["artifact"].as_str().expect("fixture artifact"),
+        diagnostic["at"].as_str().expect("fixture locus"),
+    );
+    assert!(has_diagnostic(
+        &output,
+        "semantic.duplicate-section",
+        diagnostic["severity"].as_str().expect("fixture severity"),
+        "second-section",
+        line,
+    ));
 }
 
 #[trace("FR-121-AC-7")]
 #[test]
 fn wrong_blocks_and_prose_only_sections_are_reported() {
     for id in ["list-under-table-key", "list-after-table"] {
-        let (_, output, _) = run_fixture(id);
+        let (case, output, _) = run_fixture(id);
+        let diagnostic = &case["diagnostics"][0];
         assert!(
-            diagnostics(&output).iter().any(|(code, reason)| {
-                code == "semantic.feature-not-extractable" && reason == "assessment"
-            }),
+            has_diagnostic(
+                &output,
+                "semantic.feature-not-extractable",
+                "error",
+                "assessment",
+                line_of(
+                    case["artifact"].as_str().expect("fixture artifact"),
+                    diagnostic["at"].as_str().expect("fixture locus"),
+                ),
+            ),
             "{id}: {:?}",
             diagnostics(&output)
         );
     }
-    let (_, output, _) = run_fixture("prose-only-section");
-    assert!(diagnostics(&output).contains(&(
-        "semantic.record-key-no-block".to_string(),
-        "no-block".to_string()
-    )));
+    let (case, output, _) = run_fixture("prose-only-section");
+    assert!(has_diagnostic(
+        &output,
+        "semantic.record-key-no-block",
+        "warning",
+        "no-block",
+        line_of(
+            case["artifact"].as_str().expect("fixture artifact"),
+            "## Assessment",
+        ),
+    ));
     assert_eq!(
         output["availability"]["recordKeys"]["assessment"]["state"],
         "not_applicable"
@@ -281,6 +390,49 @@ fn token_gate_and_unowned_headings_are_prose() {
     );
     let (_, prose, _) = run_fixture("prose-headings");
     assert!(diagnostics(&prose).is_empty());
+    assert!(prose.get("record").is_none() || prose["record"].is_null());
+    assert!(record_source_keys(&prose).is_empty());
+    for key in ["notes", "thresholds", "requires", "endianness"] {
+        assert!(prose["record"].get(key).is_none(), "{key}");
+        assert!(!record_source_keys(&prose).contains(&key), "{key}");
+    }
+
+    let schema = json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://schemas.example.test/ArchitectureRecord.json",
+        "type": "object",
+        "properties": {
+            "thresholds": {"type": "array", "items": {"type": "object"}},
+            "records": {"type": "array", "items": {"type": "object"}},
+            "endianness": {"type": "string"}
+        },
+        "additionalProperties": false
+    });
+    let extraction = json!({"yield_pattern": {"match": {
+        "thresholds": {"from": "table_row", "under_section": "Thresholds", "required": true,
+            "assert": {"columns": ["Name"], "min_rows": 1}}
+    }}});
+    let architecture = synthetic_for(
+        "# Artifact\n\n## Thresholds\n\n| Name |\n|---|\n| high |\n\n## Requires\n\n- control-1\n\n## Endianness\n\n`little`\n",
+        &schema,
+        &["record-sections"],
+        Some(&extraction),
+        "agent-ix/spec-objects-architecture",
+        Some("binary_format"),
+    );
+    assert!(diagnostics(&architecture).is_empty());
+    assert!(architecture.get("record").is_none() || architecture["record"].is_null());
+    assert!(record_source_keys(&architecture).is_empty());
+}
+
+fn record_source_keys(output: &Value) -> Vec<&str> {
+    output
+        .get("recordSources")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|source| source["key"].as_str())
+        .collect()
 }
 
 #[trace("FR-121-AC-9")]
@@ -289,11 +441,17 @@ fn normalized_camel_case_and_ambiguous_keys_follow_goldens() {
     let (case, output, _) = run_fixture("camel-case-heading");
     assert_eq!(output["record"], case["record"]);
     assert_eq!(output["record"]["retryPolicy"]["attempts"], 3);
-    let (_, ambiguous, _) = run_fixture("key-ambiguous");
-    assert!(diagnostics(&ambiguous).contains(&(
-        "semantic.feature-not-extractable".to_string(),
-        "key-ambiguous".to_string()
-    )));
+    let (case, ambiguous, _) = run_fixture("key-ambiguous");
+    assert!(has_diagnostic(
+        &ambiguous,
+        "semantic.feature-not-extractable",
+        "error",
+        "key-ambiguous",
+        line_of(
+            case["artifact"].as_str().expect("fixture artifact"),
+            "## Retry Policy",
+        ),
+    ));
 }
 
 fn status_schema() -> Value {
@@ -316,16 +474,19 @@ fn status_locator() -> Value {
 #[trace("FR-121-AC-10")]
 #[test]
 fn section_cannot_supply_a_missing_frontmatter_owned_key() {
-    let output = synthetic(
+    let output = synthetic_for(
         "# Item\n\n## Status\n\n`accepted`\n",
-        status_schema(),
+        &status_schema(),
         &["record-sections"],
-        Some(status_locator()),
+        Some(&status_locator()),
     );
-    assert!(diagnostics(&output).contains(&(
-        "semantic.feature-not-extractable".to_string(),
-        "frontmatter-owned".to_string()
-    )));
+    assert!(has_diagnostic(
+        &output,
+        "semantic.feature-not-extractable",
+        "error",
+        "frontmatter-owned",
+        3,
+    ));
     assert!(output["record"].get("status").is_none());
     assert!(
         output
@@ -343,18 +504,21 @@ fn section_cannot_supply_a_missing_frontmatter_owned_key() {
 fn frontmatter_value_wins_over_a_duplicate_section_without_duplicate_key_error() {
     let output = synthetic(
         "---\nstatus: accepted\n---\n# Item\n\n## Status\n\n`rejected`\n",
-        status_schema(),
+        &status_schema(),
         &["record-sections"],
-        Some(status_locator()),
+        Some(&status_locator()),
     );
-    assert!(diagnostics(&output).contains(&(
-        "semantic.feature-not-extractable".to_string(),
-        "frontmatter-owned".to_string()
-    )));
+    assert!(has_diagnostic(
+        &output,
+        "semantic.feature-not-extractable",
+        "warning",
+        "frontmatter-owned",
+        6,
+    ));
     assert!(
         !diagnostics(&output)
             .iter()
-            .any(|(code, _)| code == "semantic.duplicate-record-key")
+            .any(|diagnostic| diagnostic.0 == "semantic.duplicate-record-key")
     );
     assert_eq!(output["record"]["status"], "accepted");
 }
@@ -364,9 +528,9 @@ fn frontmatter_value_wins_over_a_duplicate_section_without_duplicate_key_error()
 fn frontmatter_projection_is_retained_without_a_section() {
     let output = synthetic(
         "---\nstatus: accepted\n---\n# Item\n",
-        status_schema(),
+        &status_schema(),
         &["record-sections"],
-        Some(status_locator()),
+        Some(&status_locator()),
     );
     assert_eq!(output["record"]["status"], "accepted");
     assert!(diagnostics(&output).is_empty());
@@ -386,9 +550,9 @@ fn frontmatter_projection_is_retained_without_a_section() {
 fn absent_optional_frontmatter_key_is_not_defaulted() {
     let output = synthetic(
         "# Item\n",
-        status_schema(),
+        &status_schema(),
         &["record-sections"],
-        Some(status_locator()),
+        Some(&status_locator()),
     );
     assert!(output["record"].get("status").is_none());
     assert!(diagnostics(&output).is_empty());
@@ -406,22 +570,35 @@ fn absent_optional_frontmatter_key_is_not_defaulted() {
 #[trace("FR-121-AC-14")]
 #[test]
 fn another_declared_table_mapping_owns_its_heading() {
+    let schema = json!({
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://schemas.example.test/ArchitectureRecord.json",
+        "type": "object",
+        "properties": {
+            "label": {"type": "string"},
+            "thresholds": {"type": "array", "items": {"type": "object"}},
+            "records": {"type": "array", "items": {"type": "object"}},
+            "endianness": {"type": "string"}
+        },
+        "additionalProperties": false
+    });
     let extraction = json!({"yield_pattern": {"match": {
         "label": {"from": "frontmatter_field", "path": ["label"], "required": false},
         "thresholds": {"from": "table_row", "under_section": "Thresholds", "required": true,
             "assert": {"columns": ["Name"], "min_rows": 1}}
     }}});
-    let output = synthetic(
-        "---\nlabel: sample\n---\n# Item\n\n## Thresholds\n\n| Name |\n|---|\n| high |\n",
-        status_schema(),
+    let output = synthetic_for(
+        "---\nlabel: sample\n---\n# Item\n\n## Thresholds\n\n| Name |\n|---|\n| high |\n\n## Endianness\n\n`little`\n",
+        &schema,
         &["record-sections"],
-        Some(extraction),
+        Some(&extraction),
+        "agent-ix/spec-objects-architecture",
+        Some("binary_format"),
     );
-    assert!(
-        !diagnostics(&output)
-            .iter()
-            .any(|(_, reason)| reason == "thresholds")
-    );
+    assert!(diagnostics(&output).is_empty());
+    assert!(output["record"].get("thresholds").is_none());
+    assert!(output["record"].get("endianness").is_none());
+    assert!(record_source_keys(&output).is_empty());
 }
 
 #[trace("FR-121-AC-15")]
@@ -429,9 +606,9 @@ fn another_declared_table_mapping_owns_its_heading() {
 fn lifecycle_key_without_frontmatter_locator_still_reads_its_section() {
     let output = synthetic(
         "# Item\n\n## Status\n\n`accepted`\n",
-        status_schema(),
+        &status_schema(),
         &["record-sections"],
-        Some(json!({"yield_pattern": {"match": {
+        Some(&json!({"yield_pattern": {"match": {
             "label": {"from": "frontmatter_field", "path": ["label"], "required": false}
         }}})),
     );
@@ -444,9 +621,9 @@ fn lifecycle_key_without_frontmatter_locator_still_reads_its_section() {
 fn frontmatter_locator_does_not_enable_section_diagnostics_without_token() {
     let output = synthetic(
         "# Item\n\n## Status\n\n`accepted`\n",
-        status_schema(),
+        &status_schema(),
         &[],
-        Some(status_locator()),
+        Some(&status_locator()),
     );
     assert!(diagnostics(&output).is_empty());
     assert!(output.get("record").is_none() || output["record"].is_null());
