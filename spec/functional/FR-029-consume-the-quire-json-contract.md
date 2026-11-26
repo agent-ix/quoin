@@ -100,7 +100,7 @@ schema, reads none from the network, and hashes none.
 
 | ID | Constraint | Type | Validation |
 |----|------------|------|------------|
-| FR-029-CON-1 | quoin SHALL NOT restate the published schemas as hand-written validators. The duplication is the failure being closed; using the linked engine's schema and types is the whole mechanism. | Architecture | Test |
+| FR-029-CON-1 | quoin SHALL NOT restate the published schemas as hand-written validators. The duplication is the failure being closed; using the linked engine's schema and types is the whole mechanism. | Architecture | Inspection |
 | FR-029-CON-2 | quoin SHALL NOT fetch a schema at runtime. Every command path stays network-free. | Architecture | Inspection |
 | FR-029-CON-3 | The schemas quoin validates against SHALL mirror the publisher's open/closed decision for every vocabulary rather than second-guessing it. Closing `diagnostics[].reason` would reject a newer engine's payload that a consumer could otherwise read. | Architecture | Test |
 
@@ -110,7 +110,7 @@ schema, reads none from the network, and hashes none.
 | --- | --- | --- |
 | FR-029-AC-1 | Withdrawn: required each schema copy to hash to a recorded value. quoin keeps no copy, so nothing remains to check (id not reused). | Withdrawn |
 | FR-029-AC-2 | A conformant coverage payload and a conformant properties payload each validate. | Test |
-| FR-029-AC-3 | A payload missing a required key, carrying an added field, or using a value outside a closed engine enum is rejected, and the report names the failing path. | Test |
+| FR-029-AC-3 | A payload missing a required key or using a value outside a closed engine enum is rejected, and the report names the failing path. Additive fields in open engine objects remain readable. | Test |
 | FR-029-AC-4 | Unreadable JSON is reported as a named violation rather than a panic. | Test |
 | FR-029-AC-5 | Withdrawn: a minimum-version premise on a `quire` subprocess. Quoin links the engine in process; there is no version to read or compare (id not reused). | Withdrawn |
 | FR-029-AC-6 | Withdrawn with AC-5: no version comparison remains (id not reused). | Withdrawn |
