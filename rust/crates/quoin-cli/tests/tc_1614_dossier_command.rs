@@ -27,45 +27,7 @@ use std::process::{Command, Output};
 use ix_trace_rs::trace;
 use serde_json::Value;
 
-const DROPPED_DESIGN_RELATION_MODULE: &str = r##"name: quoin-cli-dossier-dropped-relation-fixture
-version: 0.1.0
-artifact_types:
-  - name: Requirement
-  - name: DesignElement
-  - name: Connection
-  - name: Classification
-edge_types:
-  realizes: { description: realizes, category: traceability }
-  carries: { description: carries, category: dataflow }
-traceability:
-  trace_targets:
-    - name: acceptance-criterion
-      archetype: Requirement
-      section: Acceptance Criteria
-      id_column: ID
-  obligations:
-    - name: acceptance-criterion
-      target: acceptance-criterion
-      statement_column: Criteria
-      method_column: Verification
-  required_relations:
-    - name: requirement-has-design
-      from: Requirement
-      edges: [realizes]
-      to: [DesignElement]
-      direction: outgoing
-      check: requirement-without-design
-    - name: connection-carries-classification
-      from: Connection
-      edges: [carries]
-      to: [Classification]
-      direction: outgoing
-      check: connection-without-classification
-      record_keys: [regulatedCategories]
-  design_relations: [requirement-has-design]
-"##;
-
-const DROPPED_DESIGN_RELATION_SPEC: &str = "---\nid: FR-001\ntype: Requirement\ntitle: Requirement\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|----|----------|--------------|\n| FR-001-AC-1 | The requirement has a design entry. | Test (TC-001) |\n";
+mod dropped_relation_support;
 
 fn quoin(work: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
@@ -215,19 +177,19 @@ fn generated_documents_carry_the_running_quoin_version() {
 
 /// Architecture generation carries valid design output and a relation gap
 /// through a dropped required relation instead of refusing before generation.
-#[trace("FR-193-AC-10", "FR-193-AC-11")]
+#[trace("FR-193-AC-10")]
 #[test]
 fn architecture_dossier_keeps_valid_entries_and_names_dropped_relations() {
     let work = tempfile::tempdir().unwrap();
     fs::write(
         work.path().join("manifest.yaml"),
-        DROPPED_DESIGN_RELATION_MODULE,
+        dropped_relation_support::MODULE,
     )
     .unwrap();
     fs::create_dir_all(work.path().join("spec")).unwrap();
     fs::write(
         work.path().join("spec/FR-001.md"),
-        DROPPED_DESIGN_RELATION_SPEC,
+        dropped_relation_support::SPEC,
     )
     .unwrap();
     let output = quoin(
@@ -259,6 +221,53 @@ fn architecture_dossier_keeps_valid_entries_and_names_dropped_relations() {
     assert!(
         !document.contains("design_relations_unavailable"),
         "{document}"
+    );
+}
+
+/// A dropped design relation still explains why no design block was returned.
+#[trace("FR-193-AC-11")]
+#[test]
+fn architecture_dossier_reports_a_dropped_relation_without_design_blocks() {
+    let work = tempfile::tempdir().unwrap();
+    let module = dropped_relation_support::MODULE.replace(
+        "design_relations: [requirement-has-design]",
+        "design_relations: []",
+    );
+    fs::write(work.path().join("manifest.yaml"), module).unwrap();
+    fs::create_dir_all(work.path().join("spec")).unwrap();
+    fs::write(
+        work.path().join("spec/FR-001.md"),
+        dropped_relation_support::SPEC,
+    )
+    .unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "architecture",
+            "--scope",
+            ".",
+            "--module",
+            ".",
+        ],
+    );
+    assert_eq!(code(&output), 1, "{}", stderr(&output));
+    let document = read(&work.path().join("dossier/DOS-ARCH.md"));
+    assert!(document.contains("design_relation_dropped"), "{document}");
+    assert!(
+        document.contains("connection-carries-classification"),
+        "{document}"
+    );
+    assert!(
+        !document.contains("design_relations_unavailable"),
+        "{document}"
+    );
+    assert!(
+        !document.contains("requirement-without-design"),
+        "no design block was returned: {document}"
     );
 }
 

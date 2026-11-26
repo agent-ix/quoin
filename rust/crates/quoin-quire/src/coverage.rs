@@ -99,11 +99,9 @@ fn walk_with_dropped_relation_policy(
     // Dropped declarations first, and before the absent-model check: when every
     // declaration was dropped the merged model is empty and reads as absent,
     // which must be reported as the drop, not as QQ-1020 (FR-029-AC-20).
-    let has_disallowed_drops = registry.dropped_declarations().any(|(_, declaration)| {
-        !allow_dropped_required_relations
-            || declaration.kind != quire_rs::traceability::DeclarationKind::RequiredRelation
-    });
-    if has_disallowed_drops {
+    if allow_dropped_required_relations {
+        crate::modules::require_design_matrix_compatible_model(&registry)?;
+    } else {
         crate::modules::require_complete_model(&registry)?;
     }
 

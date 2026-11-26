@@ -3,7 +3,7 @@
 ## Revisions
 
 - Quoin old dependency: quire-rs `v0.63.1`, commit `bd797be83f643a31e3a9c86580a06b4f6dbfa6bb`.
-- Quoin new dependency: package `0.63.2`, exact merged main revision `5f6268a21e1aa4ede52f098f4925616d2750a281` (PLAT-1904 engine implementation).
+- Quoin new dependency: package `0.63.2`, exact merged main revision `5f6268a21e1aa4ede52f098f4925616d2750a281`.
 - The `v0.63.2` tag points to `1d8381188b37a95f0fe4cd6b7c57389058ac45b1`, not the requested merged main revision. Quoin pins the exact requested main revision; this does not create or move an engine tag.
 
 The move consumes Quire's `coverage::compute_coverage_for_design_matrix`, which retains valid coverage entries when a required-relation declaration was dropped, while ordinary coverage remains strict. The design-matrix path allows only dropped `RequiredRelation` declarations through its precheck; all other dropped declarations still return the existing QQ-1022 error.
@@ -38,6 +38,8 @@ The move consumes Quire's `coverage::compute_coverage_for_design_matrix`, which 
 - `reviews/plat-1898-gap-analysis.md` (A)
 - `reviews/plat-1904-code-review.md` (A)
 - `reviews/plat-1904-gap-analysis.md` (A)
+- `reviews/plat-1904-pr751-code-review.md` (A)
+- `reviews/plat-1904-pr751-gap-analysis.md` (A)
 - `reviews/plat-1904-spec-review-base.md` (A)
 - `reviews/plat-1904-spec-review-integrity.md` (A)
 - `reviews/plat-1915-code-review.md` (A)
@@ -54,6 +56,9 @@ The move consumes Quire's `coverage::compute_coverage_for_design_matrix`, which 
 - `reviews/pr730/plat-1884-spec-review-integrity.md` (A)
 - `reviews/pr730/plat-1884-spec-review-scope-boundary.md` (A)
 - `reviews/pr732/plat-1640-code-review.md` (A)
+- `reviews/pr748/plat-1892-code-review.md` (A)
+- `reviews/pr748/plat-1892-gap-analysis.md` (A)
+- `reviews/pr748/plat-1892-replay-summary.tsv` (A)
 - `schemas/output/semantic-v1.schema.json` (M)
 - `spec/functional/FR-040-object-edge-vocabulary.md` (M)
 - `spec/functional/FR-062-implements-relation.md` (M)
@@ -79,6 +84,7 @@ The move consumes Quire's `coverage::compute_coverage_for_design_matrix`, which 
 - `src/lib.rs` (M)
 - `src/loader/mod.rs` (M)
 - `src/loader/paths.rs` (M)
+- `src/obligation/inventory.rs` (M)
 - `src/parser/slug.rs` (M)
 - `src/registry.rs` (M)
 - `src/selftest.rs` (M)
@@ -98,6 +104,7 @@ The move consumes Quire's `coverage::compute_coverage_for_design_matrix`, which 
 - `tests/fixtures/semantic/cases.expected.json` (M)
 - `tests/it/coverage_matrix.rs` (M)
 - `tests/it/coverage_rollup.rs` (M)
+- `tests/it/formalizes_relation.rs` (M)
 - `tests/it/relation_report.rs` (M)
 - `tests/it/semantic_contract.rs` (M)
 - `tests/it/semantic_model.rs` (M)
@@ -126,28 +133,13 @@ A search of Quoin Rust source for those names found these references:
 
 Quoin does not reference the new anomaly, impact-analysis, embedded-document, or indexed-bundle APIs. The new transitive `ix-trace-rs` lock entry is used by Quire-RS for implementation markers; Quoin's direct source references to `ix-trace-rs` continue to use its workspace main pin.
 
-An exact-path search for the 95 changed upstream file paths found 17 paths mentioned in Quoin source/spec/review files, mostly in earlier review records. None of those references are source imports by upstream file path; they are dependency notes, review context, or shared filenames such as `Cargo.toml` and `Cargo.lock`. No additional Quoin call site for the new APIs was found.
+The changed Quire-RS paths and public API names above were searched in Quoin's Rust source, specs, and review records. There are no direct imports by upstream file path. The upstream `plat-1856.json` is under quire-rs's test tree and is not exposed by the `quire-fixtures` API, so the CLI regressions use one shared, minimal Quoin-owned fixture.
 
 ## Tests and checks
 
 - `CARGO_HOME=/home/peter/.cache/cargo-home-shared cargo metadata --manifest-path rust/Cargo.toml --locked --offline --format-version 1` passed against `5f6268a`.
 - `cargo fmt --manifest-path rust/Cargo.toml --all -- --check` and `git diff --check` passed.
 - Through `/home/peter/dev/worktrees/locked-build.sh` against `5f6268a`, the real-host regression `cargo test --locked -p quoin-cli --test tc_1080_matrix_command tc_1080_211_matrix_keeps_valid_rows_when_a_required_relation_drops -- --exact` passed (1 passed, 0 failed), including the strict non-relation-drop assertion.
-- Through `/home/peter/dev/worktrees/locked-build.sh` against `5f6268a`, `cargo test --locked -p quoin-cli --test tc_1614_dossier_command architecture_dossier_keeps_valid_entries_and_names_dropped_relations -- --exact` passed (1 passed, 0 failed).
+- Through `/home/peter/dev/worktrees/locked-build.sh` against `5f6268a`, `cargo test --locked -p quoin-cli --test tc_1614_dossier_command architecture_dossier -- --nocapture` passed (2 passed, 0 failed), covering FR-193-AC-10 and FR-193-AC-11 separately.
 - The earlier standalone design-matrix regression and strict QQ-1022 refusal tests passed against `d7d418fa`; the real-host checks above exercise the additional evidence-aware engine APIs from `5f6268a`.
 - The first compile attempt against `d7d418fa` exposed that the public function is under `quire_rs::coverage`, not the crate root. The integration now uses `quire_rs::coverage::compute_coverage_for_design_matrix`; both focused tests passed after this correction. The earlier queued attempt against `42bbf796` was canceled before it started after an upstream compile defect was reported.
-
-## PLAT-1904 host-path blocker and proposed engine contract
-
-The current Quoin command path is `quoin matrix` → `quoin-cli::analysis_evidence::compute_for_matrix` → `quoin_quire::evidence::compute_for_matrix` → `compute_with`. That path calls strict `coverage::walk` and then `quire_rs::coverage::compute_with_evidence`; it does not call `design_matrix::compute`. The new engine `compute_coverage_for_design_matrix` API accepts a plain coverage request and has no evidence-backing counterpart, so the current standalone Quoin integration does not fix the issue's real host path. PR #1095 remains draft and is not mergeable until this is resolved.
-
-Minimal engine API proposal: add an evidence-aware matrix coverage entry point (for example `compute_coverage_with_evidence_for_design_matrix`) that accepts the same `Spec`, `Registry`, `SymbolGraph`, scope, and `BackingInput` as `compute_with_evidence`. It may ignore only dropped `RequiredRelation` declarations, preserving the current `DeclarationsDropped` refusal for every other kind. The returned report must retain evidence backing and coverage for valid sibling relations; the existing design-matrix report must carry one dropped-relation error for each dropped required relation.
-
-Minimal real-host acceptance test after that API is available:
-
-1. Read `tests/fixtures/corpus_cases/plat-1856.json` from quire-rs at the selected revision.
-2. Materialize `input.module_manifest` unchanged as `module/manifest.yaml`; materialize every `input.documents` entry under `repo/spec/`.
-3. Run `quoin matrix --repo <repo> --module <module> --no-project-config --json` using the built Quoin binary.
-4. Assert exit 0 and JSON output retaining `requirement-has-design`; assert one `design_matrix_errors` entry for `connection-carries-classification`; exercise the architecture dossier path to assert a `design_relation_dropped` gap and no `design_relations_unavailable` gap.
-
-The issue's recorded v0.63.1 reproduction exits 2 with empty stdout and `CORE_REFUSED` / `QQ-1022` for the dropped `connection-carries-classification` declaration. The draft's current unit test only exercises the standalone `design_matrix::compute` API and is not acceptance evidence for this CLI reproduction.

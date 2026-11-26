@@ -22,6 +22,8 @@ use std::process::{Command, Output};
 
 use serde_json::Value;
 
+mod dropped_relation_support;
+
 /// The module every fixture repository carries: an FR archetype whose
 /// Acceptance Criteria table is an `obligations:` source.
 const MODULE: &str = r##"name: quoin-cli-matrix-fixture
@@ -136,46 +138,6 @@ traceability:
         pattern: '#\[trace\(([^)]*)\)\]'
         template: "#[trace({ids})]"
 "##;
-
-const DROPPED_RELATION_MODULE: &str = r##"name: quoin-cli-dropped-relation-fixture
-version: 0.1.0
-artifact_types:
-  - name: Requirement
-  - name: DesignElement
-  - name: Connection
-  - name: Classification
-edge_types:
-  realizes: { description: realizes, category: traceability }
-  carries: { description: carries, category: dataflow }
-traceability:
-  trace_targets:
-    - name: acceptance-criterion
-      archetype: Requirement
-      section: Acceptance Criteria
-      id_column: ID
-  obligations:
-    - name: acceptance-criterion
-      target: acceptance-criterion
-      statement_column: Criteria
-      method_column: Verification
-  required_relations:
-    - name: requirement-has-design
-      from: Requirement
-      edges: [realizes]
-      to: [DesignElement]
-      direction: outgoing
-      check: requirement-without-design
-    - name: connection-carries-classification
-      from: Connection
-      edges: [carries]
-      to: [Classification]
-      direction: outgoing
-      check: connection-without-classification
-      record_keys: [regulatedCategories]
-  design_relations: [requirement-has-design]
-"##;
-
-const DROPPED_RELATION_SPEC: &str = "---\nid: FR-001\ntype: Requirement\ntitle: Requirement\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|----|----------|--------------|\n| FR-001-AC-1 | The requirement has a design entry. | Test (TC-001) |\n";
 
 /// Three criteria and no declared method, so the catalog cannot add an
 /// `unknown-method` finding that would blur the three statuses under test.
@@ -1202,8 +1164,8 @@ fn tc_1080_211_matrix_keeps_valid_rows_when_a_required_relation_drops() {
         dir: tempfile::tempdir().unwrap(),
         home: tempfile::tempdir().unwrap(),
     };
-    fixture.write("manifest.yaml", DROPPED_RELATION_MODULE);
-    fixture.write("spec/FR-001-requirement.md", DROPPED_RELATION_SPEC);
+    fixture.write("manifest.yaml", dropped_relation_support::MODULE);
+    fixture.write("spec/FR-001-requirement.md", dropped_relation_support::SPEC);
     let output = fixture.quoin(&[
         "matrix",
         "--repo",
@@ -1238,7 +1200,7 @@ fn tc_1080_211_matrix_keeps_valid_rows_when_a_required_relation_drops() {
         "the dropped relation is reported beside valid rows: {stderr}"
     );
 
-    let non_relation_drop_module = DROPPED_RELATION_MODULE.replace(
+    let non_relation_drop_module = dropped_relation_support::MODULE.replace(
         "      method_column: Verification\n  required_relations:",
         "      method_column: Verification\n    - name: dropped-obligation\n      target: absent-target\n      statement_column: Criteria\n      method_column: Verification\n  required_relations:",
     );
@@ -1248,7 +1210,7 @@ fn tc_1080_211_matrix_keeps_valid_rows_when_a_required_relation_drops() {
         home: tempfile::tempdir().unwrap(),
     };
     strict_fixture.write("manifest.yaml", &non_relation_drop_module);
-    strict_fixture.write("spec/FR-001-requirement.md", DROPPED_RELATION_SPEC);
+    strict_fixture.write("spec/FR-001-requirement.md", dropped_relation_support::SPEC);
     let refused = strict_fixture.quoin(&[
         "matrix",
         "--repo",
