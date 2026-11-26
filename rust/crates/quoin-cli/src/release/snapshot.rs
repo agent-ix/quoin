@@ -161,6 +161,7 @@ pub(super) fn risk_findings(repo: &Path, modules: &[String]) -> Result<Vec<OpenF
 /// Authored vulnerability records whose lifecycle status is still open
 /// (FR-032, FR-167). No advisory, VEX or anomaly data is consulted.
 #[implements("FR-167-AC-20")]
+#[implements("FR-167-AC-24")]
 pub(super) fn vulnerabilities(
     repo: &Path,
     modules: &[String],
