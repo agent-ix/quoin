@@ -94,37 +94,44 @@ fn line_of(markdown: &str, needle: &str) -> usize {
         + 1
 }
 
-fn diagnostics(output: &Value) -> Vec<(String, String, String, Option<usize>, Option<String>)> {
+struct TestDiagnostic {
+    code: String,
+    severity: String,
+    reason: String,
+    line: Option<usize>,
+    section: Option<String>,
+}
+
+fn diagnostics(output: &Value) -> Vec<TestDiagnostic> {
     output["diagnostics"]
         .as_array()
         .into_iter()
         .flatten()
-        .map(|diagnostic| {
-            (
-                diagnostic["code"].as_str().unwrap_or_default().to_string(),
-                diagnostic["severity"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_string(),
-                diagnostic["reason"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_string(),
-                diagnostic["line"]
-                    .as_u64()
-                    .and_then(|line| usize::try_from(line).ok()),
-                diagnostic["section"].as_str().map(str::to_string),
-            )
+        .map(|diagnostic| TestDiagnostic {
+            code: diagnostic["code"].as_str().unwrap_or_default().to_string(),
+            severity: diagnostic["severity"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            reason: diagnostic["reason"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            line: diagnostic["line"]
+                .as_u64()
+                .and_then(|line| usize::try_from(line).ok()),
+            section: diagnostic["section"].as_str().map(str::to_string),
         })
         .collect()
 }
 
 fn has_diagnostic(output: &Value, code: &str, severity: &str, reason: &str, line: usize) -> bool {
     diagnostics(output).iter().any(|diagnostic| {
-        diagnostic.0 == code
-            && diagnostic.1 == severity
-            && diagnostic.2 == reason
-            && diagnostic.3 == Some(line)
+        diagnostic.code == code
+            && diagnostic.severity == severity
+            && diagnostic.reason == reason
+            && diagnostic.line == Some(line)
+            && diagnostic.section.is_some()
     })
 }
 
@@ -602,7 +609,7 @@ fn frontmatter_value_wins_over_a_duplicate_section_without_duplicate_key_error()
     assert!(
         !diagnostics(&output)
             .iter()
-            .any(|diagnostic| diagnostic.0 == "semantic.duplicate-record-key")
+            .any(|diagnostic| diagnostic.code == "semantic.duplicate-record-key")
     );
     assert_eq!(output["record"]["status"], "accepted");
 }
