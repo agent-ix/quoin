@@ -397,6 +397,43 @@ fn accepted_hazard_with_properties_validates_against_the_authentic_schema() {
     assert_eq!(output["record"]["provenance"]["assertedBy"], "Alice");
     assert!(validator.is_valid(&declaration), "{declaration:#}");
 
+    let (without_provenance, provenance_section) = markdown
+        .split_once("\n## Provenance\n")
+        .expect("source markdown has a final Provenance section");
+    assert!(provenance_section.contains("| Alice | 2026-11-26T00:00:00Z |"));
+    let markdown_without_provenance = format!("{without_provenance}\n");
+    let (without_provenance_output, without_provenance_declaration) =
+        extract_with_schema(&markdown_without_provenance, &hazard_schema, &hazard_docs);
+    assert_eq!(
+        without_provenance_output["fields"], output["fields"],
+        "Properties still extracts when Provenance is absent"
+    );
+    assert_eq!(
+        without_provenance_output["record"]["status"], "accepted",
+        "the accepted status remains extracted"
+    );
+    assert_eq!(
+        without_provenance_output["record"]["assessment"], output["record"]["assessment"],
+        "Assessment still extracts when Provenance is absent"
+    );
+    assert!(
+        without_provenance_output["record"]
+            .get("provenance")
+            .is_none(),
+        "no Provenance record is extracted without its section: {}",
+        without_provenance_output["record"]
+    );
+    let provenance_errors = validator
+        .iter_errors(&without_provenance_declaration)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        provenance_errors
+            .iter()
+            .any(|error| error.contains("provenance")),
+        "accepted Hazard without source Provenance fails the authentic required-property schema: {provenance_errors:?}"
+    );
+
     let mut without_provenance = declaration;
     without_provenance
         .as_object_mut()
