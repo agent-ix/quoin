@@ -42,7 +42,7 @@ fn tc_1650_root_help_is_a_successful_stdout_catalogue() {
 
 /// Unknown command refusals are not parser-success output: they retain exit 2
 /// and send the unresolved name and a usable command catalog to stderr.
-#[trace("FR-005", "FR-102", "FR-005-AC-1")]
+#[trace("FR-005", "FR-102", "FR-005-AC-1", "FR-102-AC-5")]
 #[test]
 fn tc_1650_unknown_command_is_a_stderr_refusal_with_the_root_catalogue() {
     let output = invoke(&["not-a-command"]);
