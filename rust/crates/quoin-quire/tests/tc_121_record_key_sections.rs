@@ -46,7 +46,7 @@ fn fixture_case(id: &str) -> (Value, Value, BTreeMap<String, Value>) {
 
 fn run_fixture(id: &str) -> (Value, Value, Value) {
     let (case, root, docs) = fixture_case(id);
-    let request = json!({
+    let mut request = json!({
         "markdown": case["artifact"],
         "module": {
             "contractVersion": "1.0.0",
@@ -60,6 +60,16 @@ fn run_fixture(id: &str) -> (Value, Value, Value) {
         "dataSchema": root,
         "schemaDocuments": docs,
     });
+    for key in [
+        "relationVocabulary",
+        "bodyExtraction",
+        "constructReferences",
+        "objectType",
+    ] {
+        if let Some(value) = case.get(key) {
+            request[key] = value.clone();
+        }
+    }
     let extraction = extract_semantic_json(&request).expect("Quire extracts fixture case");
     (
         case,
@@ -69,9 +79,17 @@ fn run_fixture(id: &str) -> (Value, Value, Value) {
 }
 
 fn line_of(markdown: &str, needle: &str) -> usize {
+    let (needle, occurrence) = needle
+        .rsplit_once('@')
+        .map_or((needle, 1), |(text, count)| {
+            (text, count.parse().expect("line occurrence"))
+        });
     markdown
         .lines()
-        .position(|line| line.contains(needle))
+        .enumerate()
+        .filter(|(_, line)| line.contains(needle))
+        .nth(occurrence - 1)
+        .map(|(index, _)| index)
         .expect("diagnostic snippet occurs in fixture")
         + 1
 }
@@ -205,7 +223,11 @@ fn synthetic_analysis_schema_validates_the_extracted_record() {
         })
     );
     assert!(validator.is_valid(&output["record"]));
-    assert!(diagnostics(&output).is_empty());
+    assert!(
+        diagnostics(&output).is_empty(),
+        "{:?}",
+        diagnostics(&output)
+    );
 }
 
 #[trace("FR-121-AC-3")]
@@ -533,7 +555,11 @@ fn frontmatter_projection_is_retained_without_a_section() {
         Some(&status_locator()),
     );
     assert_eq!(output["record"]["status"], "accepted");
-    assert!(diagnostics(&output).is_empty());
+    assert!(
+        diagnostics(&output).is_empty(),
+        "{:?}",
+        diagnostics(&output)
+    );
     assert!(
         output
             .get("recordSources")
@@ -595,7 +621,11 @@ fn another_declared_table_mapping_owns_its_heading() {
         "agent-ix/spec-objects-architecture",
         Some("binary_format"),
     );
-    assert!(diagnostics(&output).is_empty());
+    assert!(
+        diagnostics(&output).is_empty(),
+        "{:?}",
+        diagnostics(&output)
+    );
     assert!(output["record"].get("thresholds").is_none());
     assert!(output["record"].get("endianness").is_none());
     assert!(record_source_keys(&output).is_empty());
