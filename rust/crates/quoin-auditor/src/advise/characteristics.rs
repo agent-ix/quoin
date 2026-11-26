@@ -12,6 +12,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::LazyLock;
 
+use ix_trace_rs::implements;
 use quoin_combinatorial::{js, parse_space};
 use regex::Regex;
 
@@ -135,6 +136,7 @@ fn math_min(values: &[f64]) -> f64 {
 ///
 /// Derived from the regex table rather than hand-listed, because a hand-listed
 /// copy is the failure mode this whole check exists to catch.
+#[implements("FR-031-AC-13")]
 #[must_use]
 pub fn mintable_characteristics() -> BTreeSet<String> {
     let mut names: BTreeSet<String> = STATEMENT_CHARACTERISTICS
@@ -146,6 +148,8 @@ pub fn mintable_characteristics() -> BTreeSet<String> {
     // Not lexical: read from the evidence store.
     names.insert("fault-detection-unmeasured".to_owned());
     names.insert("fault-detection-failed".to_owned());
+    // Not lexical: read from the obligation's structured parameters.
+    names.insert("quantified-threshold".to_owned());
     names
 }
 

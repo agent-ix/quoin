@@ -8,6 +8,7 @@
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
+use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 
 use crate::core_runtime::invoke;
@@ -43,7 +44,9 @@ pub(crate) fn command() -> Command {
         )
         .subcommand(
             Command::new("validate")
-                .about("Validate that the active catalog has no duplicate types")
+                .about(
+                    "Validate that active catalogs have no duplicate types or unreachable methods",
+                )
                 .arg(json_flag()),
         )
 }
@@ -225,21 +228,38 @@ fn show(arguments: &ArgMatches) -> Result<Response, String> {
     })
 }
 
+#[implements("FR-031-AC-13", "FR-031-AC-16")]
 fn validate(arguments: &ArgMatches) -> Result<Response, String> {
     let response = invoke("catalog.load", &serde_json::json!({}))?;
+    if !response.outcome.carries_payload() {
+        return Ok(response);
+    }
+    let methods = invoke("catalog.methods", &serde_json::json!({}))?;
+    if !methods.outcome.carries_payload() {
+        return Ok(methods);
+    }
+    let catalog: quoin_auditor::MethodCatalog = serde_json::from_value(methods.payload)
+        .map_err(|error| format!("catalog.methods returned an invalid method catalog: {error}"))?;
+    let unreachable = quoin_auditor::unreachable_characteristics(&catalog);
+    let unjustified_methods = quoin_auditor::unjustified_unreachable_methods(&catalog);
     with_lag_warnings(
         response,
         arguments.get_flag("json"),
         crate::module::lag_diagnostics(),
+        unreachable,
+        unjustified_methods,
     )
 }
 
 /// Build the `validate` response from a loaded catalog and the lag check. The
 /// check can add diagnostics but never changes the outcome.
+#[implements("FR-031-AC-13", "FR-031-AC-16")]
 fn with_lag_warnings(
     response: Response,
     json: bool,
     lag: Result<Vec<quoin_core::protocol::Diagnostic>, String>,
+    unreachable_characteristics: Vec<quoin_auditor::UnreachableCharacteristic>,
+    unjustified_unreachable_methods: Vec<quoin_auditor::UnjustifiedUnreachableMethod>,
 ) -> Result<Response, String> {
     if !response.outcome.carries_payload() {
         return Ok(response);
@@ -249,17 +269,22 @@ fn with_lag_warnings(
         .get("duplicates")
         .cloned()
         .ok_or_else(|| "catalog.load did not return duplicates".to_owned())?;
-    let ok = duplicates.as_array().is_some_and(Vec::is_empty);
+    let no_duplicates = duplicates.as_array().is_some_and(Vec::is_empty);
     let modules = response
         .payload
         .get("modules")
         .and_then(serde_json::Value::as_array)
         .ok_or_else(|| "catalog.load did not return modules".to_owned())?
         .len();
+    let ok = no_duplicates
+        && unreachable_characteristics.is_empty()
+        && unjustified_unreachable_methods.is_empty();
     let payload = serde_json::json!({
         "ok": ok,
         "duplicates": duplicates,
         "modules": modules,
+        "unreachable_characteristics": unreachable_characteristics,
+        "unjustified_unreachable_methods": unjustified_unreachable_methods,
     });
     let rendered = if json || !ok {
         serde_json::to_string_pretty(&payload).map_err(|error| error.to_string())?
@@ -324,9 +349,16 @@ mod tests {
                 "modules": [{"name": "m"}],
             }))
         };
-        let clean = with_lag_warnings(loaded(), false, Ok(Vec::new())).expect("validates");
-        let failed = with_lag_warnings(loaded(), false, Err("unreadable".to_owned()))
-            .expect("a failed lag check is not an error");
+        let clean = with_lag_warnings(loaded(), false, Ok(Vec::new()), Vec::new(), Vec::new())
+            .expect("validates");
+        let failed = with_lag_warnings(
+            loaded(),
+            false,
+            Err("unreadable".to_owned()),
+            Vec::new(),
+            Vec::new(),
+        )
+        .expect("a failed lag check is not an error");
         assert_eq!(failed.outcome, clean.outcome);
         assert_eq!(failed.outcome, Outcome::Ok);
         assert_eq!(failed.payload, clean.payload);
@@ -334,6 +366,36 @@ mod tests {
             panic!("expected one warning, got {:?}", failed.diagnostics);
         };
         assert_eq!(warning.code, "QM010_REGISTRY_UNREADABLE");
+    }
+
+    #[trace("FR-031-AC-13", "FR-031-AC-16")]
+    #[test]
+    fn unreachable_method_characteristics_fail_catalog_validation_by_name() {
+        let response = Response::ok(serde_json::json!({
+            "duplicates": [],
+            "modules": [{"name": "active-module"}],
+        }));
+        let checked = with_lag_warnings(
+            response,
+            false,
+            Ok(Vec::new()),
+            vec![quoin_auditor::UnreachableCharacteristic {
+                characteristic: "removed-characteristic".to_owned(),
+                methods: vec!["obsolete-method".to_owned()],
+            }],
+            vec![quoin_auditor::UnjustifiedUnreachableMethod {
+                method: "unreachable-method".to_owned(),
+            }],
+        )
+        .expect("catalog validation returns its finding");
+        assert_eq!(checked.outcome, Outcome::Partial);
+        assert_eq!(checked.payload["renderedStream"], "stderr");
+        let rendered = checked.payload["rendered"]
+            .as_str()
+            .expect("validation renders text");
+        assert!(rendered.contains("removed-characteristic"), "{rendered}");
+        assert!(rendered.contains("obsolete-method"), "{rendered}");
+        assert!(rendered.contains("unreachable-method"), "{rendered}");
     }
 
     #[test]
