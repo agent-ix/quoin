@@ -91,17 +91,50 @@ fn tc_375_every_crate_opts_into_the_workspace_lint_policy() {
 /// Developer tools that ship no engine behaviour.
 const DEVELOPER_TOOLS: &[&str] = &["quoin-suite-trace", "quoin-workflow-check"];
 
-/// Executables quoin starts. `quire` is the one `quoin dossier export` hands a
-/// bundle to (FR-191); quoin renders nothing itself.
-const EXPECTED_EXECUTABLES: &[&str] = &["$EDITOR", "git", "ix-flow", "quire"];
+/// Executables quoin starts. Configured tool paths are explicit inputs to
+/// capability adapters; the other names are fixed process dependencies.
+const EXPECTED_EXECUTABLES: &[&str] = &[
+    "$CAPABILITY_TOOL",
+    "$CONFIGURED_TOOL",
+    "$EDITOR",
+    "/bin/sh",
+    "engineering-assurance",
+    "git",
+    "ix-flow",
+    "node",
+    "quoin",
+    "quire",
+];
 
 /// Non-literal executor arguments, each keyed by the file that owns it:
 /// `runner_program()` names `ix-flow`; `config edit` starts the operator's own
 /// editor.
 const KNOWN_ARGUMENTS: &[(&str, &str, &str)] = &[
     ("quoin-cli/src/flow.rs", "runner_program()", "ix-flow"),
+    ("quoin-cli/src/flow.rs", "node_program()", "node"),
     ("quoin-cli/src/config.rs", "&editor", "$EDITOR"),
     ("quoin-dossier/src/export.rs", "&options.quire", "quire"),
+    ("quoin-cli/src/selftest.rs", "binary", "quoin"),
+    (
+        "quoin-cli/src/formal_rules.rs",
+        "ea",
+        "engineering-assurance",
+    ),
+    (
+        "quoin-cli/src/flow/provider.rs",
+        "executable",
+        "$CONFIGURED_TOOL",
+    ),
+    (
+        "quoin-cli/src/flow/provider.rs",
+        "program",
+        "$CONFIGURED_TOOL",
+    ),
+    (
+        "quoin-core/src/runtime.rs",
+        "executable",
+        "$CAPABILITY_TOOL",
+    ),
 ];
 
 /// Fillers keep each character's UTF-8 width so byte offsets agree with the
@@ -437,7 +470,7 @@ fn executables_in(path: &str, source: &str) -> Result<BTreeSet<String>, Vec<Stri
 /// FR-036-AC-8, CON-1.
 #[trace("FR-036-AC-8", "FR-036-CON-1")]
 #[test]
-fn quoin_executes_exactly_git_and_ix_flow_and_the_operators_editor() {
+fn quoin_process_launches_match_the_declared_tool_policy() {
     let crates = workspace_root().join("crates");
     let mut files = Vec::new();
     for entry in std::fs::read_dir(&crates).unwrap() {

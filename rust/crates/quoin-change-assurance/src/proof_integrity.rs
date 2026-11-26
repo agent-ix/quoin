@@ -379,7 +379,8 @@ pub struct ProofScope {
 pub enum RetainedObject<'a> {
     /// The canonical proof-integrity statement.
     Statement(&'a [u8]),
-    /// The immutable signed tag object bytes returned by FR-080.
+    /// The tag object bytes returned by FR-080 are retained as source content;
+    /// their presence does not authenticate the tag or establish signed acceptance.
     TagObject(&'a [u8]),
     /// The exact accepted attestation bytes.
     Attestation(&'a [u8]),

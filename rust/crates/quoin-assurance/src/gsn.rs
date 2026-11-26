@@ -1817,14 +1817,22 @@ mod tests {
             .iter()
             .filter(|node| node.source == "evidence://ok")
             .collect::<Vec<_>>();
-        assert_eq!(evidence.len(), 1, "shared source evidence is one GSN node");
+        assert_eq!(
+            evidence.len(),
+            2,
+            "each citation keeps its claim-specific resolution"
+        );
         assert!(
             result
                 .edges
                 .iter()
-                .filter(|edge| edge.to == evidence[0].id)
-                .count()
-                >= 2
+                .any(|edge| edge.from == *root && edge.to == evidence[0].id)
+        );
+        assert!(
+            result
+                .edges
+                .iter()
+                .any(|edge| edge.from == strategy_two.id && edge.to == evidence[1].id)
         );
         let missing = result
             .nodes
