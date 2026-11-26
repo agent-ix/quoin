@@ -121,7 +121,9 @@ New public items across the dependency range:
 - `coverage::compute_coverage_for_design_matrix`
 - `coverage::EvidenceCoverageMode` and the `mode` argument added to `compute_with_evidence`
 - `obligation::inventory::InventoryModelPolicy` and `InventoryOptions::model_policy`
-- `impact` module: `LineRange`, `SourceSnapshot`, `FileChange`, `ImpactInput`, `RevisionSide`, `ChangedSymbol`, `UnmappedChange`, `ImpactReason`, `SelectedTest`, `RelatedImplementation`, `ImpactFinding`, `ImpactReport`, `DependencyMoveInput`, `UpstreamChange`, `DependencyLocalReference`, `DependencyTestReason`, `DependencyMoveReport`, `analyze_dependency_move`, `ImpactError`, and `analyze`
+- `impact` module: `LineRange`, `SourceSnapshot`, `FileChange`, `ImpactInput`, `RevisionSide`, `ChangedSymbol`, `UnmappedChange`, `ImpactReason`, `SelectedTest`, `RelatedImplementation`, `ImpactFinding`, `ImpactReport`, `DependencyMoveInput`, `UpstreamChange`, `DependencyLocalReference`, `DependencyTestReason`, `DependencyMoveReport`, `analyze_dependency_move`, `ImpactError`, `analyze`, `CallerSearch`, `LinkedCaller`, and `UnresolvedCallSite`
+- `semantic::relations::RelationSource::validation_path`
+- `semantic::surface::SemanticExtraction::record_relations`
 - `EmbeddedAnomalyDocument` and `embedded_anomaly_documents`
 - `validate_document_in_indexed_bundle`
 
@@ -132,6 +134,8 @@ A search of Quoin Rust source for those names found these references:
 - `rust/crates/quoin-quire/tests/fr029_dropped_declarations.rs` exercises the design-matrix integration.
 
 Quoin does not reference the new anomaly, impact-analysis, embedded-document, or indexed-bundle APIs. The new transitive `ix-trace-rs` lock entry is used by Quire-RS for implementation markers; Quoin's direct source references to `ix-trace-rs` continue to use its workspace main pin.
+
+The added `CallerSearch`, `LinkedCaller`, `UnresolvedCallSite`, `RelationSource::validation_path`, and `SemanticExtraction::record_relations` items also have no Quoin Rust references.
 
 The changed Quire-RS paths and public API names above were searched in Quoin's Rust source, specs, and review records. There are no direct imports by upstream file path. The upstream `plat-1856.json` is under quire-rs's test tree and is not exposed by the `quire-fixtures` API, so the CLI regressions use one shared, minimal Quoin-owned fixture.
 
