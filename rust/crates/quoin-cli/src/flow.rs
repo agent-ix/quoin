@@ -268,9 +268,30 @@ fn executable_path(program: &str) -> Result<PathBuf, LaunchFailure> {
     let path = std::env::var_os("PATH").ok_or_else(|| {
         LaunchFailure::Local("PATH is unavailable while resolving ix-flow".to_owned())
     })?;
-    std::env::split_paths(&path)
+    executable_path_in(program, &path)
+}
+
+#[implements("FR-099-AC-10")]
+fn executable_path_in(program: &str, path: &OsStr) -> Result<PathBuf, LaunchFailure> {
+    std::env::split_paths(path)
         .map(|directory| directory.join(program))
-        .find(|candidate| candidate.is_file())
+        .find(|candidate| {
+            let Ok(metadata) = candidate.metadata() else {
+                return false;
+            };
+            if !metadata.is_file() {
+                return false;
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                metadata.permissions().mode() & 0o111 != 0
+            }
+            #[cfg(not(unix))]
+            {
+                true
+            }
+        })
         .ok_or_else(|| {
             LaunchFailure::Local("could not resolve ix-flow executable on PATH".to_owned())
         })
@@ -501,7 +522,10 @@ fn node_program() -> &'static str {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test assertions may panic")]
 mod tests {
-    use super::{LaunchFailure, ProcessCommand, command, execute, instance_id, run, skill_path};
+    use super::{
+        LaunchFailure, ProcessCommand, command, executable_path_in, execute, instance_id, run,
+        skill_path,
+    };
     use ix_trace_rs::trace;
 
     /// Provenance: PLAT-1249
@@ -621,6 +645,43 @@ mod tests {
         let spawn_failure = execute(&mut ProcessCommand::new(&non_executable));
         assert!(
             matches!(spawn_failure, Err(LaunchFailure::Local(message)) if message.contains("could not start ix-flow"))
+        );
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-099-AC-10")]
+    #[test]
+    fn ix_flow_path_lookup_skips_non_executable_candidates() {
+        let directory = tempfile::tempdir().expect("runner search roots are created");
+        let first = directory.path().join("first");
+        let second = directory.path().join("second");
+        std::fs::create_dir(&first).expect("first search root is created");
+        std::fs::create_dir(&second).expect("second search root is created");
+
+        let shadow = first.join("ix-flow");
+        std::fs::write(&shadow, "not executable").expect("shadow candidate is written");
+        let mut permissions = std::fs::metadata(&shadow)
+            .expect("shadow metadata")
+            .permissions();
+        use std::os::unix::fs::PermissionsExt;
+        permissions.set_mode(0o600);
+        std::fs::set_permissions(&shadow, permissions).expect("shadow is not executable");
+
+        let runner = second.join("ix-flow");
+        std::fs::write(&runner, "#!/bin/sh\nexit 0\n").expect("runner candidate is written");
+        let mut permissions = std::fs::metadata(&runner)
+            .expect("runner metadata")
+            .permissions();
+        permissions.set_mode(0o700);
+        std::fs::set_permissions(&runner, permissions).expect("runner is executable");
+
+        let path = std::env::join_paths([first, second]).expect("PATH is valid");
+        let selected = executable_path_in("ix-flow", &path);
+        assert!(selected.is_ok(), "later executable is selected");
+        assert_eq!(
+            selected.ok(),
+            Some(runner),
+            "the later executable must be selected over the non-executable shadow"
         );
     }
 }
