@@ -7,19 +7,26 @@
 //! preserves the core response/diagnostic taxonomy while eliminating the
 //! Rust-to-Rust subprocess and its JSON reparse.
 
+use ix_trace_rs::implements;
 use quoin_core::error::{CoreError, CoreErrorCode};
 use quoin_core::protocol::Response;
 use quoin_core::runtime::{RuntimeSettings, dispatch};
 
 use crate::invocation;
 
+#[implements("FR-004-AC-2", "FR-004-AC-4")]
 pub(crate) fn settings() -> RuntimeSettings {
     // An explicit root remains a developer override. Release binaries instead
     // materialize their compiled contract under IX_HOME; `CARGO_MANIFEST_DIR`
     // points at a build checkout and is invalid after installation (#527).
     let semantic_root = std::env::var_os("QUOIN_SEMANTIC_ROOT").map(std::path::PathBuf::from);
+    let ix_home = invocation::current().config_root().cloned().or_else(|| {
+        std::env::var_os("IX_CONFIG_ROOT")
+            .filter(|value| !value.is_empty())
+            .map(std::path::PathBuf::from)
+    });
     RuntimeSettings {
-        ix_home: invocation::current().config_root().cloned(),
+        ix_home,
         semantic_root,
     }
 }
