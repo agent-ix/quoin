@@ -45,10 +45,10 @@ fn projection(disposition: &str) -> Value {
 fn recording_keeps_the_run_schema_and_projection_as_one_immutable_pair() {
     let mut source = MemoryEvidence::new();
     let request = request();
-    let projection = projection("agreement");
+    let projection_value = projection("agreement");
 
-    let first = record_run_with_analysis_projection(&mut source, &request, &[], &projection)
-        .unwrap();
+    let first =
+        record_run_with_analysis_projection(&mut source, &request, &[], &projection_value).unwrap();
 
     let run_bytes = source.read(&first.run_path).unwrap().unwrap();
     let run: Value = serde_json::from_str(&run_bytes).unwrap();
@@ -67,17 +67,23 @@ fn recording_keeps_the_run_schema_and_projection_as_one_immutable_pair() {
     let entry = &run["entries"][0];
     let mut entry_fields: Vec<_> = entry.as_object().unwrap().keys().cloned().collect();
     entry_fields.sort();
-    assert_eq!(entry_fields, vec!["outcome".to_owned(), "symbol".to_owned()]);
+    assert_eq!(
+        entry_fields,
+        vec!["outcome".to_owned(), "symbol".to_owned()]
+    );
 
     let suffix = first.run_path.strip_prefix("runs/").unwrap();
     let projection_path = format!("analysis-reports/{suffix}");
     assert_eq!(run["suite"], "ANALYSIS-1");
     assert_eq!(run["timestamp"], request.timestamp);
     let projection_bytes = source.read(&projection_path).unwrap().unwrap();
-    assert_eq!(serde_json::from_str::<Value>(&projection_bytes).unwrap(), projection);
+    assert_eq!(
+        serde_json::from_str::<Value>(&projection_bytes).unwrap(),
+        projection_value
+    );
 
     let second =
-        record_run_with_analysis_projection(&mut source, &request, &[], &projection).unwrap();
+        record_run_with_analysis_projection(&mut source, &request, &[], &projection_value).unwrap();
     assert_eq!(first, second);
     assert_eq!(source.read(&first.run_path).unwrap().unwrap(), run_bytes);
     assert_eq!(
@@ -86,13 +92,8 @@ fn recording_keeps_the_run_schema_and_projection_as_one_immutable_pair() {
     );
 
     assert!(
-        record_run_with_analysis_projection(
-            &mut source,
-            &request,
-            &[],
-            &projection("refuted")
-        )
-        .is_err()
+        record_run_with_analysis_projection(&mut source, &request, &[], &projection("refuted"))
+            .is_err()
     );
     assert_eq!(source.read(&first.run_path).unwrap().unwrap(), run_bytes);
     assert_eq!(
@@ -119,13 +120,9 @@ fn obligation_ids_travel_only_through_the_existing_trace_ids_field() {
     }];
     let projection = projection("agreement");
 
-    let outcome = record_run_with_analysis_projection(
-        &mut source,
-        &request,
-        &obligations,
-        &projection,
-    )
-    .unwrap();
+    let outcome =
+        record_run_with_analysis_projection(&mut source, &request, &obligations, &projection)
+            .unwrap();
     let run_bytes = source.read(&outcome.run_path).unwrap().unwrap();
     let run: Value = serde_json::from_str(&run_bytes).unwrap();
     let mut run_fields: Vec<_> = run.as_object().unwrap().keys().cloned().collect();
