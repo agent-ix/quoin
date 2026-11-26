@@ -10,7 +10,7 @@
     reason = "in a test, a panic IS the failure report"
 )]
 
-use std::{collections::BTreeSet, fs, path::PathBuf};
+use std::{collections::BTreeSet, fs, path::Path, path::PathBuf};
 
 use ix_trace_rs::trace;
 use quire_rs::coverage::CoverageMatrixStatus;
@@ -43,6 +43,28 @@ fn fixture() -> PathBuf {
         .join("tests")
         .join("fixtures")
         .join("analysis")
+}
+
+fn snapshot_tree(root: &Path) -> Vec<(PathBuf, Option<Vec<u8>>)> {
+    let mut pending = vec![root.to_path_buf()];
+    let mut snapshot = Vec::new();
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(&directory).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let kind = entry.file_type().unwrap();
+            if kind.is_dir() {
+                snapshot.push((path.clone(), None));
+                pending.push(path);
+            } else if kind.is_file() {
+                snapshot.push((path.clone(), Some(fs::read(path).unwrap())));
+            } else {
+                snapshot.push((path, None));
+            }
+        }
+    }
+    snapshot.sort_by(|left, right| left.0.cmp(&right.0));
+    snapshot
 }
 
 fn scope() -> ScopeRequest {
@@ -228,21 +250,14 @@ fn counting_uses_supplied_record_projection_and_leaves_inputs_untouched() {
     let recorded = Recorded::new(&[AC1], "analysis-suite", "2026-11-13T00:00:00Z");
     let before_record = recorded.runs()[0].record.clone();
     let before_bindings = recorded.bindings();
-    let fixture_files_before = fs::read_dir(fixture())
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name())
-        .collect::<BTreeSet<_>>();
+    let fixture_before = snapshot_tree(&fixture());
 
     let outcome = count(recorded.runs(), recorded.bindings(), &[AC1], admitted());
 
     assert_eq!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);
     assert_eq!(recorded.runs()[0].record, before_record);
     assert_eq!(recorded.bindings(), before_bindings);
-    let fixture_files_after = fs::read_dir(fixture())
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name())
-        .collect::<BTreeSet<_>>();
-    assert_eq!(fixture_files_after, fixture_files_before);
+    assert_eq!(snapshot_tree(&fixture()), fixture_before);
 }
 
 #[trace("FR-184-AC-19")]

@@ -598,12 +598,7 @@ fn is_expected_rmm_compliance_row(line: &str) -> bool {
     )
 }
 
-#[trace(
-    "FR-173-AC-1",
-    "NFR-038-AC-1",
-    "NFR-038-AC-3",
-    "NFR-038-M-1"
-)]
+#[trace("FR-173-AC-1", "NFR-038-AC-1", "NFR-038-AC-3", "NFR-038-M-1")]
 #[test]
 fn tc_173_an_effective_control_yields_a_direct_fact_with_the_supplied_attestation() {
     let world = World::new(
@@ -658,10 +653,7 @@ fn each_mapping_fact_uses_the_effectiveness_from_its_own_control() {
                 "A.md",
                 control("CTRL-A", Some("not_assessed"), &[(SET, "C1")]),
             ),
-            (
-                "B.md",
-                control("CTRL-B", Some("effective"), &[(SET, "C2")]),
-            ),
+            ("B.md", control("CTRL-B", Some("effective"), &[(SET, "C2")])),
         ],
     );
     let facts = parsed(&world.facts());
