@@ -108,18 +108,14 @@ without checking out the source repository.
   the JSON bytes to standard output. When no repository evidence store is
   available, it rejects the run before starting any case unless `--out <path>`
   is supplied, as required by FR-236.
-- The read-only `quoin validation ratings --coverage` check joins applicable
-  supplier `FeatureRiskRating` values to local self-test `# Trace:` markers.
-  For each feature, it SHALL report its rating state and values separately from
-  whether a local self-test marker names one of its existing acceptance
-  criteria. The self-test coverage value SHALL be `covered` when one or more
-  valid markers name its criteria and `not_in_selftest` otherwise. This value
-  is informational: it SHALL NOT depend on the feature's rating, make any
-  feature require a dedicated self-test case, or cause a non-zero exit because
-  no local marker exists. A feature without an applicable rating remains
-  `unrated` in the separate rating state. A marker with malformed syntax or a
-  reference to a nonexistent local feature or acceptance criterion is reported
-  as invalid.
+- The read-only `quoin validation ratings --coverage` command SHALL report
+  supplier `FeatureRiskRating` status, identifiers, and authored values for
+  functional requirements. It SHALL NOT inspect self-test assets, associate a
+  feature rating with a self-test case, or require a dedicated test for any
+  feature. Test selection and criterion coverage remain the responsibility of
+  the normal-suite test matrix. The command SHALL report an unrated feature as
+  `unrated`; absence of a self-test asset or trace marker SHALL NOT change the
+  rating report or its exit status.
 - The check reports the rating values and links it reads; it does not change
   rating acceptance state or produce retained-run evidence. Retained run
   evidence remains governed by [FR-236](./FR-236-selftest-run-record.md).
@@ -151,14 +147,14 @@ without checking out the source repository.
 | FR-235-AC-1 | Given a listed case and an available runner matching the installed command's exact version and host target, `quoin selftest --run` executes it against the installed binary and records a result for the case. | Test |
 | FR-235-AC-2 | Given an expected stdout file that differs from actual stdout by one byte, the case result is `fail` and names the case id and its traced criteria. | Test |
 | FR-235-AC-3 | Given a case process that exits non-zero or cannot execute, the result is respectively `fail` or `error`, and the command exits non-zero. | Test |
-| FR-235-AC-4 | Given a high-process-risk FR with no local self-test marker, `quoin validation ratings --coverage` reports its rating separately from `selftest_coverage: not_in_selftest`, lists no risk-based uncovered item, and exits 0 when there are no malformed markers or unreadable spec documents. | Test |
+| FR-235-AC-4 | Given a high-process-risk FR with no self-test asset or trace marker, `quoin validation ratings --coverage` reports its authored rating state, identifier, and value without a self-test coverage field, and exits 0 when the spec bundle is readable. | Test |
 | FR-235-AC-5 | Given a normal-suite command-level test with no trace marker, the static requirement matrix reports its criterion as `untagged`. | Test |
 | FR-235-AC-6 | Given no `--case` option, `quoin selftest --run` runs every configured normal-suite test ID; given repeated `--case <id>` options, it runs only the named configured tests once each in release-configuration order; an unknown ID is rejected before any test starts and is named in the error. | Test |
 | FR-235-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
 | FR-235-AC-8 | Given `--out <path>`, the command writes the retained FR-236 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out` and with a repository evidence store, it writes those bytes to stdout; without a repository evidence store it rejects before starting any case. | Test |
 | FR-235-AC-9 | Given a case owned by a linked engine and invoked through the installed Quoin command, its source and trace tags remain with that engine and the result reports test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
 | FR-235-AC-10 | Given `quoin selftest --run` on Linux, a matching version-and-target runner is used; when the version or target has no release runner, or the runner cannot be fetched, execution returns an error before a case starts and reports no case as passed. Given macOS, Windows, or another unsupported operating system, it returns `unsupported-platform` before a case starts. | Test |
-| FR-235-AC-11 | Given `quoin validation ratings --coverage`, a not-high-process-risk or unrated FR without a local self-test marker has `selftest_coverage: not_in_selftest` without failing; an unrated FR remains unrated in its separate rating state; malformed or unknown `# Trace:` markers are reported as invalid and cause a non-zero exit. | Test |
+| FR-235-AC-11 | Given a not-high-process-risk or unrated FR and any contents of a self-test asset tree, `quoin validation ratings --coverage` reports rating state and authored values, leaves the unrated FR as `unrated`, and does not inspect or report test trace markers; unreadable spec documents remain partial results. | Test |
 | FR-235-AC-12 | Given a published self-test runner, its executable and declared runtime files contain no private library linkage or private data beyond content already present in the installed command; the normal-suite library test harness is not published as a customer self-test runner. | Inspection |
 | FR-235-AC-13 | Given the matching runner release asset is available but no sibling source or specification repositories are checked out, `quoin selftest --run` invokes the installed command and records its result without attempting to access those repositories. | Test |
 
@@ -166,4 +162,4 @@ without checking out the source repository.
 
 - **Upstream**: [FR-112](./FR-112-npm-distribution-from-release-assets.md) defines the shipped quoin binary; [FR-030](./FR-030-evidence-store.md) defines the evidence store used for retained results.
 - **Downstream**: [FR-236](./FR-236-selftest-run-record.md) records each run; [FR-217](./FR-217-validation-report.md) presents its results.
-- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the cross-repository `quire matrix --strict` check over each tool repository's self-test source. Quoin owns `quoin validation ratings --coverage` and its `quoin selftest` entry point; each related CLI owns its own command-level runner assets.
+- [PLAT-1640](https://linear.app/agent-ix/issue/PLAT-1640) owns the cross-repository strict matrix check over normal-suite test sources. Quoin owns `quoin validation ratings --coverage` for authored rating status and its `quoin selftest` entry point; each related CLI owns its own command-level runner assets. Rating records do not select tests or establish test coverage.

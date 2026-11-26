@@ -63,7 +63,7 @@ fn invoke_coverage(root: &Path) -> std::process::Output {
 #[trace("FR-235-AC-4")]
 #[trace("FR-235-AC-11")]
 #[test]
-fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_markers() {
+fn tc_235_ratings_coverage_reports_ratings_without_reading_selftest_assets() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
     write(
         scratch.path(),
@@ -90,13 +90,8 @@ fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_marke
         "spec/ratings/RR-2.md",
         "---\nid: RR-2\ntype: FeatureRiskRating\nscope: supplier\nrating: not_high_process_risk\nstatus: proposed\nrelationships:\n  - target: ix://agent-ix/quoin/FR-002\n    type: rates_feature\n---\n",
     );
-    write(
-        scratch.path(),
-        "selftest/cases/marked/run.sh",
-        "#!/bin/sh\n# Trace: FR-001-AC-1\n# Trace: FR-999-AC-1\n# Trace: malformed\nexit 0\n",
-    );
     let output = invoke_coverage(scratch.path());
-    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(output.status.code(), Some(0));
     let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
     let features = report["features"].as_array().expect("features listed");
     let row = |id| {
@@ -106,79 +101,29 @@ fn tc_235_ratings_coverage_distinguishes_high_not_high_unrated_and_invalid_marke
             .expect("feature listed")
     };
     assert_eq!(row("FR-001")["status"], "rated");
-    assert_eq!(row("FR-001")["selftest_coverage"], "covered");
     assert_eq!(row("FR-001")["rating_ids"], serde_json::json!(["RR-1"]));
     assert_eq!(
         row("FR-001")["rating_values"][0]["value"],
         "high_process_risk"
     );
     assert_eq!(row("FR-002")["status"], "rated", "{report}");
-    assert_eq!(row("FR-002")["selftest_coverage"], "not_in_selftest");
     assert_eq!(row("FR-003")["status"], "unrated");
-    assert_eq!(row("FR-003")["selftest_coverage"], "not_in_selftest");
-    assert_eq!(
-        report["not_in_selftest"],
-        serde_json::json!(["FR-002", "FR-003"])
-    );
-    assert_eq!(
-        report["invalid_markers"]
-            .as_array()
-            .expect("invalid listed")
-            .len(),
-        2
-    );
+    assert!(row("FR-001")["selftest_coverage"].is_null());
+    assert!(row("FR-001")["traced_criteria"].is_null());
+    assert!(report["not_in_selftest"].is_null());
+    assert!(report["invalid_markers"].is_null());
 
     write(
         scratch.path(),
         "selftest/cases/marked/run.sh",
-        "#!/bin/sh\n# Trace: FR-001-AC-1\nexit 0\n",
+        "#!/bin/sh\n# Trace: FR-999-AC-1\n# Trace: malformed\nexit 0\n",
     );
-    let output = invoke_coverage(scratch.path());
-    assert_eq!(output.status.code(), Some(0));
-    let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
-    let features = report["features"].as_array().expect("features listed");
-    assert_eq!(
-        features
-            .iter()
-            .find(|item| item["feature_id"] == "FR-001")
-            .expect("high-risk feature listed")["selftest_coverage"],
-        "covered"
-    );
-    assert_eq!(output.status.code(), Some(0));
-
-    write(
-        scratch.path(),
-        "selftest/cases/marked/run.sh",
-        "#!/bin/sh\nexit 0\n",
-    );
-    let output = invoke_coverage(scratch.path());
-    assert_eq!(output.status.code(), Some(0));
-    let report: Value = serde_json::from_slice(&output.stdout).expect("coverage JSON parses");
-    let features = report["features"].as_array().expect("features listed");
-    assert_eq!(
-        report["not_in_selftest"],
-        serde_json::json!(["FR-001", "FR-002", "FR-003"])
-    );
-    let high = features
-        .iter()
-        .find(|item| item["feature_id"] == "FR-001")
-        .expect("high-rated FR listed");
-    let not_high = features
-        .iter()
-        .find(|item| item["feature_id"] == "FR-002")
-        .expect("not-high-rated FR listed");
-    assert_eq!(high["status"], "rated");
-    assert_eq!(high["selftest_coverage"], "not_in_selftest");
-    assert_eq!(not_high["status"], "rated");
-    assert_eq!(not_high["selftest_coverage"], "not_in_selftest");
-    assert!(
-        features
-            .iter()
-            .all(|item| item["selftest_coverage"] == "not_in_selftest")
-    );
+    let with_selftest_assets = invoke_coverage(scratch.path());
+    assert_eq!(with_selftest_assets.status.code(), Some(0));
+    assert_eq!(with_selftest_assets.stdout, output.stdout);
 }
 
-#[trace("FR-235-AC-4")]
+#[trace("FR-235-AC-11")]
 #[test]
 fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
