@@ -106,11 +106,11 @@ pub fn reconcile(
     Ok(report)
 }
 
-/// Lazily install the committed default module set.
+/// Reconcile the committed default module set against its pinned releases.
 ///
-/// Idempotent and, once installed, does no git — safe to call before
-/// every catalog read. Installed modules whose refs are older than or
-/// incomparable with their semantic-version pins are updated.
+/// Idempotent and, once installed at the pins, does no git. Installed modules
+/// whose refs are older than or incomparable with their semantic-version pins
+/// are updated.
 ///
 /// # Errors
 /// As [`reconcile`].
