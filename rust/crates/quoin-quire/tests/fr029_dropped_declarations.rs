@@ -226,16 +226,15 @@ fn the_design_computes_refuse_a_dropped_declaration_with_qq_1022() {
     }
 }
 
-/// FR-193-AC-10: the design-matrix path keeps valid coverage when one required
-/// relation cannot load, while ordinary coverage and unrelated declaration
-/// failures retain their strict behavior.
-#[trace("FR-193-AC-10")]
+/// FR-165-AC-21: the design-matrix path retains its valid entry when a sibling
+/// required relation cannot load, while ordinary coverage remains strict.
+#[trace("FR-165-AC-21")]
 #[test]
 fn the_design_matrix_keeps_coverage_when_only_a_required_relation_drops() {
     let module = Module::new(
         "partial-matrix",
         &manifest(
-            "  required_relations:\n    - name: retained-relation\n      from: FR\n      edges: [implements]\n      direction: outgoing\n      check: missing-design\n    - name: dropped-relation\n      from: FR\n      edges: [implements]\n      direction: outgoing\n      check: missing-design\n      record_keys: [regulatedCategories]\n",
+            "  required_relations:\n    - name: retained-relation\n      from: FR\n      edges: [implements]\n      direction: outgoing\n      check: missing-design\n    - name: dropped-relation\n      from: FR\n      edges: [implements]\n      direction: outgoing\n      check: missing-design\n      record_keys: [regulatedCategories]\n  design_relations: [retained-relation]\n",
         ),
     );
     let request = module.request();
@@ -245,6 +244,17 @@ fn the_design_matrix_keeps_coverage_when_only_a_required_relation_drops() {
     let outcome = design_matrix::compute(&request)
         .expect("design coverage survives a dropped required relation");
     assert_eq!(outcome.design_matrix.errors.len(), 1);
+    assert!(
+        outcome.design_matrix.entries.iter().any(|entry| {
+            entry.design.as_ref().is_some_and(|blocks| {
+                blocks
+                    .iter()
+                    .any(|block| block.relation == "retained-relation")
+            })
+        }),
+        "the valid design block survives: {:?}",
+        outcome.design_matrix.entries
+    );
 }
 
 /// FR-029-AC-20: with every declaration dropped the model reads as absent, and

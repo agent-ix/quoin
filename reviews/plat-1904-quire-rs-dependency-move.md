@@ -147,3 +147,27 @@ The changed Quire-RS paths and public API names above were searched in Quoin's R
 - Through `/home/peter/dev/worktrees/locked-build.sh` against `5f6268a`, `cargo test --locked -p quoin-cli --test tc_1614_dossier_command architecture_dossier -- --nocapture` passed (2 passed, 0 failed), covering FR-193-AC-10 and FR-193-AC-11 separately.
 - The earlier standalone design-matrix regression and strict QQ-1022 refusal tests passed against `d7d418fa`; the real-host checks above exercise the additional evidence-aware engine APIs from `5f6268a`.
 - The first compile attempt against `d7d418fa` exposed that the public function is under `quire_rs::coverage`, not the crate root. The integration now uses `quire_rs::coverage::compute_coverage_for_design_matrix`; both focused tests passed after this correction. The earlier queued attempt against `42bbf796` was canceled before it started after an upstream compile defect was reported.
+
+## Follow-on source alignment (PLAT-1904)
+
+To remove a duplicate `ix-trace-rs 0.1.2` source in Quoin's dependency graph, Quoin advances both direct `quire-rs` pins from `5f6268a21e1aa4ede52f098f4925616d2750a281` to merged revision `a52b3b20a3bf1460193a37e53d4a8a293ce7edac`. The package remains `quire-rs 0.63.2`.
+
+`git diff --name-status 5f6268a a52b3b20` in quire-rs:
+
+- `Cargo.lock` (M)
+- `Cargo.toml` (M)
+- `fuzz/Cargo.toml` (M)
+- `reviews/plat-1904-ix-trace-dependency-move.md` (A)
+- `tools/quire-bench/Cargo.toml` (M)
+
+No Quire public Rust items changed in this follow-on. Its Cargo manifests and lockfile align the engine, benchmark, and fuzz dependencies on `ix-trace-rs` Git branch `main`, resolving to `3cd3285055e32e4c08fb124d76e489b9dd412b6b`. The upstream change adds opt-in feature `emit`, the `ix-trace-run` workspace package, and trace emission support; the default `trace` behavior remains transparent, and Quire enables neither `emit` nor the runner. The full upstream `ix-trace-rs` path inventory and API changes are in Quire's `reviews/plat-1904-ix-trace-dependency-move.md`.
+
+Quoin has no direct source imports by the changed Quire manifest paths. Its references to the changed dependency items remain the `ix-trace-rs` `trace`/`implements` markers and the Quire APIs used by `quoin-quire` and `quoin-dossier`. The two changed Quoin manifests are `rust/crates/quoin-quire/Cargo.toml` and `rust/crates/quoin-dossier/Cargo.toml`; `rust/Cargo.lock` now contains one `ix-trace-rs` package source (`branch=main`).
+
+Verification against merged revision `a52b3b20`:
+
+- `cargo metadata --manifest-path rust/Cargo.toml --locked --offline --format-version 1`, `cargo fmt --manifest-path rust/Cargo.toml --all -- --check`, and `git diff --check` passed.
+- Through `/home/peter/dev/worktrees/locked-build.sh`, `cargo test --manifest-path rust/Cargo.toml -p quoin-quire --test fr029_dropped_declarations the_design_matrix_keeps_coverage_when_only_a_required_relation_drops` passed (1 passed).
+- Through `/home/peter/dev/worktrees/locked-build.sh`, `cargo test --manifest-path rust/Cargo.toml -p quoin-cli --test tc_1080_matrix_command tc_1080_211_matrix_keeps_valid_rows_when_a_required_relation_drops` passed (1 passed), retaining the strict non-relation-drop assertion.
+- Through `/home/peter/dev/worktrees/locked-build.sh`, `cargo test --manifest-path rust/Cargo.toml -p quoin-cli --test tc_1614_dossier_command architecture_dossier` passed (2 passed), covering FR-193-AC-10 and FR-193-AC-11.
+- `cargo deny --manifest-path rust/Cargo.toml check --disable-fetch` reports `bans ok` and no duplicate `ix-trace-rs` source. The command still exits 3 because of existing `rustix 1.1.4` and `url 2.5.8` advisories also present on `origin/main`; output is in `/tmp/plat1904-final-deny.log`.
