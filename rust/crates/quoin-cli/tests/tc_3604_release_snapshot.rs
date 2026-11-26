@@ -2335,15 +2335,47 @@ fn the_unusable_file_is_named_relative_to_repo_whatever_the_repo_spelling() {
     );
 }
 
-#[trace("FR-167-AC-24")]
+#[trace("FR-166-AC-14")]
 #[test]
 fn a_valid_typeless_skill_document_is_not_a_vulnerability_record() {
     let repo = Repo::bare();
-    repo.write(
-        "docs/SKILL.md",
-        "---\nname: quoin-test-skill\ndescription: A valid skill document.\n---\n# Skill\n",
-    );
+    for path in ["docs/SKILL.md", "spec/vulnerabilities/SKILL.md"] {
+        repo.write(
+            path,
+            "---\nname: quoin-test-skill\ndescription: A valid skill document.\n---\n# Skill\n",
+        );
+    }
 
     let snapshot = repo.snapshot(&repo.run());
     assert_eq!(snapshot["vulnerabilities"], json!([]));
+}
+
+#[trace("FR-166-AC-14")]
+#[test]
+fn a_vulnerability_without_an_id_is_not_silently_dropped_outside_its_usual_directory() {
+    let repo = Repo::bare();
+    repo.write(
+        "docs/missing-id.md",
+        "---\ntitle: MissingId\ntype: vulnerability\nobject: vulnerability\nseverity: high\n---\n# Missing ID\n",
+    );
+    let security = security_module();
+    let safety = safety_module();
+
+    let output = run_with_modules(&repo, &[&safety, &security]);
+    assert_eq!(output.status.code(), Some(2), "{}", text(&output.stderr));
+    let refused: Value = serde_json::from_slice(&output.stderr).unwrap();
+    assert_eq!(refused[0]["code"], "release_snapshot_input_invalid");
+    assert!(
+        text(&output.stderr).contains("docs/missing-id.md"),
+        "{}",
+        text(&output.stderr)
+    );
+}
+
+fn security_module() -> String {
+    let checkout = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-security"),
+        PathBuf::from,
+    );
+    checkout.join("spec_objects_security").display().to_string()
 }

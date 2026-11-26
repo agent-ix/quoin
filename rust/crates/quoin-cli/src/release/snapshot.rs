@@ -161,7 +161,7 @@ pub(super) fn risk_findings(repo: &Path, modules: &[String]) -> Result<Vec<OpenF
 /// Authored vulnerability records whose lifecycle status is still open
 /// (FR-032, FR-167). No advisory, VEX or anomaly data is consulted.
 #[implements("FR-167-AC-20")]
-#[implements("FR-167-AC-24")]
+#[implements("FR-166-AC-14")]
 pub(super) fn vulnerabilities(
     repo: &Path,
     modules: &[String],
@@ -196,7 +196,7 @@ pub(super) fn vulnerabilities(
     if let Some(path) = corpus
         .malformed
         .iter()
-        .find(|path| is_vulnerability_record_path(&root, path))
+        .find(|path| is_malformed_vulnerability_record(path))
     {
         let shown = path
             .strip_prefix(&root)
@@ -214,18 +214,25 @@ pub(super) fn vulnerabilities(
     render_vulnerabilities(&corpus.documents)
 }
 
-/// Malformed frontmatter is a vulnerability-record failure only in the
-/// authored vulnerability-record directory. Other malformed repository files
-/// belong to the snapshot's risk-summary refusal, which can name their path.
-#[implements("FR-167-AC-24")]
-fn is_vulnerability_record_path(repo: &Path, path: &Path) -> bool {
-    path.strip_prefix(repo)
-        .is_ok_and(|relative| relative.starts_with(Path::new("spec/vulnerabilities")))
+/// A malformed identity is a vulnerability-record failure when its parsed
+/// frontmatter declares that type, regardless of the file's repository path.
+/// Typeless mappings are valid non-record documents under FR-166-AC-14.
+#[implements("FR-166-AC-14")]
+fn is_malformed_vulnerability_record(path: &Path) -> bool {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|text| quoin_quire::validate::frontmatter(&text))
+        .is_some_and(|frontmatter| {
+            frontmatter
+                .get("type")
+                .and_then(Value::as_str)
+                .is_some_and(|kind| kind.trim() == "vulnerability")
+        })
 }
 
 /// Preserve the module root when reading vulnerability records fails during
 /// module loading, just as the risk-summary refusal does.
-#[implements("FR-167-AC-24")]
+#[implements("FR-166-AC-13")]
 fn vulnerability_records_refusal(
     modules: &[String],
     roots: &[ModuleRoot],

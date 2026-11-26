@@ -164,7 +164,6 @@ does not claim the caller's clean-tree precondition was met.
 | FR-167-AC-20 | A fixture with `open`, `in_remediation`, `remediated`, and `closed` vulnerability records carries only the first two into `vulnerabilities`, copies each listed source field unchanged, orders included records by id, and emits an empty list when neither open status is present. | Test |
 | FR-167-AC-21 | A fixture with an included vulnerability record whose status or disposition conflicts with advisory scan, VEX, or anomaly data carries the authored values unchanged; a record with status `remediated` or `closed` remains absent. | Test |
 | FR-167-AC-22 | A valid `quoin.release-snapshot/v1` written before the `vulnerabilities` member was added is accepted by the reader and exposes `vulnerabilities` as an empty list; an invalid present value is still refused. | Test |
-| FR-167-AC-24 | A repository containing a valid non-vulnerability Markdown document outside `spec/vulnerabilities` produces a snapshot with an empty `vulnerabilities` list instead of refusing that document as a malformed vulnerability record. | Test |
 
 ## Dependencies
 
