@@ -510,7 +510,8 @@ fn refusal_table() -> Vec<Row> {
     "FR-151-AC-7",
     "FR-151-AC-8",
     "FR-151-AC-9",
-    "FR-151-AC-14"
+    "FR-151-AC-14",
+    "NFR-032-M-3"
 )]
 #[test]
 fn tc_001_every_refusal_class_is_refused_with_a_reason_and_no_panic() {
@@ -534,7 +535,7 @@ fn tc_001_every_refusal_class_is_refused_with_a_reason_and_no_panic() {
     }
 }
 
-#[trace("FR-151-AC-10")]
+#[trace("FR-151-AC-10", "NFR-032-M-1")]
 #[test]
 fn tc_001_an_input_over_the_limit_is_refused_by_size_before_parsing() {
     // Not JSON at all: any parse would complain about that instead.
@@ -551,7 +552,7 @@ fn tc_001_an_input_over_the_limit_is_refused_by_size_before_parsing() {
     assert!(!error.contains("byte limit"), "{error}");
 }
 
-#[trace("FR-151-AC-11")]
+#[trace("FR-151-AC-11", "NFR-032-M-2")]
 #[test]
 fn tc_001_the_same_bytes_give_the_same_result_wherever_they_are_read() {
     const INPUT_PATH: &str = "QUIRE_TEST_DIFFERENTIAL_REPORT_PATH";
