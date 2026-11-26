@@ -7,24 +7,37 @@ relationships:
     type: "depends_on"
 ---
 
-# FR-218: Report validation coverage and verify a person's sign-off
+# FR-218: Distinguish report completeness from test outcomes and verify sign-off
 
 ## Description
 
-The validation report SHALL distinguish complete evidence from incomplete
-evidence and SHALL let a named person sign the report, so evidence gaps remain
+The validation report SHALL distinguish whether its declared release evidence
+is complete from whether its tests pass and from whether requirements are
+covered. It SHALL let a named person sign the report, so evidence gaps remain
 visible and acceptance remains a human decision.
 
 ## Behavior
 
-- The report status SHALL be `complete` only when each high-process-risk FR has
-  at least one passing case and every required tool run is present.
-- The report status SHALL be `incomplete` when a high-process-risk FR has no
-  passing case, a case failed or errored, a required tool result is missing,
-  or required evidence was not executed.
+- The evidence status SHALL be `complete` when each declared release-suite run
+  and required producer result is present and contains a result for each
+  expected test. It SHALL be `incomplete` when a required run or result is
+  missing, unreadable, malformed, or not executed.
+- The report SHALL show aggregate and per-test outcomes separately from
+  evidence status.
+- A failed, errored, skipped, or not-executed test result SHALL remain visible
+  as a test outcome and SHALL NOT be hidden by evidence status.
+- The report SHALL list uncovered requirements from computed requirement
+  coverage.
+- An uncovered requirement SHALL NOT by itself make evidence status
+  `incomplete`.
+- A feature-risk rating SHALL NOT define a dedicated test or make evidence
+  status `incomplete`.
+- Test selection and evidence completeness SHALL NOT depend on
+  `FeatureRiskRating` values. Ratings remain descriptive report metadata.
 - The report generator SHALL write a report with `incomplete` status.
-- An incomplete report SHALL name each uncovered FR, failed case, errored case,
-  missing tool result, and not-executed tool.
+- An incomplete report SHALL name each missing or unreadable run, missing test
+  result, and not-executed tool. Independently, it SHALL list uncovered
+  requirements and all failed, errored, skipped, or not-executed tests.
 - The command SHALL exit 1 when the report is incomplete.
 - The command SHALL exit 0 when the report is complete.
 - A person SHALL accept the validation record by committing the report with
@@ -48,9 +61,9 @@ visible and acceptance remains a human decision.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-218-AC-1 | Given all high-process-risk FRs have a passing case and all required tool runs are present, the report is `complete` and the command exits 0. | Test |
-| FR-218-AC-2 | Given one high-process-risk FR has no passing case, the report is `incomplete`, names that FR, is still written, and the command exits 1. | Test |
-| FR-218-AC-3 | Given a failed case, a missing run, or an unexecuted tool, the report remains written as `incomplete`, names each gap, and exits 1. | Test |
+| FR-218-AC-1 | Given every declared release-suite run and expected test result is present, the evidence status is `complete` and the command exits 0 even when a test failed or a requirement is uncovered. Test outcome and coverage remain separately reported. | Test |
+| FR-218-AC-2 | Given a required run or expected test result is missing, the report is still written with evidence status `incomplete`, names the missing evidence, and the command exits 1. | Test |
+| FR-218-AC-3 | Given complete run records with a failing test, an errored test, and an uncovered requirement, the report remains evidence-complete, lists each distinct outcome and the uncovered requirement, and does not infer a test requirement from risk rating. | Test |
 | FR-218-AC-4 | Given a signed report commit with a mapped signer matching `rated_by` and the required meaning trailer, sign-off verification reports the signature facts as valid. | Test |
 | FR-218-AC-5 | Given an unsigned commit, unmapped signer, signer different from `rated_by`, or missing trailer, sign-off verification reports `not_accepted` and names the reason. | Test |
 | FR-218-AC-6 | The report contains neither a report digest nor a commit identifier and does not decide customer acceptability. | Test |
