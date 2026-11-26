@@ -34,7 +34,7 @@ pub struct ReconcileReport {
     pub installed: Vec<ModuleName>,
     /// Entries already installed; no network was used.
     pub unchanged: Vec<ModuleName>,
-    /// Entries re-installed by a sync.
+    /// Entries re-installed by a sync or because their installed refs lagged.
     pub updated: Vec<ModuleName>,
     /// Entries skipped because `defaultEnabled` is `false`.
     pub skipped: Vec<ModuleName>,
