@@ -40,7 +40,7 @@ interviews:
     itemType: operation_request
     completenessRule: all_required
     questions:
-      - {key: review_set, prompt: "Agent-selected from the change: base, all, or subset.", type: enum, options: [base, all, subset], required: true}
+      - {key: review_set, prompt: "Selected by the agent from the change: base, all or subset.", type: enum, options: [base, all, subset], required: true}
       - {key: selected_analyses, prompt: "Selected lenses; empty for base or all.", type: "list<text>", required: false}
       - {key: assurance_profiles, prompt: "Applicable active AssuranceProfile paths.", type: "list<text>", required: false}
       - {key: profile_disposition, prompt: "Explain applicable profiles, or why none applies.", type: text, required: true}

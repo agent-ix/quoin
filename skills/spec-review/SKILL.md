@@ -59,33 +59,36 @@ Count the requirements touched and the cross-references the change adds or alter
 
 ### 2. Scope
 
-| Signal in the diff | Scope |
-| --- | --- |
-| Frontmatter links only; or test-case rows only; or a typo or non-normative edit | Small: the changed text and its directly linked artifacts |
-| Wording or criteria of one requirement; up to about 3 requirements in one area; no ADR or shared type | Small: the changed text, the requirements it links to by frontmatter relationships, the tests and code criteria it constrains, the sibling requirement that must agree |
-| New or restructured rule across routes or several requirements; 4 or more requirements in more than one area; new cross-references among them | Large: the wider set below, over every requirement touched and its neighbours |
-| An ADR, shared type or shared format changes; any change that alters who owns a responsibility or a boundary | Large |
+One count rule decides the scope:
 
-When signals disagree, take the larger scope. Small scope never reads the whole
-spec tree; large scope reads every requirement touched plus its linked neighbours.
+| Scope | Condition |
+| --- | --- |
+| Small | At most 3 requirements touched, and no ADR, no shared type or format change, and no new rule spanning areas. Review the changed text, the requirements it links to by frontmatter relationships, the tests and code criteria it constrains, and the sibling requirement that must agree. |
+| Large | 4 or more requirements touched, or any ADR or shared type or format change, or a new rule spanning areas (including a change of who owns a responsibility or boundary). Review every requirement touched and its linked neighbours. |
+
+Small scope never reads the whole spec tree. Frontmatter-link-only, test-row-only
+and typo edits are always small unless they touch 4 or more requirements.
 
 ### 3. Select methods
 
 Base (the Checklist, scoped to the changed text and its neighbours) always runs.
 Add methods by what the change needs:
 
-| What changed | Methods added to base |
-| --- | --- |
-| Frontmatter links only | dependency (links check only) |
-| Test-case rows only | evidence on the touched criteria |
-| Wording change in one requirement | ears-conformance and integrity, on that requirement |
-| New criterion or rule in one requirement | ears-conformance, integrity, evidence on that requirement |
-| New rule across routes or several requirements | integrity, dependency, object review (`spec-object-review`), failure-domain |
-| Restructure, new shared type or format | the row above plus scope-boundary |
-| New component, responsibility or interface boundary | scope-boundary, dependency, integrity |
-| Volatile, novel or hard to estimate requirement | risk-complexity |
-| ADR or security-relevant change (trust boundary, authz, secrets, input handling) | the matching rows above plus `spec-security-analysis` |
-| Criteria that may be unfalsifiable | `spec-criterion-strength-analysis` on those criteria |
+| What changed | Scope | Methods added to base |
+| --- | --- | --- |
+| Frontmatter links only | Small | dependency (links check only) |
+| Test-case rows only | Small | evidence on the touched criteria |
+| Wording change in one requirement | Small | ears-conformance and integrity, on that requirement |
+| New criterion or rule in 1 to 3 requirements | Small | ears-conformance, integrity, evidence on those requirements |
+| New rule across routes or several requirements (4 or more, or spanning areas) | Large | integrity, dependency, object review (`spec-object-review`), failure-domain |
+| Restructure, new shared type or format | Large | the row above plus scope-boundary |
+| New component, responsibility or interface boundary | Large | scope-boundary, dependency, integrity |
+| Volatile, novel or hard to estimate requirement | either | risk-complexity |
+| ADR or security-relevant change (trust boundary, authz, secrets, input handling) | Large for an ADR, else as measured | the matching rows above plus `spec-security-analysis` |
+| Criteria that may be unfalsifiable | either | `spec-criterion-strength-analysis` on those criteria |
+
+A small change never gets the four-method set (integrity, dependency, object
+review, failure-domain); that set is for large changes.
 
 Rows combine: take the union. Run only the methods the union names. The seven
 lenses are failure-domain, integrity, dependency, evidence, risk-complexity,
@@ -97,11 +100,19 @@ additional direct methods, not enforced-run lenses.
 
 ### 4. Record the choice
 
-Write the measured change, the scope, the selected methods and the reason for
-each in the `## Summary` of every review document (the artifact header), for
-example `Scope: small (1 requirement, wording only). Methods: base, ears-conformance,
-integrity. Reason: wording change, no link or rule change.` Methods not run are
-listed with why they were skipped.
+Put this block in every review document, directly under `## Summary`, with the
+exact heading and keys below so it can be found with `grep -A5 "^### Review selection"`:
+
+```
+### Review selection
+
+- Scope: small | large (measured: <requirements touched>, <what changed>)
+- Methods: <comma-separated list, starting with base>
+- Reason: <why these methods>
+- Skipped: <method: reason; or "none">
+```
+
+The agent fills it in; it is never a question to the user.
 
 In an enforced run, record `review_set: base` when only base runs, `all` only
 when the table selects all seven lenses, otherwise `subset` with the chosen
