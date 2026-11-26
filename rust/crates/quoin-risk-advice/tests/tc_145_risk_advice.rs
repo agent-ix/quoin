@@ -175,7 +175,7 @@ fn the_json_has_exactly_the_six_keys_and_no_chain_rows() {
     }
 }
 
-#[trace("FR-145-AC-2", "NFR-031-AC-1", "NFR-031-M-1")]
+#[trace("FR-145-AC-2", "NFR-031-AC-1")]
 #[test]
 fn a_run_changes_no_file() {
     let c = corpus();
@@ -1143,7 +1143,7 @@ fn a_file_the_reader_cannot_load_is_listed_not_dropped() {
     );
 }
 
-#[trace("NFR-031-AC-1")]
+#[trace("NFR-031-AC-1", "NFR-031-M-1")]
 #[test]
 fn every_fr145_through_fr148_fixture_is_read_only() {
     the_json_has_exactly_the_six_keys_and_no_chain_rows();
