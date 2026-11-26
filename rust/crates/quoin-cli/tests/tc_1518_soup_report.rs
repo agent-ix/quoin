@@ -495,7 +495,10 @@ fn failed_empty_and_idless_osv_reports_never_make_a_record_look_free_of_advisori
             tool: Some("osv-scanner"),
         })
         .unwrap();
-        assert!(adapter.run(raw, None).is_err(), "{suite} report must be refused");
+        assert!(
+            adapter.run(raw, None).is_err(),
+            "{suite} report must be refused"
+        );
 
         let repo = Repo::new();
         repo.record("example", "pkg:npm/example@1.0.0", &[]);
@@ -955,10 +958,7 @@ fn with_every_optional_input_absent_every_value_is_unknown_not_stated_or_an_inpu
     let mut row = row(&report, "pkg:cargo/a@1.0.0").clone();
     for status in ["support_status", "end_of_support"] {
         assert_eq!(row[status]["origin"], "none");
-        row[status]
-            .as_object_mut()
-            .unwrap()
-            .remove("origin");
+        row[status].as_object_mut().unwrap().remove("origin");
     }
     let inputs = [
         row["purl"].as_str().unwrap(),

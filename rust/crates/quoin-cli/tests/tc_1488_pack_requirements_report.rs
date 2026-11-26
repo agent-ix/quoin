@@ -1162,7 +1162,12 @@ fn tc_208_006_vocabulary_provider_approval_roles_do_not_apply_to_owner_set() {
     );
 
     let provider_fact = record_output(&env, &env.repo, "provider-set", "1", &[direct("C-1")]);
-    assert_eq!(provider_fact.status.code(), Some(3), "{}", text(&provider_fact));
+    assert_eq!(
+        provider_fact.status.code(),
+        Some(3),
+        "{}",
+        text(&provider_fact)
+    );
     assert!(
         stderr(&provider_fact).contains("approval-missing"),
         "{}",
