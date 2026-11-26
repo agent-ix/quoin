@@ -104,7 +104,12 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
         .env("GIT_CEILING_DIRECTORIES", repo.path().parent().unwrap())
         .output()
         .unwrap();
-    assert_eq!(output.status.code(), Some(0), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     let response: Value = serde_json::from_slice(&output.stdout).unwrap();
     let retained_path = repo.path().join(response["run_path"].as_str().unwrap());
     let retained: Value = serde_json::from_slice(&fs::read(retained_path).unwrap()).unwrap();
@@ -113,7 +118,10 @@ fn tc_1817_suite004_retains_tool_inputs_and_unavailable_state() {
     assert_eq!(retained["tool"], "quoin-real-tool-test 1.0.0");
     assert_eq!(retained["timestamp"], "2026-11-24T00:00:00.123Z");
     let entries = retained["entries"].as_array().unwrap();
-    let osv = entries.iter().find(|entry| entry["symbol"] == "osv-authentic-report").unwrap();
+    let osv = entries
+        .iter()
+        .find(|entry| entry["symbol"] == "osv-authentic-report")
+        .unwrap();
     assert_eq!(osv["outcome"], "pass");
     assert_eq!(osv["config"]["tool_version"], "osv-scanner 2.1.0");
     assert_eq!(osv["config"]["input"], "reports/osv-report.json");
