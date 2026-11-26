@@ -676,7 +676,13 @@ mod tests {
         assert_eq!(status(None, "spec/FR-1.md"), "not-available");
     }
 
-    #[trace("FR-161-AC-1", "FR-161-AC-2", "FR-161-AC-6", "FR-161-AC-7")]
+    #[trace(
+        "FR-161-AC-1",
+        "FR-161-AC-2",
+        "FR-161-AC-6",
+        "FR-161-AC-7",
+        "FR-161-CON-2"
+    )]
     #[test]
     fn rows_read_only_carried_class_and_share_method_evidence_by_kind() {
         let activity_data = vec![
@@ -694,17 +700,21 @@ mod tests {
         ];
         let design = json!({"relations":[{"rows":[
             {"document":{"path":"spec/FR-1.md"},"state":"covered","allocated_class":"class-1"},
-            {"document":{"path":"spec/FR-2.md"},"state":"uncovered"}
+            {"document":{"path":"spec/FR-2.md"},"state":"uncovered","allocated_class":"class-1"}
         ]}]});
         let methods = BTreeMap::from([("unit-testing".to_owned(), "test-run".to_owned())]);
         let rows = build_rows(&matrix, &design, &policy, &methods, &BTreeMap::new()).unwrap();
         assert_eq!(rows.requirements.len(), 1);
         assert_eq!(rows.requirements[0]["class"], "class-3");
+        assert!(rows.requirements[0].get("allocation").is_none());
+        assert!(rows.requirements[0].get("design_links").is_none());
         assert_eq!(rows.requirements[0]["activities"][0]["status"], "met");
         assert_eq!(rows.requirements[0]["activities"][1]["status"], "met");
         assert_eq!(rows.unassigned, ["spec/FR-2.md"]);
         let first = render_markdown(&rows);
         assert_eq!(first, render_markdown(&rows));
+        assert!(!first.contains("class-1"), "{first}");
+        assert!(!first.contains("allocated_class"), "{first}");
         assert!(
             first.contains("| unit | evidence | unit-testing | met |  |  |"),
             "{first}"
