@@ -330,7 +330,10 @@ fn real_ea_release_and_quire_dossier_export_scenario() {
         text.contains(&format!("{RELEASE_TAG} (tag commit {release})")),
         "{text}"
     );
-    assert!(text.contains(&release), "{text}");
+    assert!(
+        text.contains(&dossier_commit),
+        "PDF omitted Source commit {dossier_commit}: {text}"
+    );
     assert!(text.contains(&dossier_date), "{text}");
     let successful_pdf = fs::read(&output).unwrap();
 
