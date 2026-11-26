@@ -112,7 +112,11 @@ fn security_module() -> PathBuf {
 fn schema_path() -> PathBuf {
     std::env::var_os("CYCLONEDX_SCHEMA_PATH")
         .map(PathBuf::from)
-        .expect("CYCLONEDX_SCHEMA_PATH must name the fetched CycloneDX 1.7 schema")
+        .expect(concat!(
+            "missing CYCLONEDX_SCHEMA_PATH; set it to the fetched CycloneDX 1.7 ",
+            "bom-1.7.schema.json, e.g. CYCLONEDX_SCHEMA_PATH=/path/to/cyclonedx-1.7/",
+            "bom-1.7.schema.json"
+        ))
 }
 
 fn statement(advisory: &str, status: &str, justification: Option<&str>) -> Value {
