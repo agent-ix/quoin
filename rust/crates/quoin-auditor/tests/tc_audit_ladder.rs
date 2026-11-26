@@ -268,37 +268,38 @@ fn vacuity_needs_every_bound_symbol_skipped_or_absent() {
 #[test]
 fn vacuity_folds_over_all_bound_suites() {
     let obligation = ob("FR-9-AC-1", "the system SHALL do the thing");
-    let bindings = vec![
-        bind("FR-9-AC-1", "unit", &["t::skipped"]),
-        bind("FR-9-AC-1", "property", &["t::passed"]),
-    ];
-    let mixed = input(
-        vec![obligation.clone()],
-        bindings.clone(),
-        vec![
-            run_of(
-                "unit",
-                None,
-                vec![RunEntry::new("t::skipped", Outcome::Skip)],
-            ),
-            run_of("property", None, vec![pass("t::passed")]),
-        ],
-    );
-    assert!(
-        of_kind(&report(&mixed), "vacuous-evidence", "FR-9-AC-1").is_empty(),
-        "one passing bound symbol in another suite keeps the evidence non-vacuous"
-    );
+    let mixed_case = |alpha: Outcome, zeta: Outcome| {
+        let mixed = input(
+            vec![obligation.clone()],
+            vec![
+                bind("FR-9-AC-1", "alpha", &["t::alpha"]),
+                bind("FR-9-AC-1", "zeta", &["t::zeta"]),
+            ],
+            vec![
+                run_of("alpha", None, vec![RunEntry::new("t::alpha", alpha)]),
+                run_of("zeta", None, vec![RunEntry::new("t::zeta", zeta)]),
+            ],
+        );
+        let report = report(&mixed);
+        assert!(
+            of_kind(&report, "vacuous-evidence", "FR-9-AC-1").is_empty(),
+            "one passing bound symbol in another suite keeps the evidence non-vacuous"
+        );
+    };
+    // Bindings sort by suite name: cover a passing first suite and a passing
+    // later suite so neither a first-only nor last-only scan can pass.
+    mixed_case(Outcome::Pass, Outcome::Skip);
+    mixed_case(Outcome::Skip, Outcome::Pass);
 
     let all_vacuous = input(
         vec![obligation],
-        bindings,
         vec![
-            run_of(
-                "unit",
-                None,
-                vec![RunEntry::new("t::skipped", Outcome::Skip)],
-            ),
-            run_of("property", None, vec![]),
+            bind("FR-9-AC-1", "alpha", &["t::alpha"]),
+            bind("FR-9-AC-1", "zeta", &["t::zeta"]),
+        ],
+        vec![
+            run_of("alpha", None, vec![]),
+            run_of("zeta", None, vec![RunEntry::new("t::zeta", Outcome::Skip)]),
         ],
     );
     let all_vacuous_report = report(&all_vacuous);
