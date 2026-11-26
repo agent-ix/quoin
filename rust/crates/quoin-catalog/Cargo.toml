@@ -15,6 +15,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 quoin-semantic = { workspace = true }
 quoin-yaml = { workspace = true }
 serde = { workspace = true }

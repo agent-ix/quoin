@@ -75,7 +75,7 @@ fn text(bytes: &[u8]) -> String {
 /// and human listing shapes without mutating migration evidence in place. This
 /// fixture deliberately has no resolved module roots: its contract is the
 /// empty JSON module list and an entirely empty human response.
-#[trace("FR-099", "FR-102")]
+#[trace("FR-099-AC-3", "FR-102")]
 #[test]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
@@ -104,7 +104,7 @@ fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
 
 /// The shipped command, rather than the retired protocol executable, discovers
 /// one nested module root and preserves its declared artifact projection.
-#[trace("FR-099", "FR-102")]
+#[trace("FR-099-AC-3", "FR-102")]
 #[test]
 fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");

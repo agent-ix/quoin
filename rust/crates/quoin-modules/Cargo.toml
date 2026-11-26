@@ -53,5 +53,6 @@ schema = ["dep:schemars"]
 
 [dev-dependencies]
 ix-trace-rs = { workspace = true }
+quoin-catalog = { workspace = true }
 quire-fixtures = { workspace = true }
 tempfile = "=3.27.0"
