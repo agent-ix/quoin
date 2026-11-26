@@ -7,8 +7,7 @@
 //! exclusively from validated `soup_record` documents; retained advisory scans
 //! are read only to label an authored statement stale.
 
-use std::collections::BTreeMap;
-use std::io::Write as _;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::str::FromStr as _;
 
@@ -70,7 +69,7 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, Stop> {
         vec![VexScanState::default(); records.len()]
     };
     let document = render(&records, &scan_states)?;
-    write_atomic(&output, &document)?;
+    super::vex::write_atomic(&output, &document, "CycloneDX")?;
 
     let vulnerabilities = document.vulnerabilities.as_ref().map_or(0, Vec::len);
     Ok(Response::ok(json!({
@@ -203,28 +202,21 @@ struct Property {
     value: String,
 }
 
-struct SourceStatement<'a> {
-    record: &'a Existing,
-    advisory: &'a str,
-    status: &'a str,
-    justification: Option<&'a str>,
-    impact_statement: Option<&'a str>,
-    action_statement: Option<&'a str>,
-    assessed_by: &'a str,
-    assessed_at: &'a str,
-    evidence_refs: Vec<&'a str>,
-}
-
-#[implements("FR-156-AC-6", "FR-156-AC-9")]
+#[implements("FR-156-AC-6", "FR-156-AC-9", "FR-156-AC-11")]
 fn render(records: &[Existing], scan_states: &[VexScanState]) -> Result<Bom, Stop> {
     let mut components_by_ref = BTreeMap::new();
     let mut vulnerabilities = Vec::new();
+    let mut unique_vulnerabilities = BTreeSet::new();
     for (position, record) in records.iter().enumerate() {
         let Some(items) = record.front.get("vex_statements") else {
             continue;
         };
         let Some(items) = items.as_array() else {
-            return Err(source_invalid(record, "vex_statements", "must be a list"));
+            return Err(super::vex::source_invalid(
+                record,
+                "vex_statements",
+                "must be a list",
+            ));
         };
         if items.is_empty() {
             continue;
@@ -233,8 +225,19 @@ fn render(records: &[Existing], scan_states: &[VexScanState]) -> Result<Bom, Sto
         let state = scan_states.get(position).cloned().unwrap_or_default();
         components_by_ref.insert(component.bom_ref.clone(), component);
         for item in items {
-            let statement = source_statement(record, item)?;
-            vulnerabilities.push(vulnerability(&statement, &state)?);
+            let statement = super::vex::source_statement(record, item)?;
+            let vulnerability = vulnerability(record, &statement, &state)?;
+            let unique = serde_json::to_vec(&vulnerability).map_err(|error| {
+                Stop::Fail(format!("cannot compare CycloneDX entries: {error}"))
+            })?;
+            if !unique_vulnerabilities.insert(unique) {
+                return Err(super::vex::source_invalid(
+                    record,
+                    "vex_statements",
+                    "duplicate statements produce identical CycloneDX entries, which the schema forbids",
+                ));
+            }
+            vulnerabilities.push(vulnerability);
         }
     }
     vulnerabilities.sort_by(|left, right| {
@@ -260,10 +263,11 @@ fn render(records: &[Existing], scan_states: &[VexScanState]) -> Result<Bom, Sto
 
 #[implements("FR-156-AC-1", "FR-156-AC-8")]
 fn component(record: &Existing) -> Result<Component, Stop> {
-    let identity = PurlIdentity::parse(&record.purl)
-        .ok_or_else(|| source_invalid(record, "purl", "must be a canonical package URL"))?;
+    let identity = PurlIdentity::parse(&record.purl).ok_or_else(|| {
+        super::vex::source_invalid(record, "purl", "must be a canonical package URL")
+    })?;
     let parsed = PackageUrl::from_str(&record.purl).map_err(|_| {
-        source_invalid(
+        super::vex::source_invalid(
             record,
             "purl",
             "must follow the Package-URL type definition",
@@ -278,6 +282,8 @@ fn component(record: &Existing) -> Result<Component, Stop> {
             (!identity.namespace.is_empty()).then_some(identity.namespace),
             identity.name,
         )
+    } else if identity.kind == "pypi" {
+        (None, normalize_pypi_name(&identity.name))
     } else {
         (
             parsed.namespace().map(str::to_owned),
@@ -293,82 +299,50 @@ fn component(record: &Existing) -> Result<Component, Stop> {
     })
 }
 
-#[implements("FR-156-AC-3", "FR-156-AC-4")]
-fn source_statement<'a>(
-    record: &'a Existing,
-    source: &'a Value,
-) -> Result<SourceStatement<'a>, Stop> {
-    let Some(object) = source.as_object() else {
-        return Err(source_invalid(
-            record,
-            "vex_statements",
-            "entries must be objects",
-        ));
-    };
-    let required = |field: &str| -> Result<&str, Stop> {
-        object.get(field).and_then(Value::as_str).ok_or_else(|| {
-            source_invalid(
-                record,
-                field,
-                "must be text as required by the source contract",
-            )
-        })
-    };
-    let optional = |field: &str| -> Result<Option<&str>, Stop> {
-        match object.get(field) {
-            None => Ok(None),
-            Some(Value::String(value)) => Ok(Some(value)),
-            _ => Err(source_invalid(
-                record,
-                field,
-                "must be text as required by the source contract",
-            )),
+#[implements("FR-156-AC-8")]
+fn normalize_pypi_name(name: &str) -> String {
+    let mut normalized = String::with_capacity(name.len());
+    let mut previous_was_separator = false;
+    for character in name.chars() {
+        if matches!(character, '-' | '_' | '.') {
+            if !previous_was_separator {
+                normalized.push('-');
+            }
+            previous_was_separator = true;
+        } else {
+            previous_was_separator = false;
+            normalized.extend(character.to_lowercase());
         }
-    };
-    let evidence_refs = match object.get("evidence_refs") {
-        None => Vec::new(),
-        Some(Value::Array(values)) => values
-            .iter()
-            .map(|value| {
-                value
-                    .as_str()
-                    .ok_or_else(|| source_invalid(record, "evidence_refs", "entries must be text"))
-            })
-            .collect::<Result<Vec<_>, _>>()?,
-        _ => return Err(source_invalid(record, "evidence_refs", "must be a list")),
-    };
-    Ok(SourceStatement {
-        record,
-        advisory: required("advisory")?,
-        status: required("status")?,
-        justification: optional("justification")?,
-        impact_statement: optional("impact_statement")?,
-        action_statement: optional("action_statement")?,
-        assessed_by: required("assessed_by")?,
-        assessed_at: required("assessed_at")?,
-        evidence_refs,
-    })
+    }
+    normalized
 }
 
-#[implements("FR-156-AC-2", "FR-156-AC-3", "FR-156-AC-4", "FR-156-AC-7")]
+#[implements(
+    "FR-156-AC-2",
+    "FR-156-AC-3",
+    "FR-156-AC-4",
+    "FR-156-AC-7",
+    "FR-156-AC-12"
+)]
 fn vulnerability(
-    statement: &SourceStatement<'_>,
+    record: &Existing,
+    statement: &super::vex::SourceStatement,
     scan_state: &VexScanState,
 ) -> Result<Vulnerability, Stop> {
-    let (state, version_status) = match statement.status {
+    let (state, version_status) = match statement.status.as_str() {
         "affected" => (AnalysisState::Exploitable, AffectedStatus::Affected),
         "not_affected" => (AnalysisState::NotAffected, AffectedStatus::Unaffected),
         "under_investigation" => (AnalysisState::InTriage, AffectedStatus::Unknown),
         "fixed" => (AnalysisState::Resolved, AffectedStatus::Unaffected),
         _ => {
-            return Err(source_invalid(
-                statement.record,
+            return Err(super::vex::source_invalid(
+                record,
                 "status",
                 "is not a supported VEX status",
             ));
         }
     };
-    let justification = match statement.justification {
+    let justification = match statement.justification.as_deref() {
         Some("vulnerable_code_not_present") => Some(AnalysisJustification::CodeNotPresent),
         Some("vulnerable_code_not_in_execute_path") => {
             Some(AnalysisJustification::CodeNotReachable)
@@ -379,24 +353,33 @@ fn vulnerability(
         Some("component_not_present" | "vulnerable_code_cannot_be_controlled_by_adversary")
         | None => None,
         Some(_) => {
-            return Err(source_invalid(
-                statement.record,
+            return Err(super::vex::source_invalid(
+                record,
                 "justification",
                 "is not a supported VEX justification",
             ));
         }
     };
-    let component_version = statement
-        .record
+    let component_version = record
         .front
         .get("version")
         .and_then(Value::as_str)
         .map(str::to_owned)
         .or_else(|| {
-            PackageUrl::from_str(&statement.record.purl)
+            PackageUrl::from_str(&record.purl)
                 .ok()
                 .and_then(|purl| purl.version().map(str::to_owned))
         });
+    if component_version
+        .as_ref()
+        .is_some_and(|version| version.chars().count() > 1024)
+    {
+        return Err(super::vex::source_invalid(
+            record,
+            "version",
+            "exceeds CycloneDX 1.7's 1024-character affected-version limit",
+        ));
+    }
     let versions = component_version.map(|version| {
         vec![AffectedVersion {
             version,
@@ -405,85 +388,44 @@ fn vulnerability(
     });
     let mut properties = vec![Property {
         name: "quoin:vex:source-status".to_owned(),
-        value: statement.status.to_owned(),
+        value: statement.status.clone(),
     }];
-    if let Some(justification) = statement.justification {
+    if let Some(justification) = &statement.justification {
         properties.push(Property {
             name: "quoin:vex:justification".to_owned(),
-            value: justification.to_owned(),
+            value: justification.clone(),
         });
     }
     properties.push(Property {
         name: "quoin:vex:assessed-by".to_owned(),
-        value: statement.assessed_by.to_owned(),
+        value: statement.assessed_by.clone(),
     });
     properties.push(Property {
         name: "quoin:vex:assessed-at".to_owned(),
-        value: statement.assessed_at.to_owned(),
+        value: statement.assessed_at.clone(),
     });
     properties.extend(statement.evidence_refs.iter().map(|reference| Property {
         name: "quoin:vex:evidence-ref".to_owned(),
-        value: (*reference).to_owned(),
+        value: reference.clone(),
     }));
-    if scan_state.is_stale(&statement.record.purl, statement.advisory) {
+    if scan_state.is_stale(&record.purl, &statement.advisory) {
         properties.push(Property {
             name: STALE_PROPERTY.to_owned(),
             value: "true".to_owned(),
         });
     }
     Ok(Vulnerability {
-        id: statement.advisory.to_owned(),
+        id: statement.advisory.clone(),
         analysis: Analysis {
             state,
             justification,
-            detail: statement.impact_statement.map(str::to_owned),
+            detail: statement.impact_statement.clone(),
         },
         affects: vec![AffectedComponent {
-            component_ref: statement.record.purl.clone(),
+            component_ref: record.purl.clone(),
             versions,
         }],
         properties,
-        recommendation: statement.action_statement.map(str::to_owned),
+        recommendation: statement.action_statement.clone(),
     })
-}
-
-fn source_invalid(record: &Existing, field: &str, reason: &str) -> Stop {
-    refuse(
-        "soup.vex_statement_invalid",
-        format!("{} has invalid {field}: {reason}", record.path.display()),
-        &[
-            ("path", record.path.display().to_string()),
-            ("field", field.to_owned()),
-        ],
-    )
-}
-
-/// Write a completed BOM through a same-directory staged file.
-fn write_atomic(output: &Path, document: &Bom) -> Result<(), Stop> {
-    let mut bytes = serde_json::to_vec_pretty(document)
-        .map_err(|error| Stop::Fail(format!("cannot serialize CycloneDX document: {error}")))?;
-    bytes.push(b'\n');
-    let parent = output
-        .parent()
-        .filter(|path| !path.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."));
-    std::fs::create_dir_all(parent)
-        .map_err(|error| Stop::Fail(format!("cannot create {}: {error}", parent.display())))?;
-    let mut staged = tempfile::NamedTempFile::new_in(parent)
-        .map_err(|error| Stop::Fail(format!("cannot stage {}: {error}", output.display())))?;
-    staged
-        .write_all(&bytes)
-        .map_err(|error| Stop::Fail(format!("cannot write staged CycloneDX document: {error}")))?;
-    staged
-        .as_file()
-        .sync_all()
-        .map_err(|error| Stop::Fail(format!("cannot flush staged CycloneDX document: {error}")))?;
-    staged.persist(output).map_err(|error| {
-        Stop::Fail(format!(
-            "cannot replace {}: {}",
-            output.display(),
-            error.error
-        ))
-    })?;
-    Ok(())
 }

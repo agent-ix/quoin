@@ -22,7 +22,7 @@ use serde_json::{Value, json};
 const NPM_PURL: &str = "pkg:npm/%40babel/core@12.3.1";
 const NPM_CASE_PURL: &str = "pkg:npm/%40Babel/Core@12.3.1";
 const PYPI_PURL: &str = "pkg:pypi/requests@2.31.0";
-const PYPI_CASE_PURL: &str = "pkg:pypi/Requests@2.31.0";
+const PYPI_CASE_PURL: &str = "pkg:pypi/Foo..__Bar@2.31.0";
 
 struct Fixture {
     root: tempfile::TempDir,
@@ -235,7 +235,7 @@ fn purl_components_follow_type_definitions_and_bom_matches_schema() {
         .iter()
         .find(|component| component["purl"] == PYPI_CASE_PURL)
         .unwrap();
-    assert_eq!(normalized["name"], "requests");
+    assert_eq!(normalized["name"], "foo-bar");
     assert_matches_cyclonedx_17_schema(&result);
 }
 
@@ -422,7 +422,7 @@ fn authored_fields_and_all_justifications_are_preserved_without_advisory_dedupli
     }
 }
 
-#[trace("FR-156-AC-6", "NFR-030-AC-6")]
+#[trace("FR-156-AC-6", "FR-156-CON-3", "NFR-030-AC-6")]
 #[test]
 fn scanner_advisories_do_not_create_vulnerabilities_without_authored_statements() {
     let fixture = Fixture::new();
@@ -503,14 +503,11 @@ fn identical_inputs_produce_byte_identical_output() {
         "12.3.1",
         Some(json!([statement("CVE-2026-0001", "affected", None)])),
     );
-    let first_path = fixture.path().join("first.json");
-    let second_path = fixture.path().join("second.json");
-    assert!(fixture.command(Some(&first_path), None).status.success());
-    assert!(fixture.command(Some(&second_path), None).status.success());
-    assert_eq!(
-        std::fs::read(first_path).unwrap(),
-        std::fs::read(second_path).unwrap()
-    );
+    let output_path = fixture.path().join("same-output.json");
+    assert!(fixture.command(Some(&output_path), None).status.success());
+    let first = std::fs::read(&output_path).unwrap();
+    assert!(fixture.command(Some(&output_path), None).status.success());
+    assert_eq!(first, std::fs::read(output_path).unwrap());
 }
 
 #[trace("FR-156-AC-5", "FR-156-AC-10")]
@@ -540,4 +537,73 @@ fn cyclonedx_without_out_requires_an_sbom_path() {
     assert!(!output.status.success());
     let diagnostic = stderr(&output);
     assert!(diagnostic.contains("--sbom is required"), "{diagnostic}");
+}
+
+#[trace("FR-156-AC-11")]
+#[test]
+fn identical_statements_refuse_instead_of_violating_schema_unique_items() {
+    let fixture = Fixture::new();
+    let duplicate = statement("CVE-DUPLICATE", "affected", None);
+    fixture.record(
+        "duplicate-statements",
+        NPM_PURL,
+        "12.3.1",
+        Some(json!([duplicate.clone(), duplicate])),
+    );
+    let output_path = fixture.path().join("duplicate.json");
+    std::fs::write(&output_path, "existing output").unwrap();
+    let output = fixture.command(Some(&output_path), None);
+
+    assert!(!output.status.success());
+    let diagnostic = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        stderr(&output)
+    );
+    assert!(
+        diagnostic.contains("duplicate-statements.md"),
+        "{diagnostic}"
+    );
+    assert!(diagnostic.contains("vex_statements"), "{diagnostic}");
+    assert_eq!(std::fs::read(output_path).unwrap(), b"existing output");
+}
+
+#[trace("FR-156-AC-12")]
+#[test]
+fn affected_version_respects_cyclonedx_schema_length_limit() {
+    let fixture = Fixture::new();
+    fixture.record(
+        "max-version",
+        NPM_PURL,
+        &"v".repeat(1024),
+        Some(json!([statement("CVE-VERSION-BOUNDARY", "affected", None)])),
+    );
+    let output_path = fixture.path().join("version.json");
+    let accepted = fixture.command(Some(&output_path), None);
+    assert!(accepted.status.success(), "{}", stderr(&accepted));
+    let accepted_document: Value =
+        serde_json::from_slice(&std::fs::read(&output_path).unwrap()).unwrap();
+    assert_eq!(
+        accepted_document["vulnerabilities"][0]["affects"][0]["versions"][0]["version"]
+            .as_str()
+            .unwrap()
+            .chars()
+            .count(),
+        1024
+    );
+    assert_matches_cyclonedx_17_schema(&accepted_document);
+
+    fixture.record(
+        "max-version",
+        NPM_PURL,
+        &"v".repeat(1025),
+        Some(json!([statement("CVE-VERSION-BOUNDARY", "affected", None)])),
+    );
+    let preserved = std::fs::read(&output_path).unwrap();
+    let refused = fixture.command(Some(&output_path), None);
+    assert!(!refused.status.success());
+    let diagnostic = stderr(&refused);
+    assert!(diagnostic.contains("max-version.md"), "{diagnostic}");
+    assert!(diagnostic.contains("version"), "{diagnostic}");
+    assert_eq!(std::fs::read(output_path).unwrap(), preserved);
 }

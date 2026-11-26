@@ -13,6 +13,7 @@ use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 use quoin_quire::records::Contract;
 use quoin_quire::{ModuleSelection, records};
+use serde::Serialize;
 use serde_json::{Map, Value, json};
 use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
@@ -50,7 +51,7 @@ fn run_openvex(arguments: &ArgMatches) -> Result<Response, Stop> {
     validate_source_contract(&records_dir)?;
     let records = read_all_records(&records_dir)?;
     let document = render(&records, &metadata)?;
-    write_atomic(&output, &document)?;
+    write_atomic(&output, &document, "OpenVEX")?;
 
     let statements = document
         .get("statements")
@@ -227,19 +228,7 @@ fn render(records: &[Existing], metadata: &Metadata) -> Result<Value, Stop> {
     Ok(Value::Object(document))
 }
 
-#[allow(
-    clippy::struct_field_names,
-    reason = "these members preserve the authored OpenVEX source field names"
-)]
-struct Statement {
-    advisory: String,
-    status: String,
-    justification: Option<String>,
-    impact_statement: Option<String>,
-    action_statement: Option<String>,
-}
-
-impl Statement {
+impl SourceStatement {
     fn json(&self, purl: &str) -> Value {
         let mut statement = Map::new();
         statement.insert("vulnerability".to_owned(), json!({"name": self.advisory}));
@@ -258,7 +247,23 @@ impl Statement {
     }
 }
 
-fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop> {
+#[allow(
+    clippy::struct_field_names,
+    reason = "these members preserve the authored VEX source field names"
+)]
+pub(super) struct SourceStatement {
+    pub(super) advisory: String,
+    pub(super) status: String,
+    pub(super) justification: Option<String>,
+    pub(super) impact_statement: Option<String>,
+    pub(super) action_statement: Option<String>,
+    pub(super) assessed_by: String,
+    pub(super) assessed_at: String,
+    pub(super) evidence_refs: Vec<String>,
+}
+
+#[implements("FR-156-AC-3", "FR-156-AC-4")]
+pub(super) fn source_statement(record: &Existing, source: &Value) -> Result<SourceStatement, Stop> {
     let Some(object) = source.as_object() else {
         return Err(source_invalid(
             record,
@@ -267,14 +272,17 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
         ));
     };
     let required = |field: &str| -> Result<String, Stop> {
-        match object.get(field) {
-            Some(Value::String(value)) => Ok(value.clone()),
-            _ => Err(source_invalid(
-                record,
-                field,
-                "must be text as required by the source contract",
-            )),
-        }
+        object
+            .get(field)
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+            .ok_or_else(|| {
+                source_invalid(
+                    record,
+                    field,
+                    "must be text as required by the source contract",
+                )
+            })
     };
     let optional = |field: &str| -> Result<Option<String>, Stop> {
         match object.get(field) {
@@ -292,16 +300,32 @@ fn source_statement(record: &Existing, source: &Value) -> Result<Statement, Stop
     let justification = optional("justification")?;
     let impact_statement = optional("impact_statement")?;
     let action_statement = optional("action_statement")?;
-    Ok(Statement {
+    let evidence_refs = match object.get("evidence_refs") {
+        None => Vec::new(),
+        Some(Value::Array(values)) => values
+            .iter()
+            .map(|value| {
+                value
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or_else(|| source_invalid(record, "evidence_refs", "entries must be text"))
+            })
+            .collect::<Result<Vec<_>, _>>()?,
+        _ => return Err(source_invalid(record, "evidence_refs", "must be a list")),
+    };
+    Ok(SourceStatement {
         advisory,
         status,
         justification,
         impact_statement,
         action_statement,
+        assessed_by: required("assessed_by")?,
+        assessed_at: required("assessed_at")?,
+        evidence_refs,
     })
 }
 
-fn source_invalid(record: &Existing, field: &str, reason: &str) -> Stop {
+pub(super) fn source_invalid(record: &Existing, field: &str, reason: &str) -> Stop {
     refuse(
         "soup.vex_statement_invalid",
         format!("{} has invalid {field}: {reason}", record.path.display()),
@@ -314,9 +338,13 @@ fn source_invalid(record: &Existing, field: &str, reason: &str) -> Stop {
 
 /// Persist complete bytes with a same-directory temporary file and atomic
 /// rename, after all source validation and serialization has succeeded.
-fn write_atomic(output: &Path, document: &Value) -> Result<(), Stop> {
+pub(super) fn write_atomic<T: Serialize>(
+    output: &Path,
+    document: &T,
+    format: &str,
+) -> Result<(), Stop> {
     let mut bytes = serde_json::to_vec_pretty(document)
-        .map_err(|error| Stop::Fail(format!("cannot serialize OpenVEX document: {error}")))?;
+        .map_err(|error| Stop::Fail(format!("cannot serialize {format} document: {error}")))?;
     bytes.push(b'\n');
     let parent = output
         .parent()
@@ -324,15 +352,19 @@ fn write_atomic(output: &Path, document: &Value) -> Result<(), Stop> {
         .unwrap_or_else(|| Path::new("."));
     std::fs::create_dir_all(parent)
         .map_err(|error| Stop::Fail(format!("cannot create {}: {error}", parent.display())))?;
-    let mut staged = tempfile::NamedTempFile::new_in(parent)
-        .map_err(|error| Stop::Fail(format!("cannot stage {}: {error}", output.display())))?;
+    let mut staged = tempfile::NamedTempFile::new_in(parent).map_err(|error| {
+        Stop::Fail(format!(
+            "cannot stage {format} document at {}: {error}",
+            output.display()
+        ))
+    })?;
     staged
         .write_all(&bytes)
-        .map_err(|error| Stop::Fail(format!("cannot write staged OpenVEX document: {error}")))?;
+        .map_err(|error| Stop::Fail(format!("cannot write staged {format} document: {error}")))?;
     staged
         .as_file()
         .sync_all()
-        .map_err(|error| Stop::Fail(format!("cannot flush staged OpenVEX document: {error}")))?;
+        .map_err(|error| Stop::Fail(format!("cannot flush staged {format} document: {error}")))?;
     staged.persist(output).map_err(|error| {
         Stop::Fail(format!(
             "cannot replace {}: {}",
