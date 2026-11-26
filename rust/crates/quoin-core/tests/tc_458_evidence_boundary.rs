@@ -629,6 +629,87 @@ fn tc_458_150_audit_inputs_names_the_scans_that_evaluated_no_rules() {
     assert_eq!(payload["vacuous_scan_suites"], json!(["SUITE-VACUOUS"]));
 }
 
+/// A clean scan has no finding from which to infer an obligation; its stated
+/// `discharges` list is written as a binding.
+#[trace("FR-034-AC-16")]
+#[test]
+fn tc_458_151_a_clean_scan_binds_its_stated_discharges() {
+    let dir = repo();
+    let obligation_id = "FR-034-AC-16";
+    let sarif = json!({
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {"driver": {"name": "semgrep", "rules": [{"id": "S001"}]}},
+            "results": [],
+        }],
+    });
+    let payload = ok(&run(
+        "evidence.record",
+        &json!({
+            "repo": dir.path(),
+            "suite": "SUITE-CLEAN",
+            "tool": "semgrep 1.2.3",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "adapter": "sarif",
+            "results": sarif.to_string(),
+            "discharges": [obligation_id],
+            "obligations": [{"id": obligation_id, "statement": "the clean scan checks this"}],
+        }),
+    ));
+
+    assert_eq!(payload["kind"], "scan");
+    assert_eq!(payload["findings"], json!([]));
+    assert_eq!(payload["bound"], json!([obligation_id]));
+    let bindings: Value =
+        serde_json::from_slice(&fs::read(dir.path().join("spec/evidence/bindings.json")).unwrap())
+            .unwrap();
+    assert_eq!(bindings["bindings"][0]["obligation"], obligation_id);
+    assert_eq!(bindings["bindings"][0]["suite"], "SUITE-CLEAN");
+    assert_eq!(bindings["bindings"][0]["symbols"], json!([]));
+}
+
+/// A rule-less scan writes the scan record but cannot bind even a stated
+/// discharge.
+#[trace("FR-034-AC-17")]
+#[test]
+fn tc_458_152_a_vacuous_scan_does_not_bind_stated_discharges() {
+    let dir = repo();
+    let obligation_id = "FR-034-AC-17";
+    let sarif = json!({
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {"driver": {"name": "semgrep", "rules": []}},
+            "results": [],
+        }],
+    });
+    let payload = ok(&run(
+        "evidence.record",
+        &json!({
+            "repo": dir.path(),
+            "suite": "SUITE-VACUOUS",
+            "tool": "semgrep 1.2.3",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "adapter": "sarif",
+            "results": sarif.to_string(),
+            "discharges": [obligation_id],
+            "obligations": [{"id": obligation_id, "statement": "a vacuous scan cannot verify this"}],
+        }),
+    ));
+
+    assert_eq!(payload["kind"], "scan");
+    assert_eq!(payload["findings"], json!([]));
+    assert_eq!(payload["bound"], json!([]));
+    assert_eq!(payload["unknown"], json!([]));
+    assert!(!dir.path().join("spec/evidence/bindings.json").exists());
+    let scans = fs::read_dir(dir.path().join("spec/evidence/scans/SUITE-VACUOUS"))
+        .unwrap()
+        .count();
+    assert_eq!(
+        scans, 1,
+        "the attempted scan remains evidence that the tool ran"
+    );
+}
+
 ///
 /// The second declared divergence, through the real binary.
 ///
