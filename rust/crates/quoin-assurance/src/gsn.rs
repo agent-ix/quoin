@@ -1806,6 +1806,11 @@ mod tests {
             .iter()
             .find(|node| node.source == "R-2")
             .expect("R-2");
+        let evidence_criterion = result
+            .nodes
+            .iter()
+            .find(|node| node.source == "R-2:evidence criterion")
+            .expect("R-2 evidence criterion goal");
         assert!(result.edges.iter().any(|edge| edge.kind == "supported_by"
             && edge.from == *root
             && edge.to == strategy_one.id));
@@ -1832,7 +1837,7 @@ mod tests {
             result
                 .edges
                 .iter()
-                .any(|edge| edge.from == strategy_two.id && edge.to == evidence[1].id)
+                .any(|edge| edge.from == evidence_criterion.id && edge.to == evidence[1].id)
         );
         let missing = result
             .nodes

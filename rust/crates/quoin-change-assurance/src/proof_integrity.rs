@@ -388,14 +388,14 @@ pub enum RetainedObject<'a> {
     Output(&'a [u8]),
 }
 
-/// Signature outcome returned by Engineering Assurance FR-080 for one tag object.
+/// Reported signature state only; this record does not independently verify the tag.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CheckpointSignature {
-    /// A configured trusted signer verified the signature.
+    /// FR-080 reports a configured trusted signer verified it; Quoin does not verify signatures.
     Verified,
-    /// The signed tag's signature is malformed or cryptographically bad.
+    /// FR-080 reports malformed tag-signature bytes; Quoin does not verify signatures.
     BadSignature,
-    /// The signature is valid but the signer is not in configured trust.
+    /// FR-080 reports a valid signature from an untrusted signer; Quoin does not verify it.
     UntrustedSigner,
     /// The tag object carries no signature.
     Unsigned,
@@ -416,11 +416,11 @@ pub struct Fr080CheckpointResult {
     pub tag_object_id: String,
     /// SHA-256 of exact tag object bytes FR-080 parsed and verified.
     pub verified_tag_bytes_sha256: String,
-    /// Signature outcome FR-080 returned for this same immutable object.
+    /// Signature outcome FR-080 reported for this object, not independently verified by Quoin.
     pub signature: CheckpointSignature,
 }
 
-/// Checkpoint evidence accepted only when tied to the exact signed-tag bytes.
+/// FR-080 evidence is accepted only for matching tag bytes; Quoin does not verify signatures.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VerifiedCheckpoint {
     purpose: String,
@@ -431,13 +431,14 @@ pub struct VerifiedCheckpoint {
 }
 
 impl VerifiedCheckpoint {
-    /// Bind an FR-080 result to the exact signed-tag bytes passed for verification.
+    /// Bind an FR-080 result to the exact tag bytes passed to the verifier; Quoin does not verify signatures.
     ///
     /// # Errors
     ///
-    /// Returns a typed invalid condition for a bad signature, untrusted signer,
-    /// object-byte mismatch, malformed result or wrong protocol binding. Missing
-    /// and unevaluable signatures remain typed incomplete conditions.
+    /// Returns a typed invalid result for FR-080's bad-signature or untrusted-signer reports;
+    /// this module does not independently verify signatures. It also reports an object-byte
+    /// mismatch, malformed result or wrong protocol binding. Missing or unevaluable signature
+    /// reports remain incomplete conditions.
     pub fn from_fr080_result(
         exact_tag_bytes: &[u8],
         result: Fr080CheckpointResult,
@@ -487,16 +488,16 @@ pub enum CheckpointFailure {
     /// The configured verifier is not available.
     #[error("checkpoint verifier is unavailable")]
     VerifierUnavailable,
-    /// No signature was present.
+    /// FR-080 reports no signature; this module does not verify the tag.
     #[error("checkpoint signature is missing")]
     SignatureMissing,
-    /// The signature could not be evaluated.
+    /// FR-080 could not evaluate the signature; this module does not verify the tag.
     #[error("checkpoint signature is unverifiable")]
     SignatureUnverifiable,
-    /// The signature is bad.
+    /// FR-080 reports a bad signature; this module does not verify the tag.
     #[error("checkpoint signature is bad")]
     BadSignature,
-    /// The signature is valid, but signer trust does not include this signer.
+    /// FR-080 reports a valid signature but an untrusted signer; this module does not verify it.
     #[error("checkpoint signer is untrusted")]
     UntrustedSigner,
     /// Parsed statement purpose, digest or proof scope does not match the request.
@@ -522,7 +523,7 @@ pub enum Qualification {
         statement_digest: String,
         /// Exact tag object id returned by FR-080.
         tag_object_id: String,
-        /// Signature status returned by FR-080 for that object.
+        /// Signature status reported by FR-080 for that object, not independently verified by Quoin.
         checkpoint_signature: CheckpointSignature,
     },
 }

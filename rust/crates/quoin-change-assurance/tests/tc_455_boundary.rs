@@ -211,6 +211,11 @@ fn tc_455_the_integrity_boundary_is_stated_and_never_overstated() {
     for (name, contents) in sources() {
         let lines: Vec<&str> = contents.lines().collect();
         for (index, line) in lines.iter().enumerate() {
+            // This boundary governs prose. Code identifiers and refusal-code
+            // strings name states without asserting that Quoin authenticated them.
+            if !line.trim_start().starts_with("//") {
+                continue;
+            }
             let spoken = words(line);
             if !spoken.iter().any(|word| claims.contains(&word.as_str())) {
                 continue;
