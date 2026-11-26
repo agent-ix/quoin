@@ -68,7 +68,7 @@ newer than, the release the running CLI pins.
 | FR-212-AC-5 | `quoin module doctor` prints the warnings and a one-line summary count, and exits zero                                                                       | Test         |
 | FR-212-AC-6 | `quoin catalog validate` prints the warnings and exits zero when the catalog is valid                                                                        | Test         |
 | FR-212-AC-7 | When the lag check fails after the catalog loads, the check yields a warning diagnostic in place of the lag warnings and does not change the exit status of `quoin catalog validate` | Test         |
-| FR-212-AC-8 | `quoin module ensure-defaults` updates an installed default module whose ref is older than its pin to the pinned release, and a second call performs no further resolution. | Test |
+| FR-212-AC-8 | `quoin module ensure-defaults` updates an installed default module whose ref is older than or incomparable with its pin, leaves an at-pin or newer semantic release untouched, and a second call performs no further resolution. | Test |
 
 ## Dependencies
 
