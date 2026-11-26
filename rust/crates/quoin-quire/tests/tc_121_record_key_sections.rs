@@ -12,6 +12,7 @@
 )]
 
 use std::collections::BTreeMap;
+use std::path::Path;
 
 use ix_trace_rs::trace;
 use quire_rs::semantic::python_entry::extract_semantic_json;
@@ -42,6 +43,66 @@ fn fixture_case(id: &str) -> (Value, Value, BTreeMap<String, Value>) {
     )
     .expect("fixture schema documents compile");
     (case, root, docs)
+}
+
+fn safety_schemas_available() -> Option<std::path::PathBuf> {
+    if quire_fixtures::safety_module_available() {
+        Some(quire_fixtures::safety_schemas_dir())
+    } else {
+        eprintln!(
+            "SKIPPED: published safety module unavailable: {}",
+            quire_fixtures::safety_module_unavailable_reason().unwrap_or("unknown fetch failure")
+        );
+        None
+    }
+}
+
+fn safety_schema(schema_dir: &Path, name: &str) -> Value {
+    let text = std::fs::read_to_string(schema_dir.join(name))
+        .unwrap_or_else(|error| panic!("authentic safety schema {name} is readable: {error}"));
+    serde_json::from_str(&text)
+        .unwrap_or_else(|error| panic!("authentic safety schema {name} is valid JSON: {error}"))
+}
+
+fn safety_schema_documents(root: &Value, schema_dir: &Path) -> BTreeMap<String, Value> {
+    let id = root["$id"].as_str().expect("authentic schema has an id");
+    let base = &id[..=id.rfind('/').expect("authentic schema id has a path")];
+    module_schema_documents(
+        root,
+        &|name| {
+            let text = std::fs::read_to_string(schema_dir.join(name)).ok()?;
+            Some(serde_json::from_str(&text).map_err(|error| error.to_string()))
+        },
+        base,
+    )
+    .expect("authentic safety schema references resolve from the complete fixture bundle")
+}
+
+fn extract_with_schema(
+    markdown: &str,
+    root: &Value,
+    docs: &BTreeMap<String, Value>,
+) -> (Value, Value) {
+    let request = json!({
+        "markdown": markdown,
+        "module": {
+            "contractVersion": "1.0.0",
+            "package": "acme/safety",
+            "exports": [],
+            "mappings": ["record-sections"],
+        },
+        "path": "safety.md",
+        "sourceIdentity": "ix://acme/safety/spec",
+        "bundle": {"package": "acme/safety"},
+        "dataSchema": root,
+        "schemaDocuments": docs,
+    });
+    let extraction = extract_semantic_json(&request).expect("Quire extracts safety artifact");
+    let output = serde_json::to_value(&extraction).expect("safety output serializes");
+    let declaration = extraction
+        .declaration_record()
+        .expect("Quire composes the extracted declaration record");
+    (output, declaration)
 }
 
 fn run_fixture(id: &str) -> (Value, Value, Value) {
@@ -212,53 +273,79 @@ fn synthetic_with_relations(
         .expect("semantic output serializes")
 }
 
+#[trace("FR-121-AC-1")]
 #[test]
-fn shared_assessment_golden_extracts_with_a_source_span() {
-    let (case, output, root) = run_fixture("assessment-row");
-    assert_eq!(output["record"], case["record"]);
+fn assessment_section_extracts_a_record_validated_by_the_authentic_schema() {
+    let Some(schema_dir) = safety_schemas_available() else {
+        return;
+    };
+    let (case, _, _) = fixture_case("assessment-row");
+    let markdown = case["artifact"]
+        .as_str()
+        .expect("shared assessment fixture markdown")
+        .replace("| S3 |", "| catastrophic |");
+    let hazard_schema = safety_schema(&schema_dir, "Hazard.json");
+    let hazard_docs = safety_schema_documents(&hazard_schema, &schema_dir);
+    let (output, _) = extract_with_schema(&markdown, &hazard_schema, &hazard_docs);
+    assert_eq!(
+        output["record"]["assessment"],
+        json!({
+            "severity": "catastrophic",
+            "likelihood": "not_assessed",
+            "controllability": "C2",
+            "rationale": "Crush injury"
+        })
+    );
     assert_eq!(output["recordSources"][0]["key"], "assessment");
     let span = &output["recordSources"][0]["sourceSpan"];
     assert_eq!(span["startLine"], 8);
     assert_eq!(span["endLine"], 12);
-    let (_, _, docs) = fixture_case("assessment-row");
-    let validator = compile_documents(&root, &docs).expect("fixture record schema compiles");
-    assert!(validator.is_valid(&output["record"]));
+    let assessment_schema = safety_schema(&schema_dir, "HazardAssessment.json");
+    let assessment_docs = safety_schema_documents(&assessment_schema, &schema_dir);
+    let validator = compile_documents(&assessment_schema, &assessment_docs)
+        .expect("authentic HazardAssessment.json compiles");
+    assert!(validator.is_valid(&output["record"]["assessment"]));
+    let mut missing_rationale = output["record"]["assessment"].clone();
+    missing_rationale
+        .as_object_mut()
+        .expect("assessment is an object")
+        .remove("rationale");
+    assert!(
+        !validator.is_valid(&missing_rationale),
+        "HazardAssessment requires rationale"
+    );
 }
 
+#[trace("FR-121-AC-2")]
 #[test]
-fn synthetic_analysis_schema_validates_the_extracted_record() {
-    let schema = json!({
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://schemas.example.test/FailureMode.json",
-        "type": "object",
-        "properties": {"analysis": {
-            "type": "object",
-            "properties": {
-                "effect": {"type": "string"},
-                "cause": {"type": "string"},
-                "detection": {"type": "string"}
-            },
-            "required": ["effect", "cause", "detection"],
-            "additionalProperties": false
-        }},
-        "required": ["analysis"],
-        "additionalProperties": false
-    });
-    let output = synthetic(
-        "# FM-1\n\n## Analysis\n\n| Effect | Cause | Detection |\n|---|---|---|\n| Injury | Seal failure | Visual inspection |\n",
-        &schema,
-        &["record-sections"],
-        None,
-    );
-    let validator = compile_documents(&schema, &BTreeMap::new())
-        .expect("synthetic integration schema compiles");
+fn analysis_section_extracts_a_record_validated_by_the_authentic_schema() {
+    let Some(schema_dir) = safety_schemas_available() else {
+        return;
+    };
+    let failure_mode_schema = safety_schema(&schema_dir, "FailureMode.json");
+    let failure_mode_docs = safety_schema_documents(&failure_mode_schema, &schema_dir);
+    let markdown = "# FM-1\n\n## Analysis\n\n| Effect | Cause | Detection |\n|---|---|---|\n| Injury | Seal failure | direct |\n";
+    let (output, _) = extract_with_schema(markdown, &failure_mode_schema, &failure_mode_docs);
+    let analysis_schema = safety_schema(&schema_dir, "FailureAnalysis.json");
+    let analysis_docs = safety_schema_documents(&analysis_schema, &schema_dir);
+    let validator = compile_documents(&analysis_schema, &analysis_docs)
+        .expect("authentic FailureAnalysis.json compiles");
     assert_eq!(
         output["record"]["analysis"],
         json!({
-            "effect": "Injury", "cause": "Seal failure", "detection": "Visual inspection"
+            "effect": "Injury", "cause": "Seal failure", "detection": "direct"
         })
     );
-    assert!(validator.is_valid(&output["record"]));
+    assert!(validator.is_valid(&output["record"]["analysis"]));
+    let mut missing_detection = output["record"]["analysis"].clone();
+    missing_detection
+        .as_object_mut()
+        .expect("failure analysis is an object")
+        .remove("detection");
+    assert!(
+        !validator.is_valid(&missing_detection),
+        "FailureAnalysis requires detection"
+    );
     assert!(
         diagnostics(&output).is_empty(),
         "{:?}",
@@ -282,17 +369,80 @@ fn not_assessed_empty_cells_and_absent_assessment_follow_the_golden() {
     );
 }
 
+#[trace("FR-121-AC-4")]
 #[test]
-fn lifecycle_golden_provenance_rule_uses_its_declared_synthetic_schema() {
-    let (valid_case, valid, root) = run_fixture("lifecycle-keys");
-    let (invalid_case, invalid, _) = run_fixture("accepted-without-provenance");
-    let (_, _, docs) = fixture_case("lifecycle-keys");
-    let validator = compile_documents(&root, &docs).expect("fixture schema compiles");
-    assert_eq!(valid["record"], valid_case["record"]);
-    assert!(validator.is_valid(&valid["record"]));
-    assert_eq!(invalid["record"], invalid_case["record"]);
-    assert!(!validator.is_valid(&invalid["record"]));
-    assert!(invalid["record"].get("provenance").is_none());
+fn accepted_hazard_with_properties_validates_against_the_authentic_schema() {
+    let Some(schema_dir) = safety_schemas_available() else {
+        return;
+    };
+    let hazard_schema = safety_schema(&schema_dir, "Hazard.json");
+    let hazard_docs = safety_schema_documents(&hazard_schema, &schema_dir);
+    let markdown = "---\nid: H-1\ntitle: Hazard one\nobject: entity\n---\n# H-1 Hazard one\n\n## Properties\n\n| Field | Type | Multiplicity | Constraints |\n|---|---|---|---|\n| hazard_id | String | 1 | identity |\n\n## Assessment\n\n| Severity | Likelihood | Exposure | Controllability | Rationale |\n|---|---|---|---|---|\n| catastrophic | probable | E2 | C2 | Crush injury |\n\n## Status\n\n`accepted`\n\n## Provenance\n\n| Asserted By | Asserted At |\n|---|---|\n| Alice | 2026-11-26T00:00:00Z |\n";
+    let (output, declaration) = extract_with_schema(markdown, &hazard_schema, &hazard_docs);
+    let validator =
+        compile_documents(&hazard_schema, &hazard_docs).expect("authentic Hazard.json compiles");
+    assert_eq!(
+        output["fields"][0],
+        json!({
+            "name": "hazard_id",
+            "type": {
+                "target": {"kind": "KernelScalar", "value": "String"},
+                "multiplicity": {"lower": 1, "upper": 1, "ordered": false, "unique": false}
+            },
+            "identity": true
+        })
+    );
+    assert_eq!(output["record"]["assessment"]["severity"], "catastrophic");
+    assert_eq!(output["record"]["status"], "accepted");
+    assert_eq!(output["record"]["provenance"]["assertedBy"], "Alice");
+    assert!(validator.is_valid(&declaration), "{declaration:#}");
+
+    let (without_provenance, provenance_section) = markdown
+        .split_once("\n## Provenance\n")
+        .expect("source markdown has a final Provenance section");
+    assert!(provenance_section.contains("| Alice | 2026-11-26T00:00:00Z |"));
+    let markdown_without_provenance = format!("{without_provenance}\n");
+    let (without_provenance_output, without_provenance_declaration) =
+        extract_with_schema(&markdown_without_provenance, &hazard_schema, &hazard_docs);
+    assert_eq!(
+        without_provenance_output["fields"], output["fields"],
+        "Properties still extracts when Provenance is absent"
+    );
+    assert_eq!(
+        without_provenance_output["record"]["status"], "accepted",
+        "the accepted status remains extracted"
+    );
+    assert_eq!(
+        without_provenance_output["record"]["assessment"], output["record"]["assessment"],
+        "Assessment still extracts when Provenance is absent"
+    );
+    assert!(
+        without_provenance_output["record"]
+            .get("provenance")
+            .is_none(),
+        "no Provenance record is extracted without its section: {}",
+        without_provenance_output["record"]
+    );
+    let provenance_errors = validator
+        .iter_errors(&without_provenance_declaration)
+        .map(|error| error.to_string())
+        .collect::<Vec<_>>();
+    assert!(
+        provenance_errors
+            .iter()
+            .any(|error| error.contains("provenance")),
+        "accepted Hazard without source Provenance fails the authentic required-property schema: {provenance_errors:?}"
+    );
+
+    let mut without_provenance = declaration;
+    without_provenance
+        .as_object_mut()
+        .expect("hazard declaration is an object")
+        .remove("provenance");
+    assert!(
+        !validator.is_valid(&without_provenance),
+        "accepted Hazard records require provenance"
+    );
 }
 
 #[trace("FR-121-AC-5")]
