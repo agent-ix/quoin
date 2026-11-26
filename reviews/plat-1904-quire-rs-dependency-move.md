@@ -3,7 +3,7 @@
 ## Revisions
 
 - Quoin old dependency: quire-rs `v0.63.1`, commit `bd797be83f643a31e3a9c86580a06b4f6dbfa6bb`.
-- Quoin new dependency: package `0.63.2`, exact public-main revision `d7d418fa2727f7de87a16dfec5b38ada7d9ee776` (`PLAT-1897: Remove duplicate implements import`).
+- Quoin new dependency: package `0.63.2`, exact merged main revision `5f6268a21e1aa4ede52f098f4925616d2750a281` (PLAT-1904 engine implementation).
 - The `v0.63.2` tag points to `1d8381188b37a95f0fe4cd6b7c57389058ac45b1`, not the requested merged main revision. Quoin pins the exact requested main revision; this does not create or move an engine tag.
 
 The move consumes Quire's `coverage::compute_coverage_for_design_matrix`, which retains valid coverage entries when a required-relation declaration was dropped, while ordinary coverage remains strict. The design-matrix path allows only dropped `RequiredRelation` declarations through its precheck; all other dropped declarations still return the existing QQ-1022 error.
@@ -96,6 +96,7 @@ The move consumes Quire's `coverage::compute_coverage_for_design_matrix`, which 
 - `tests/fixtures/loader-home/foo/loader-fixture/manifest.yaml` (A)
 - `tests/fixtures/loader-home/foo/loader-fixture/schemas/FR.schema.json` (A)
 - `tests/fixtures/semantic/cases.expected.json` (M)
+- `tests/it/coverage_matrix.rs` (M)
 - `tests/it/coverage_rollup.rs` (M)
 - `tests/it/relation_report.rs` (M)
 - `tests/it/semantic_contract.rs` (M)
@@ -111,19 +112,29 @@ New public items across the dependency range:
 
 - `anomaly_sources`
 - `coverage::compute_coverage_for_design_matrix`
+- `coverage::EvidenceCoverageMode` and the `mode` argument added to `compute_with_evidence`
+- `obligation::inventory::InventoryModelPolicy` and `InventoryOptions::model_policy`
 - `impact` module: `LineRange`, `SourceSnapshot`, `FileChange`, `ImpactInput`, `RevisionSide`, `ChangedSymbol`, `UnmappedChange`, `ImpactReason`, `SelectedTest`, `RelatedImplementation`, `ImpactFinding`, `ImpactReport`, `DependencyMoveInput`, `UpstreamChange`, `DependencyLocalReference`, `DependencyTestReason`, `DependencyMoveReport`, `analyze_dependency_move`, `ImpactError`, and `analyze`
 - `EmbeddedAnomalyDocument` and `embedded_anomaly_documents`
 - `validate_document_in_indexed_bundle`
 
-A search of Quoin Rust source for those names found `compute_coverage_for_design_matrix` only: `rust/crates/quoin-quire/src/design_matrix.rs` calls it, and `rust/crates/quoin-quire/tests/fr029_dropped_declarations.rs` exercises that integration. The new anomaly, impact-analysis, embedded-document, and indexed-bundle APIs have no Quoin references. Existing `compute_coverage` and `compute_with_evidence` call sites remain in their strict reporting paths.
+A search of Quoin Rust source for those names found these references:
+
+- `rust/crates/quoin-quire/src/design_matrix.rs` calls `coverage::compute_coverage_for_design_matrix`.
+- `rust/crates/quoin-quire/src/evidence.rs` calls `coverage::compute_with_evidence` with `EvidenceCoverageMode::{Strict, DesignMatrix}` and constructs `InventoryOptions` with `InventoryModelPolicy::{Strict, DesignMatrix}`. The strict `compute()` path remains strict; only matrix evidence opts into the design-matrix policy.
+- `rust/crates/quoin-quire/tests/fr029_dropped_declarations.rs` exercises the design-matrix integration.
+
+Quoin does not reference the new anomaly, impact-analysis, embedded-document, or indexed-bundle APIs. The new transitive `ix-trace-rs` lock entry is used by Quire-RS for implementation markers; Quoin's direct source references to `ix-trace-rs` continue to use its workspace main pin.
 
 An exact-path search for the 95 changed upstream file paths found 17 paths mentioned in Quoin source/spec/review files, mostly in earlier review records. None of those references are source imports by upstream file path; they are dependency notes, review context, or shared filenames such as `Cargo.toml` and `Cargo.lock`. No additional Quoin call site for the new APIs was found.
 
 ## Tests and checks
 
-- `CARGO_HOME=/home/peter/.cache/cargo-home cargo metadata --manifest-path rust/Cargo.toml --locked --format-version 1` passed against `d7d418fa`.
+- `CARGO_HOME=/home/peter/.cache/cargo-home-shared cargo metadata --manifest-path rust/Cargo.toml --locked --offline --format-version 1` passed against `5f6268a`.
 - `cargo fmt --manifest-path rust/Cargo.toml --all -- --check` and `git diff --check` passed.
-- Through `/home/peter/dev/worktrees/locked-build.sh` against `d7d418fa`, the focused regression `cargo test --locked -p quoin-quire --test fr029_dropped_declarations the_design_matrix_keeps_coverage_when_only_a_required_relation_drops -- --exact` passed (1 passed, 0 failed), and the strictness test `cargo test --locked -p quoin-quire --test fr029_dropped_declarations the_design_computes_refuse_a_dropped_declaration_with_qq_1022 -- --exact` passed (1 passed, 0 failed). Retained run log: `/home/peter/dev/.scratchpad/plat-1822-real-tool-runs/quoin-plat1904-focused.log`.
+- Through `/home/peter/dev/worktrees/locked-build.sh` against `5f6268a`, the real-host regression `cargo test --locked -p quoin-cli --test tc_1080_matrix_command tc_1080_211_matrix_keeps_valid_rows_when_a_required_relation_drops -- --exact` passed (1 passed, 0 failed), including the strict non-relation-drop assertion.
+- Through `/home/peter/dev/worktrees/locked-build.sh` against `5f6268a`, `cargo test --locked -p quoin-cli --test tc_1614_dossier_command architecture_dossier_keeps_valid_entries_and_names_dropped_relations -- --exact` passed (1 passed, 0 failed).
+- The earlier standalone design-matrix regression and strict QQ-1022 refusal tests passed against `d7d418fa`; the real-host checks above exercise the additional evidence-aware engine APIs from `5f6268a`.
 - The first compile attempt against `d7d418fa` exposed that the public function is under `quire_rs::coverage`, not the crate root. The integration now uses `quire_rs::coverage::compute_coverage_for_design_matrix`; both focused tests passed after this correction. The earlier queued attempt against `42bbf796` was canceled before it started after an upstream compile defect was reported.
 
 ## PLAT-1904 host-path blocker and proposed engine contract

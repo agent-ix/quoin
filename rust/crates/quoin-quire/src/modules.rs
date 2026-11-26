@@ -21,6 +21,7 @@
 //! kind and an optional path, returned alongside the report, and the caller
 //! decides what to show.
 
+use ix_trace_rs::implements;
 use quire_rs::Registry;
 
 use crate::error::{Error, Result};
@@ -180,6 +181,21 @@ impl ModuleSelection {
 /// [`Error::TraceabilityDeclarationsDropped`] naming every dropped declaration.
 pub fn require_complete_model(registry: &Registry) -> Result<()> {
     registry.require_complete_model().map_err(Error::from)
+}
+
+/// Permit the design matrix to keep valid coverage rows when the loader drops
+/// only required relations; every other dropped declaration remains fatal.
+#[implements("FR-193-AC-10")]
+#[implements("FR-193-AC-11")]
+#[implements("FR-165-AC-21")]
+pub fn require_design_matrix_compatible_model(registry: &Registry) -> Result<()> {
+    let has_non_relation_drop = registry.dropped_declarations().any(|(_, declaration)| {
+        declaration.kind != quire_rs::traceability::DeclarationKind::RequiredRelation
+    });
+    if has_non_relation_drop {
+        require_complete_model(registry)?;
+    }
+    Ok(())
 }
 
 /// Fold engine diagnostics into notices.

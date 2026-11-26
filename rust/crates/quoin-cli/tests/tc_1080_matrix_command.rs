@@ -137,6 +137,46 @@ traceability:
         template: "#[trace({ids})]"
 "##;
 
+const DROPPED_RELATION_MODULE: &str = r##"name: quoin-cli-dropped-relation-fixture
+version: 0.1.0
+artifact_types:
+  - name: Requirement
+  - name: DesignElement
+  - name: Connection
+  - name: Classification
+edge_types:
+  realizes: { description: realizes, category: traceability }
+  carries: { description: carries, category: dataflow }
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: Requirement
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  required_relations:
+    - name: requirement-has-design
+      from: Requirement
+      edges: [realizes]
+      to: [DesignElement]
+      direction: outgoing
+      check: requirement-without-design
+    - name: connection-carries-classification
+      from: Connection
+      edges: [carries]
+      to: [Classification]
+      direction: outgoing
+      check: connection-without-classification
+      record_keys: [regulatedCategories]
+  design_relations: [requirement-has-design]
+"##;
+
+const DROPPED_RELATION_SPEC: &str = "---\nid: FR-001\ntype: Requirement\ntitle: Requirement\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|----|----------|--------------|\n| FR-001-AC-1 | The requirement has a design entry. | Test (TC-001) |\n";
+
 /// Three criteria and no declared method, so the catalog cannot add an
 /// `unknown-method` finding that would blur the three statuses under test.
 const SPEC: &str = "---
@@ -1151,4 +1191,82 @@ fn tc_1080_210_matrix_computes_current_architecture_with_record_keys() {
     assert!(!stderr.contains("QQ-1020"), "{stderr}");
     let matrix: Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_fr015_matrix_bindings(&matrix);
+}
+
+/// The real matrix host keeps its valid sibling row and reports a dropped
+/// required relation as a diagnostic instead of refusing the whole run.
+#[trace("FR-165-AC-21")]
+#[test]
+fn tc_1080_211_matrix_keeps_valid_rows_when_a_required_relation_drops() {
+    let fixture = Fixture {
+        dir: tempfile::tempdir().unwrap(),
+        home: tempfile::tempdir().unwrap(),
+    };
+    fixture.write("manifest.yaml", DROPPED_RELATION_MODULE);
+    fixture.write("spec/FR-001-requirement.md", DROPPED_RELATION_SPEC);
+    let output = fixture.quoin(&[
+        "matrix",
+        "--repo",
+        ".",
+        "--module",
+        ".",
+        "--no-project-config",
+        "--json",
+    ]);
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let matrix: Value = serde_json::from_slice(&output.stdout).expect("matrix is JSON");
+    assert!(
+        matrix["requirements"]
+            .as_array()
+            .is_some_and(|requirements| requirements.iter().any(|requirement| {
+                requirement["criteria"].as_array().is_some_and(|criteria| {
+                    criteria
+                        .iter()
+                        .any(|criterion| criterion["id"] == "FR-001-AC-1")
+                })
+            })),
+        "the valid requirement row survives: {matrix}"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("connection-carries-classification"),
+        "the dropped relation is reported beside valid rows: {stderr}"
+    );
+
+    let non_relation_drop_module = DROPPED_RELATION_MODULE.replace(
+        "      method_column: Verification\n  required_relations:",
+        "      method_column: Verification\n    - name: dropped-obligation\n      target: absent-target\n      statement_column: Criteria\n      method_column: Verification\n  required_relations:",
+    );
+    assert!(non_relation_drop_module.contains("dropped-obligation"));
+    let strict_fixture = Fixture {
+        dir: tempfile::tempdir().unwrap(),
+        home: tempfile::tempdir().unwrap(),
+    };
+    strict_fixture.write("manifest.yaml", &non_relation_drop_module);
+    strict_fixture.write("spec/FR-001-requirement.md", DROPPED_RELATION_SPEC);
+    let refused = strict_fixture.quoin(&[
+        "matrix",
+        "--repo",
+        ".",
+        "--module",
+        ".",
+        "--no-project-config",
+        "--json",
+    ]);
+    assert_eq!(
+        refused.status.code(),
+        Some(2),
+        "a non-relation drop stays fatal: {}",
+        String::from_utf8_lossy(&refused.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&refused.stderr).contains("dropped-obligation"),
+        "the fatal drop is named: {}",
+        String::from_utf8_lossy(&refused.stderr)
+    );
 }
