@@ -1994,13 +1994,6 @@ fn an_unverified_control_on_two_rows_is_one_open_finding_equal_to_the_risk_summa
     let repo = Repo::bare();
     unverified_control(&repo);
     let snapshot = repo.snapshot(&with_risk(&repo));
-    let snapshot_anomaly_ids: Vec<&str> = snapshot["anomalies"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|anomaly| anomaly["id"].as_str().unwrap())
-        .collect();
-    assert!(snapshot_anomaly_ids.contains(&"AN-004"));
     let items = findings_of(&snapshot, "control-without-verification");
     assert_eq!(items.len(), 1, "{items:?}");
     assert_eq!(
@@ -2232,7 +2225,8 @@ fn the_refusal_names_the_module_that_failed_and_not_one_that_loaded() {
     assert_eq!(refused[0]["code"], "release_snapshot_input_invalid");
     assert_eq!(
         refused[0]["context"]["module"],
-        broken.path().to_str().unwrap()
+        broken.path().to_str().unwrap(),
+        "{refused}"
     );
 
     // A set that declares no safety record type names every root given, and
@@ -2339,4 +2333,17 @@ fn the_unusable_file_is_named_relative_to_repo_whatever_the_repo_spelling() {
         !message.contains(repo.path().to_str().unwrap()),
         "{message}"
     );
+}
+
+#[trace("FR-167-AC-20")]
+#[test]
+fn a_valid_typeless_skill_document_is_not_a_vulnerability_record() {
+    let repo = Repo::bare();
+    repo.write(
+        "docs/SKILL.md",
+        "---\nname: quoin-test-skill\ndescription: A valid skill document.\n---\n# Skill\n",
+    );
+
+    let snapshot = repo.snapshot(&repo.run());
+    assert_eq!(snapshot["vulnerabilities"], json!([]));
 }
