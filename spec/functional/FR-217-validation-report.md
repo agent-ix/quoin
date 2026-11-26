@@ -11,6 +11,8 @@ relationships:
     type: "requires"
   - target: "ix://agent-ix/quoin/FR-185"
     type: "requires"
+  - target: "ix://agent-ix/quoin/FR-219"
+    type: "depends_on"
 ---
 
 # FR-217: Generate a per-release test report from retained evidence
@@ -75,10 +77,11 @@ coverage, evidence completeness, and authored risk ratings.
   require a dedicated self-test case, or determine requirement coverage or
   evidence completeness.
 - When Engineering Assurance `producer-execute` ran the suite process, the
-  report SHALL retain or reference its bounded execution result and declared
-  artifacts. That result records process execution and artifacts; it does not
-  map individual tests to requirements, so requirement coverage SHALL come
-  from Quoin's trace and evidence matrix.
+  report SHALL preserve the producer result and artifact references from the
+  retained run record details. That result records process execution and
+  artifacts; it does not map individual tests to requirements, so requirement
+  coverage SHALL come from the trace-linked test results and Quoin evidence
+  matrix.
 - The report SHALL name known defects from the version-matched anomaly records
   retained with the run. It SHALL NOT substitute anomaly records from the
   report generator's current build.
@@ -155,10 +158,11 @@ coverage, evidence completeness, and authored risk ratings.
 | FR-217-AC-9 | Given a run record with no retained anomaly set or a set whose producer version differs from `toolVersion`, the `Known defects` section states `not provided` and does not use the report generator's build-time set. | Test |
 | FR-217-AC-10 | Given two supplier rating records for one FR with equal rating values, the coverage row preserves both rating IDs and reports `rated_more_than_once`. | Test |
 | FR-217-AC-11 | Given equivalent run records and requirement mappings for two requirements with different risk ratings, the report selects the same tests and computes the same coverage states for both; it displays each rating only as authored metadata. | Test |
-| FR-217-AC-12 | Given a suite process executed by Engineering Assurance `producer-execute`, the report retains its execution result and artifacts while deriving test-to-requirement coverage from Quoin matrix evidence rather than the producer result. | Test |
+| FR-217-AC-12 | Given a retained test result whose detail records the bounded Engineering Assurance `producer-execute` result and its artifact references, the report preserves that detail, while deriving test-to-requirement coverage only from the test result's trace-linked criteria; artifact details alone do not establish coverage. | Test |
 
 ## Dependencies
 
 - **Upstream**: [FR-236](./FR-236-selftest-run-record.md) defines retained results; [FR-030](./FR-030-evidence-store.md) defines the evidence store.
+- **Execution evidence**: [FR-219](./FR-219-validation-report-tool-evidence.md) defines retained producer execution evidence.
 - **Anomaly selection**: [FR-162](./FR-162-anomaly-report.md) defines which anomaly records a release carries; records are defined by `spec-artifacts-process` FR-014, FR-015 and FR-016.
 - **Downstream**: [FR-218](./FR-218-validation-report-completeness-and-signoff.md) defines report completeness and signature verification.

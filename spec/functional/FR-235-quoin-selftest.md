@@ -35,6 +35,14 @@ without checking out the source repository.
 - Each supported release SHALL publish compiled self-test runner files for
   each supported operating-system and architecture target. A runner file SHALL
   be associated with exactly one Quoin release version and target.
+- Each release runner SHALL execute a configured subset of existing
+  command-level tests from the normal suite. The release configuration SHALL
+  identify test IDs already present in that suite; it SHALL NOT define a
+  separate set of self-test cases or duplicate their command behavior.
+- A test is eligible for the customer runner only when it invokes the installed
+  command as a subprocess and its executable dependency closure meets the
+  runner asset boundary below. Tests that link to library implementations
+  remain internal normal-suite evidence.
 - When `quoin selftest --run` is requested, it SHALL select only the runner
   file matching the installed command's exact `--version` output and the
   current target. It SHALL fetch and execute that release asset when the
@@ -44,18 +52,14 @@ without checking out the source repository.
   implementation crates. Tests that link and exercise those libraries remain
   internal normal-suite evidence and SHALL NOT be shipped as customer
   self-test runners.
-- Each runner case SHALL originate from a directory under
-  `selftest/cases/<case-id>/` in the source repository, containing its
-  command-invoking runner source, `input/`, and `expected/` entries. Its
-  expected results SHALL state `exit_code`, `stdout`, and any expected files
-  the case checks.
-- Each runner case SHALL carry at least one trace marker identifying a
-  requirement acceptance criterion, so its observed command behavior can be
-  related to requirements. Markers describe the case; they do not make a
-  requirement mandatory in the self-test.
-- When a runner executes a case, it SHALL invoke the installed command and
-  compare the case's exit code, stdout bytes, and each expected file byte for
-  byte.
+- Each selected test SHALL invoke the installed command through its executable
+  path and SHALL carry its normal-suite requirement trace markers. Its test
+  source, input, and expected results SHALL remain in the normal suite.
+- A runner SHALL invoke only test IDs present in the release configuration.
+  It SHALL NOT materialize a separate case directory or duplicate inputs and
+  expected outputs into the release asset.
+- When a runner executes a selected test, it SHALL compare the test's recorded
+  command outcome using the normal-suite assertion.
 - Test runner assets SHALL be standalone command-invoking harnesses.
 - Test runner assets SHALL NOT link private library implementation code.
 - Test runner assets SHALL NOT contain private data not already present in the
@@ -66,11 +70,12 @@ without checking out the source repository.
   output separately from stdout and include it in the case's FR-236 run-record
   result. The runner shall not compare standard-error output with expected
   output or use it to determine case status.
-- When a user runs `quoin selftest --run` without `--case`, the runner shall run
-  every listed case. When one or more `--case <case-id>` options are supplied,
-  it shall run only the named cases once each, in release-list order. Before
-  starting any case, it shall reject an unknown case
-  id with an error that names the id.
+- When a user runs `quoin selftest --run` without `--case`, the runner SHALL run
+  every configured test ID. When one or more `--case <case-id>` options are
+  supplied, it SHALL run only the named configured tests once each, in
+  release-configuration order. When a requested test ID is absent from the
+  release configuration, the command SHALL return an error naming that ID
+  before any test starts.
 - Each case process shall have a wall-clock limit of 60 seconds. When a case
   exceeds that limit, the runner shall terminate and reap the case process and
   its descendants, record that case as `error` with detail identifying
@@ -142,8 +147,8 @@ without checking out the source repository.
 | FR-235-AC-2 | Given an expected stdout file that differs from actual stdout by one byte, the case result is `fail` and names the case id and its traced criteria. | Test |
 | FR-235-AC-3 | Given a case process that exits non-zero or cannot execute, the result is respectively `fail` or `error`, and the command exits non-zero. | Test |
 | FR-235-AC-4 | Given a high-process-risk FR with no local self-test marker, `quoin validation ratings --coverage` reports its rating separately from `selftest_coverage: not_in_selftest`, lists no risk-based uncovered item, and exits 0 when there are no malformed markers or unreadable spec documents. | Test |
-| FR-235-AC-5 | Given a test case without a trace marker, `quire matrix --strict` over `selftest/` reports the case as untagged. | Test |
-| FR-235-AC-6 | Given no `--case` option, `quoin selftest --run` runs every listed release case; given repeated `--case <id>` options, it runs only the named cases once each in release-list order; an unknown id is rejected before any case starts and is named in the error. | Test |
+| FR-235-AC-5 | Given a normal-suite command-level test with no trace marker, the static requirement matrix reports its criterion as `untagged`. | Test |
+| FR-235-AC-6 | Given no `--case` option, `quoin selftest --run` runs every configured normal-suite test ID; given repeated `--case <id>` options, it runs only the named configured tests once each in release-configuration order; an unknown ID is rejected before any test starts and is named in the error. | Test |
 | FR-235-AC-7 | Given a case that exceeds 60 seconds, the runner terminates and reaps its process and descendants, records `error` with timeout detail, continues to the next selected case, and exits non-zero. | Test |
 | FR-235-AC-8 | Given `--out <path>`, the command writes the retained FR-236 run record's exact JSON bytes to that path and writes no run-result JSON to stdout; without `--out` and with a repository evidence store, it writes those bytes to stdout; without a repository evidence store it rejects before starting any case. | Test |
 | FR-235-AC-9 | Given a case owned by a linked engine and invoked through the installed Quoin command, its source and trace tags remain with that engine and the result reports test outcomes only; it does not create or imply an accepted `FeatureRiskRating`. | Inspection |
