@@ -434,7 +434,7 @@ fn absent_empty_and_stated_lists_render_not_stated_none_and_the_ids() {
     assert!(markdown.contains("- Support status: unknown"), "{markdown}");
 }
 
-#[trace("FR-144-AC-5", "NFR-030-AC-2")]
+#[trace("FR-144-AC-5", "NFR-030-AC-2", "NFR-030-M-3")]
 #[test]
 fn unmatched_advisories_and_unusable_scans_follow_the_rows_and_no_record_is_called_free() {
     let (repo, binding) = standard();
@@ -975,7 +975,7 @@ fn the_wall_clock_is_not_an_input_only_as_of_is() {
     assert_eq!(later.stdout, repo.report(&binding, &["--json"]).stdout);
 }
 
-#[trace("FR-144-AC-5", "NFR-030-AC-2")]
+#[trace("FR-144-AC-5", "NFR-030-AC-2", "NFR-030-M-3")]
 #[test]
 fn a_cargo_deny_log_refused_at_recording_leaves_the_scan_not_run_and_no_record_free() {
     let refused = std::fs::read_to_string(
@@ -1021,7 +1021,7 @@ fn walk(value: &Value, found: &mut Vec<Value>) {
     }
 }
 
-#[trace("NFR-030-AC-1")]
+#[trace("NFR-030-AC-1", "NFR-030-M-1")]
 #[test]
 fn with_every_optional_input_absent_every_value_is_unknown_not_stated_or_an_input() {
     let repo = Repo::new();
