@@ -18,8 +18,9 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# Use the published quire-rs release with corrected imported relationship
-# targets, frontmatter-id trace targets, and partial design-matrix reporting.
+# Use the merged quire-rs revision with partial design-matrix coverage for
+# dropped required relations (PLAT-1904). The version tracks the 0.63.2
+# package release; the commit pin selects the exact merged engine change.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject
@@ -36,7 +37,7 @@ quoin-quire-types = { workspace = true }
 ix-trace-rs = { workspace = true }
 quoin-jsonschema = { workspace = true }
 quoin-yaml = { workspace = true }
-quire-rs = { version = "=0.63.1", git = "https://github.com/agent-ix/quire-rs", tag = "v0.63.1" }
+quire-rs = { version = "=0.63.2", git = "https://github.com/agent-ix/quire-rs", rev = "a52b3b20a3bf1460193a37e53d4a8a293ce7edac" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

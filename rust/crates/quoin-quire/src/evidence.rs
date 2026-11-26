@@ -249,7 +249,7 @@ fn audit_outcome(report: &quoin_finding_types::AuditReport, id: &str) -> AuditOu
 /// of the retained runs cannot be built.
 #[implements("FR-153")]
 pub fn compute(request: &Request) -> Result<Outcome> {
-    compute_with(request, |_, _, _| Ok(())).map(|(outcome, ())| outcome)
+    compute_with(request, CoveragePurpose::Strict, |_, _, _| Ok(())).map(|(outcome, ())| outcome)
 }
 
 /// Count the requested obligations and derive design rows from the same coverage.
@@ -260,13 +260,30 @@ pub fn compute(request: &Request) -> Result<Outcome> {
 pub fn compute_for_matrix(
     request: &Request,
 ) -> Result<(Outcome, crate::design_matrix::DesignMatrix)> {
-    compute_with(request, |spec, registry, report| {
-        crate::design_matrix::for_coverage(request.scope.scope.as_path(), spec, registry, report)
-    })
+    compute_with(
+        request,
+        CoveragePurpose::DesignMatrix,
+        |spec, registry, report| {
+            crate::design_matrix::for_coverage(
+                request.scope.scope.as_path(),
+                spec,
+                registry,
+                report,
+            )
+        },
+    )
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CoveragePurpose {
+    Strict,
+    DesignMatrix,
+}
+
+#[implements("FR-165-AC-21")]
 fn compute_with<T>(
     request: &Request,
+    purpose: CoveragePurpose,
     finish: impl FnOnce(&quire_rs::Spec, &quire_rs::Registry, &quire_rs::CoverageReport) -> Result<T>,
 ) -> Result<(Outcome, T)> {
     let Walked {
@@ -274,10 +291,18 @@ fn compute_with<T>(
         spec,
         graph,
         notices,
-    } = coverage::walk(&request.scope)?;
+    } = match purpose {
+        CoveragePurpose::Strict => coverage::walk(&request.scope)?,
+        CoveragePurpose::DesignMatrix => coverage::walk_for_design_matrix(&request.scope)?,
+    };
     // The shared walk checked this registry already; the model is read again
     // here, so ask again before reading it (FR-029).
-    crate::modules::require_complete_model(&registry)?;
+    match purpose {
+        CoveragePurpose::Strict => crate::modules::require_complete_model(&registry)?,
+        CoveragePurpose::DesignMatrix => {
+            crate::modules::require_design_matrix_compatible_model(&registry)?;
+        }
+    }
     let model = registry
         .traceability()
         .ok_or(Error::TraceabilityModelUndeclared)?;
@@ -290,7 +315,17 @@ fn compute_with<T>(
         request.scope.scope.as_path(),
         model,
         &sources,
-        InventoryOptions::default(),
+        InventoryOptions {
+            model_policy: match purpose {
+                CoveragePurpose::Strict => {
+                    quire_rs::obligation::inventory::InventoryModelPolicy::Strict
+                }
+                CoveragePurpose::DesignMatrix => {
+                    quire_rs::obligation::inventory::InventoryModelPolicy::DesignMatrix
+                }
+            },
+            ..InventoryOptions::default()
+        },
     );
     let entries: Vec<CriterionEntry<'_>> = selected.entries().collect();
     let audit = audit_report(request, &entries)?;
@@ -436,6 +471,12 @@ fn compute_with<T>(
             &graph,
             request.scope.scope.as_path(),
             backing,
+            match purpose {
+                CoveragePurpose::Strict => quire_rs::coverage::EvidenceCoverageMode::Strict,
+                CoveragePurpose::DesignMatrix => {
+                    quire_rs::coverage::EvidenceCoverageMode::DesignMatrix
+                }
+            },
         )
         .map_err(coverage::coverage_error)
     })?;

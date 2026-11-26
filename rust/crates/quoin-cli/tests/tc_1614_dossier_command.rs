@@ -27,6 +27,8 @@ use std::process::{Command, Output};
 use ix_trace_rs::trace;
 use serde_json::Value;
 
+mod dropped_relation_support;
+
 fn quoin(work: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_quoin"))
         .arg("dossier")
@@ -171,6 +173,102 @@ fn generated_documents_carry_the_running_quoin_version() {
         assert_eq!(producer_version, format!("\"{version}\""));
         assert!(frontmatter.contains("version: \"1.0\""));
     }
+}
+
+/// Architecture generation carries valid design output and a relation gap
+/// through a dropped required relation instead of refusing before generation.
+#[trace("FR-193-AC-10")]
+#[test]
+fn architecture_dossier_keeps_valid_entries_and_names_dropped_relations() {
+    let work = tempfile::tempdir().unwrap();
+    fs::write(
+        work.path().join("manifest.yaml"),
+        dropped_relation_support::MODULE,
+    )
+    .unwrap();
+    fs::create_dir_all(work.path().join("spec")).unwrap();
+    fs::write(
+        work.path().join("spec/FR-001.md"),
+        dropped_relation_support::SPEC,
+    )
+    .unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "architecture",
+            "--scope",
+            ".",
+            "--module",
+            ".",
+        ],
+    );
+    assert_eq!(code(&output), 1, "{}", stderr(&output));
+    let document = read(&work.path().join("dossier/DOS-ARCH.md"));
+    assert!(document.contains("FR-001"), "{document}");
+    assert!(
+        document.contains("requirement-without-design"),
+        "{document}"
+    );
+    assert!(document.contains("design_relation_dropped"), "{document}");
+    assert!(
+        document.contains("connection-carries-classification"),
+        "{document}"
+    );
+    assert!(
+        !document.contains("design_relations_unavailable"),
+        "{document}"
+    );
+}
+
+/// A dropped design relation still explains why no design block was returned.
+#[trace("FR-193-AC-11")]
+#[test]
+fn architecture_dossier_reports_a_dropped_relation_without_design_blocks() {
+    let work = tempfile::tempdir().unwrap();
+    let module = dropped_relation_support::MODULE.replace(
+        "design_relations: [requirement-has-design]",
+        "design_relations: []",
+    );
+    fs::write(work.path().join("manifest.yaml"), module).unwrap();
+    fs::create_dir_all(work.path().join("spec")).unwrap();
+    fs::write(
+        work.path().join("spec/FR-001.md"),
+        dropped_relation_support::SPEC,
+    )
+    .unwrap();
+    let output = quoin(
+        work.path(),
+        &[
+            "generate",
+            "--version",
+            "1.0",
+            "--doc",
+            "architecture",
+            "--scope",
+            ".",
+            "--module",
+            ".",
+        ],
+    );
+    assert_eq!(code(&output), 1, "{}", stderr(&output));
+    let document = read(&work.path().join("dossier/DOS-ARCH.md"));
+    assert!(document.contains("design_relation_dropped"), "{document}");
+    assert!(
+        document.contains("connection-carries-classification"),
+        "{document}"
+    );
+    assert!(
+        !document.contains("design_relations_unavailable"),
+        "{document}"
+    );
+    assert!(
+        !document.contains("requirement-without-design"),
+        "no design block was returned: {document}"
+    );
 }
 
 /// Another command's failure still prints nothing on stdout: the dossier
