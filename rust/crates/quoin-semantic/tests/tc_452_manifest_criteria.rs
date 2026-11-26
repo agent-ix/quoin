@@ -58,6 +58,32 @@ fn tc_452_610_a_module_without_a_semantic_block_reads_clean_and_unjudged() {
     assert!(bare_result.module.is_none());
 }
 
+/// The reader refuses a module manifest root key absent from the pinned schema.
+#[trace("FR-099-AC-5")]
+#[test]
+fn tc_1915_unknown_module_manifest_root_key_is_refused_by_the_reader() {
+    let validators = validators();
+    let scratch = Scratch::new();
+    let root = scratch.module_copy("unknown-root-key", |manifest, _| {
+        manifest["unknown_root_key"] = json!(true);
+    });
+
+    let result = read(&root, &validators);
+    assert!(
+        result.module.is_none(),
+        "unknown root key refuses the module"
+    );
+    assert!(
+        result.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code.as_str() == "semantic.unknown-key"
+                && diagnostic.path == "manifest.unknown_root_key"
+                && diagnostic.severity == quoin_semantic::diagnostic::Severity::Error
+        }),
+        "the reader reports the unknown root key as an error: {:?}",
+        result.diagnostics
+    );
+}
+
 /// A minimal block is accepted and the optional keys take their documented
 /// defaults.
 ///

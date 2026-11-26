@@ -3183,6 +3183,7 @@ dependencies = [
 name = "quoin-catalog"
 version = "0.31.1"
 dependencies = [
+ "ix-trace-rs",
  "quoin-semantic",
  "quoin-yaml",
  "schemars 1.2.2",
@@ -3233,12 +3234,12 @@ dependencies = [
  "quoin-quire",
  "quoin-quire-types",
  "quoin-risk-advice",
- "rustix",
  "quoin-semantic",
  "quoin-soup",
  "quoin-store",
  "quoin-validators",
  "quoin-yaml",
+ "rustix",
  "schemars 1.2.2",
  "semver",
  "serde",
@@ -3491,6 +3492,7 @@ dependencies = [
  "gix",
  "ix-trace-rs",
  "quire-fixtures",
+ "quoin-catalog",
  "quoin-semantic",
  "reqwest 0.13.5",
  "schemars 1.2.2",

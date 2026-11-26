@@ -22,7 +22,7 @@ use std::fs;
 use std::path::Path;
 
 use quoin_modules::ModulesErrorCode;
-use quoin_modules::git::{GitLimits, GitResolver, GixResolver, Revision};
+use quoin_modules::git::{GitLimits, GitResolver, GixResolver, Revision, sanitize_cache_key};
 
 /// Build a bare repository holding one commit with this layout:
 ///
@@ -145,6 +145,42 @@ fn tc_381_290_gix_resolves_a_tag_and_extracts_the_whole_tree() {
         .expect("nested blob"),
         "hello\n"
     );
+}
+
+/// A cache directory without the completion marker is never served as an
+/// installed module root; the resolver replaces it from the committed tree.
+#[trace("FR-099-AC-11")]
+#[test]
+fn tc_1915_partial_extraction_cache_is_rebuilt_before_use() {
+    let root = tempfile::tempdir().expect("temp dir");
+    let (url, commit) = build_fixture_repo(&root.path().join("remote.git"));
+    let cache = root.path().join("cache");
+    let partial = cache
+        .join("content")
+        .join(sanitize_cache_key(&url))
+        .join(&commit)
+        .join("_root");
+    fs::create_dir_all(&partial).expect("partial cache root exists");
+    fs::write(partial.join("manifest.yaml"), "name: incomplete\n")
+        .expect("partial manifest is written");
+    fs::write(partial.join("interrupted.txt"), "partial extraction\n")
+        .expect("partial file is written");
+
+    let resolver = GixResolver::new(cache);
+    let fetched = resolver
+        .resolve(&url, Revision::Ref("v1.0.0"), None)
+        .expect("incomplete cache is re-extracted");
+
+    assert_eq!(fetched.sha.as_str(), commit);
+    assert_eq!(
+        fs::read_to_string(fetched.dir.join("manifest.yaml")).expect("root manifest"),
+        "name: fixture-root\n"
+    );
+    assert!(
+        !fetched.dir.join("interrupted.txt").exists(),
+        "partial output is not served"
+    );
+    assert!(fetched.dir.join(".quoin-extract-complete").is_file());
 }
 
 #[trace("FR-019-AC-2")]

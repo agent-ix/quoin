@@ -22,6 +22,7 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use quoin_catalog::{ModuleDocument, build as build_catalog};
 use quoin_modules::git::{GitResolver, ResolvedGitSource, Revision};
 use quoin_modules::install::ModuleInstaller;
 use quoin_modules::manifest::{MarketplaceEntry, MarketplaceManifest};
@@ -122,8 +123,18 @@ fn write_module(root: &Path, name: &str, marker: &str) -> PathBuf {
     let dir = root.join(name);
     fs::create_dir_all(dir.join("artifacts")).expect("fixture dirs");
     fs::write(dir.join("manifest.yaml"), format!("name: {name}\n")).expect("manifest");
+    fs::write(dir.join(".quoin-extract-complete"), "").expect("resolved git tree is complete");
     fs::write(dir.join("artifacts").join("marker.txt"), marker).expect("marker");
     dir
+}
+
+fn catalog_for_installed_module(root: &Path) -> quoin_catalog::Catalog {
+    let document = ModuleDocument {
+        root: root.display().to_string(),
+        manifest: fs::read_to_string(root.join("manifest.yaml")).expect("module manifest"),
+        skeleton_names: Vec::new(),
+    };
+    build_catalog(&[document], &[]).expect("installed module builds a catalog")
 }
 
 struct Home {
@@ -281,16 +292,36 @@ fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
     }
 }
 
-#[trace("FR-019-AC-2", "NFR-001-M-1")]
+#[trace("FR-019-AC-2", "NFR-001-M-1", "FR-099-AC-4", "FR-099-CON-3")]
 #[test]
 fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     let h = home();
-    let tree = write_module(&h.fixtures, "mod", "v1");
+    let tree = h.fixtures.join("repo");
+    fs::create_dir_all(tree.join("nested/artifacts")).expect("nested fixture dirs");
+    fs::write(tree.join(".quoin-extract-complete"), "").expect("resolved git tree is complete");
+    fs::write(
+        tree.join("nested/manifest.yaml"),
+        "name: mod\nversion: 1.0.0\nartifact_types:\n  - name: FR\n",
+    )
+    .expect("fixture declares a catalog artifact");
+    fs::write(tree.join("nested/artifacts/marker.txt"), "v1").expect("artifact fixture");
     let resolver =
         CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
-    let manifest = git_manifest("mod", "v1.0.0");
+    let manifest = MarketplaceManifest {
+        schema_version: 1,
+        name: Some("test-set".to_owned()),
+        entries: vec![MarketplaceEntry {
+            name: ModuleName::new("mod").expect("legal name"),
+            source: Source::Git {
+                url: "https://github.com/agent-ix/fixture.git".to_owned(),
+                r#ref: Some("v1.0.0".to_owned()),
+            },
+            default_enabled: None,
+            path: Some("nested".to_owned()),
+        }],
+    };
 
     let first = ensure_defaults(&manifest, &installer).expect("first reconcile");
     assert_eq!(
@@ -298,6 +329,10 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
         vec![ModuleName::new("mod").expect("legal")]
     );
     assert_eq!(resolver.calls(), 1, "the first reconcile must fetch");
+    let installed_root = h.paths.target_root.join("mod");
+    let first_catalog = catalog_for_installed_module(&installed_root);
+    assert_eq!(first_catalog.entries.len(), 1);
+    assert_eq!(first_catalog.entries[0].name, "FR");
 
     let second = ensure_defaults(&manifest, &installer).expect("second reconcile");
     assert_eq!(
@@ -310,6 +345,56 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
         1,
         "a settled lazy reconcile must not resolve anything — it runs before \
          every catalog read"
+    );
+    assert_eq!(
+        catalog_for_installed_module(&installed_root),
+        first_catalog,
+        "a second reconcile preserves the non-empty catalog from the materialized module root"
+    );
+}
+
+#[trace("FR-099-AC-11")]
+#[test]
+fn tc_1915_lazy_reconcile_reinstalls_a_partial_materialized_module_root() {
+    let h = home();
+    let tree = write_module(&h.fixtures, "mod", "v1");
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+    let manifest = MarketplaceManifest {
+        schema_version: 1,
+        name: Some("test-set".to_owned()),
+        entries: vec![MarketplaceEntry {
+            name: ModuleName::new("mod").expect("legal name"),
+            source: Source::GitSubdir {
+                url: "https://github.com/agent-ix/fixture.git".to_owned(),
+                path: "module".to_owned(),
+                r#ref: Some("v1.0.0".to_owned()),
+            },
+            default_enabled: None,
+            path: None,
+        }],
+    };
+
+    ensure_defaults(&manifest, &installer).expect("initial reconcile installs the module");
+    let installed_root = h.paths.target_root.join("mod");
+    fs::remove_file(installed_root.join(".quoin-materialize-complete"))
+        .expect("simulate an interrupted git-subdir root");
+
+    let repaired = ensure_defaults(&manifest, &installer).expect("partial root is re-resolved");
+    assert_eq!(
+        repaired.updated,
+        vec![ModuleName::new("mod").expect("legal")]
+    );
+    assert_eq!(
+        resolver.calls(),
+        2,
+        "partial roots must not take the lazy fast path"
+    );
+    assert!(
+        installed_root.join(".quoin-materialize-complete").is_file(),
+        "the complete-tree marker returns after replacement"
     );
 }
 
