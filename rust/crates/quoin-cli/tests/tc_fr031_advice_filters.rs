@@ -13,7 +13,7 @@ use serde_json::Value;
 use std::fs;
 use std::process::{Command, Output};
 
-const MODULE: &str = r#"
+const MODULE: &str = r##"
 name: advisor-fixture
 verification_catalog:
   security-review:
@@ -43,7 +43,7 @@ traceability:
         language: rust
         pattern: '#\[trace\(([^)]*)\)\]'
         template: "#[trace({ids})]"
-"#;
+"##;
 
 const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: Advice fixture\n---\n\n\
 ## Acceptance Criteria\n\n\
