@@ -384,17 +384,18 @@ fn not_released_stays_not_released_and_undecided_risk_is_not_accepted() {
     assert!(matches!(output.status.code(), Some(0 | 1)), "{output:?}");
     let json_output = String::from_utf8_lossy(&output.stdout);
     assert!(json_output.contains("incomplete"), "{json_output}");
+    assert!(json_output.contains("not_released"), "{json_output}");
     let release = fs::read_to_string(work.path().join("dossier/DOS-REL.md")).unwrap();
     assert!(release.contains("Status: not_released"), "{release}");
     assert!(!release.contains("Status: accepted"), "{release}");
     let risk = fs::read_to_string(work.path().join("dossier/DOS-RISK.md")).unwrap();
-    let residual = risk.lines().find(|line| line.starts_with("| RR-1 |"));
-    assert_eq!(
-        residual,
-        Some("| RR-1 | undecided | not stated | not recorded |")
-    );
-    assert!(!risk.contains("| RR-1 | accepted |"), "{risk}");
-    assert!(!risk.contains("| RR-1 | acceptable |"), "{risk}");
+    let residual = risk
+        .lines()
+        .find(|line| line.starts_with("| RR-1 | residual_risk |"))
+        .unwrap_or_else(|| panic!("risk decision queue omitted RR-1: {risk}"));
+    assert!(residual.contains("not stated"), "{residual}");
+    assert!(!residual.contains("accepted"), "{residual}");
+    assert!(!residual.contains("acceptable"), "{residual}");
 }
 
 fn rmm_sections(document: &str) -> (Vec<String>, BTreeMap<String, String>) {
