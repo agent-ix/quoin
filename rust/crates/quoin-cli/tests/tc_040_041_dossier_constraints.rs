@@ -328,7 +328,7 @@ fn assert_no_unrecorded_dossier_values(documents: &BTreeMap<String, String>) {
     }
 }
 
-#[trace("NFR-040-AC-3")]
+#[trace("NFR-040-AC-3", "NFR-040-M-3")]
 #[test]
 fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
     let work = tempfile::tempdir().unwrap();
