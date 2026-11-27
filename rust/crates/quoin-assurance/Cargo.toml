@@ -29,6 +29,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 quick-xml = { workspace = true }
 thiserror = { workspace = true }
+ix-trace-rs = { workspace = true }
 
 # Optional, and enabled by `quoin-schemas` rather than by this crate: the
 # derives are what let the SCHEMA be read off the canonical type, but nothing
@@ -37,7 +38,6 @@ thiserror = { workspace = true }
 schemars = { workspace = true, optional = true }
 
 [dev-dependencies]
-ix-trace-rs = { workspace = true }
 tempfile = { workspace = true }
 
 # FR-115-CON-1: `matrix` must stay free of host capability, audited by the

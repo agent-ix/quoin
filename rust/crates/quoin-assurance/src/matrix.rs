@@ -16,6 +16,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use ix_trace_rs::implements;
 use quoin_evidence::parse_timestamp;
 use quoin_evidence::qualify::RetainedRun;
 use quoin_evidence::types::{Binding, BindingsFile, Outcome};
@@ -38,6 +39,10 @@ pub struct MatrixInput {
     /// quire-rs `design_matrix` entries, when supplied by `quoin matrix`.
     #[serde(default)]
     pub design_coverage: Option<Vec<MatrixCoverageEntry>>,
+    /// Parent-target groups emitted by quire-rs, kept separate from the
+    /// obligation-only design coverage entries.
+    #[serde(default)]
+    pub parented_target_groups: Vec<serde_json::Value>,
     /// The evidence store's binding graph, exactly as persisted.
     pub bindings: BindingsFile,
     /// The auditor's report over the same bindings and obligations.
@@ -208,6 +213,10 @@ pub struct MatrixCoverageCriterion {
 pub struct MatrixOutput {
     /// One entry per requirement id, in ASCII byte order of that id.
     pub requirements: Vec<MatrixRequirement>,
+    /// Parent-target groups emitted by quire-rs, including parents with no
+    /// child rows; omitted when the engine reports none.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parented_target_groups: Vec<serde_json::Value>,
     /// Present exactly when there are no criteria at all: why the matrix is
     /// empty, so a consumer can tell "nothing to show" from "all clear".
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -539,6 +548,7 @@ pub(crate) fn bucket(kind: &str) -> u8 {
     clippy::too_many_lines,
     reason = "one pure projection joins the audit and evidence fields with the optional design axis"
 )]
+#[implements("FR-165-AC-22")]
 pub fn build(input: &MatrixInput) -> Result<MatrixOutput, MatrixRefusal> {
     let healthy: BTreeSet<&str> = input.audit.healthy.iter().map(String::as_str).collect();
     if let Some(obligation) = input
@@ -712,6 +722,7 @@ pub fn build(input: &MatrixInput) -> Result<MatrixOutput, MatrixRefusal> {
         .collect();
     Ok(MatrixOutput {
         requirements,
+        parented_target_groups: input.parented_target_groups.clone(),
         reason,
         unclassified,
     })

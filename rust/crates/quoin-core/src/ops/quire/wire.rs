@@ -135,6 +135,10 @@ pub struct DesignMatrixPayload {
     /// Required relations dropped while loading their declaring modules.
     /// Kept beside valid entries so partial engine results remain actionable.
     pub design_matrix_errors: Vec<serde_json::Value>,
+    /// Parent-target groups from the engine's coverage report, including
+    /// parents with no child rows.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parented_target_groups: Vec<serde_json::Value>,
     /// The ordered permitted values of each declared carried field.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub carried_vocabulary: BTreeMap<String, Vec<String>>,
