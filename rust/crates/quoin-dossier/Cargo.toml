@@ -40,4 +40,4 @@ time = { workspace = true, features = ["parsing"] }
 [dev-dependencies]
 quoin-core = { workspace = true }
 quoin-evidence = { workspace = true }
-quire-rs = { version = "=0.63.2", git = "https://github.com/agent-ix/quire-rs", rev = "8fea9b4ee476ba2c1bc65e2e1b0c28d2664c9467" }
+quire-rs = { version = "=0.63.5", git = "https://github.com/agent-ix/quire-rs", rev = "a31c3629276dba1966f88e698323d22038cdc551" }
