@@ -24,9 +24,8 @@ relationships:
 > output is deleted by quoin#654, so the thing it constrained no longer exists
 > and nothing surviving inherits the obligation.
 >
-> The former metric definitions are retained below as prose for provenance. The
-> measurement table uses the repository's withdrawn placeholder so the computed
-> matrix does not treat those historical measures as active obligations.
+> The former metric definitions are retained below as prose for provenance. No
+> measurement rows remain active after withdrawal.
 
 ## Statement
 
@@ -42,9 +41,12 @@ The withdrawn audit measured these historical quantities:
 - Markdown paths assigned exactly one parse state / Markdown paths discovered — target 100%, threshold 100%.
 - Canonical artifact bytes differing across equal-input reruns — target 0, threshold 0.
 
+The former audit measures are not active metrics. The table records an inspection
+of their archival-only disposition.
+
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Withdrawn | n/a | n/a | n/a |
+| Withdrawn audit metrics remain archival prose only | 1 | 1 | Inspection |
 
 ## Verification
 
