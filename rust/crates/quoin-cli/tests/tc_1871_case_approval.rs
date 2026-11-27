@@ -335,11 +335,18 @@ fn sacm_and_gsn_share_the_real_verified_approval_for_both_case_modes() {
             quoin_jsonschema::SchemaValidator::compile_vendored(&schema_path, &schema, &[])
                 .expect("GSN schema compiles");
         assert!(validator.is_valid(&gsn), "{:?}", validator.errors(&gsn));
-        let accepted = gsn
-            .as_object_mut()
-            .unwrap()
-            .remove("signed_acceptance")
-            .unwrap();
+        let warning = gsn
+            .get("warning")
+            .and_then(Value::as_str)
+            .unwrap_or("<none>")
+            .to_owned();
+        let accepted = gsn.as_object_mut().unwrap().remove("signed_acceptance");
+        assert!(
+            accepted.is_some(),
+            "signed acceptance missing; warning={warning}; stderr={}; payload={gsn}",
+            String::from_utf8_lossy(&approved.stderr)
+        );
+        let accepted = accepted.unwrap();
         assert_eq!(gsn, unsigned);
         assert_eq!(
             accepted,
