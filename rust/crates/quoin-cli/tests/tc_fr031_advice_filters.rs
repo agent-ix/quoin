@@ -9,7 +9,6 @@
 )]
 
 use ix_trace_rs::trace;
-use serde_json::Value;
 use std::fs;
 use std::process::{Command, Output};
 
@@ -90,11 +89,7 @@ impl Fixture {
             "{}",
             String::from_utf8_lossy(&output.stderr)
         );
-        let response: Value = serde_json::from_slice(&output.stdout).expect("response JSON");
-        response["rendered"]
-            .as_str()
-            .expect("rendered advice")
-            .to_owned()
+        String::from_utf8(output.stdout).expect("rendered advice is UTF-8")
     }
 }
 
@@ -102,7 +97,7 @@ impl Fixture {
 #[test]
 fn tc_fr031_combined_advice_filters_are_a_union_with_full_population_footer() {
     let fixture = Fixture::new();
-    let rendered = fixture.rendered(&["--mismatch-only", "--inconclusive-only", "--json"]);
+    let rendered = fixture.rendered(&["--mismatch-only", "--inconclusive-only"]);
 
     assert!(rendered.contains("FR-001-AC-1"), "{rendered}");
     assert!(rendered.contains("FR-001-AC-2"), "{rendered}");
