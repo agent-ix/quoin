@@ -933,6 +933,52 @@ mod tests {
             .to_owned()
     }
 
+    #[cfg(unix)]
+    struct ReadOnlyTree {
+        original_modes: Vec<(std::path::PathBuf, u32)>,
+    }
+
+    #[cfg(unix)]
+    impl ReadOnlyTree {
+        fn new(root: &Path) -> Self {
+            use std::os::unix::fs::PermissionsExt;
+
+            fn collect(path: &Path, modes: &mut Vec<(std::path::PathBuf, u32)>) {
+                let metadata = fs::symlink_metadata(path).expect("repository metadata");
+                modes.push((path.to_path_buf(), metadata.permissions().mode()));
+                if metadata.is_dir() {
+                    for entry in fs::read_dir(path).expect("repository children") {
+                        collect(&entry.expect("repository entry").path(), modes);
+                    }
+                }
+            }
+
+            let mut original_modes = Vec::new();
+            collect(root, &mut original_modes);
+            for (path, mode) in &original_modes {
+                let mut permissions = fs::metadata(path).expect("path metadata").permissions();
+                permissions.set_mode(mode & !0o222);
+                fs::set_permissions(path, permissions).expect("make repository read-only");
+            }
+            Self { original_modes }
+        }
+    }
+
+    #[cfg(unix)]
+    impl Drop for ReadOnlyTree {
+        fn drop(&mut self) {
+            use std::os::unix::fs::PermissionsExt;
+
+            for (path, mode) in self.original_modes.iter().rev() {
+                if let Ok(metadata) = fs::metadata(path) {
+                    let mut permissions = metadata.permissions();
+                    permissions.set_mode(*mode);
+                    let _ = fs::set_permissions(path, permissions);
+                }
+            }
+        }
+    }
+
     fn commit_repo(native: &str) -> (tempfile::TempDir, String) {
         let repo = tempfile::tempdir().expect("temporary git repository");
         git(repo.path(), &["init", "-q"]);
@@ -1694,6 +1740,91 @@ mod tests {
             revisions,
             vec![candidate],
             "one verifier call covers both rules on a candidate commit; excluded {non_candidate} and {second_non_candidate}"
+        );
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-188-CON-2")]
+    #[test]
+    fn status_succeeds_with_a_read_only_git_tree_and_preserves_ignored_state() {
+        let (repo, _old_ea, allowed) = command_fixture();
+        fs::write(repo.path().join(".gitignore"), "ignored-state/\n").expect("ignore rule");
+        let ignored = repo.path().join("ignored-state");
+        fs::create_dir(&ignored).expect("ignored directory");
+        fs::write(
+            ignored.join("approval-cache"),
+            "pre-existing ignored bytes\n",
+        )
+        .expect("ignored sentinel");
+        git(repo.path(), &["add", ".gitignore"]);
+        git(
+            repo.path(),
+            &["commit", "-q", "-m", "ignore transient state"],
+        );
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "formal rule candidate",
+                "-m",
+                "Formal-rule: qsl:a.native::P1",
+            ],
+        );
+        let candidate = git(repo.path(), &["rev-parse", "HEAD"]);
+        let verifier = executable(
+            repo.path(),
+            "read-only-ea",
+            &format!(
+                "cat >/dev/null\nprintf '%s\\n' '{}'",
+                json!({
+                    "protocol": RESULT_PROTOCOL,
+                    "kind": "commit",
+                    "status": "unsigned",
+                    "verified_commit_id": candidate,
+                    "trailers": {"Formal-rule": ["qsl:a.native::P1"]}
+                })
+            ),
+        );
+        let head_before = git(repo.path(), &["log", "--format=%H"]);
+        let status_before = git(
+            repo.path(),
+            &[
+                "status",
+                "--porcelain",
+                "--ignored",
+                "--untracked-files=all",
+            ],
+        );
+        let ignored_before = fs::read(ignored.join("approval-cache")).expect("sentinel bytes");
+        let _readonly = ReadOnlyTree::new(repo.path());
+
+        let response = super::run(&status_matches(repo.path(), &verifier, &allowed))
+            .expect("status reads a read-only repository without writing state");
+        let rendered = response.payload["rendered"].as_str().expect("JSON report");
+        let report: Value = serde_json::from_str(rendered).expect("status JSON");
+        assert_eq!(report["rules"][0]["state"], "draft");
+        assert_eq!(report["rules"][0]["reason"], "approval_unsigned");
+
+        drop(_readonly);
+        assert_eq!(git(repo.path(), &["log", "--format=%H"]), head_before);
+        assert_eq!(
+            git(
+                repo.path(),
+                &[
+                    "status",
+                    "--porcelain",
+                    "--ignored",
+                    "--untracked-files=all"
+                ]
+            ),
+            status_before
+        );
+        assert_eq!(
+            fs::read(ignored.join("approval-cache")).expect("sentinel bytes"),
+            ignored_before
         );
     }
 
