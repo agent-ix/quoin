@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import sys
 import tempfile
@@ -108,6 +109,35 @@ fn another_ignored_test() {}
             path.write_text('{"outcomes":[]}', encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "no outcome rows"):
                 behavioral_mutation_test.raw_counts(path)
+
+    @pytest.mark.trace("NFR-042-M-1")
+    def test_operator_mutant_with_null_function_and_span_is_retained(self) -> None:
+        outcome = {
+            "scenario": {
+                "Mutant": {
+                    "name": "operator_mutant",
+                    "file": "src/kernel.rs",
+                    "function": None,
+                    "span": {"start": None},
+                }
+            },
+            "summary": "MissedMutant",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "outcomes.json"
+            path.write_text(json.dumps({"outcomes": [outcome]}), encoding="utf-8")
+            self.assertEqual(
+                behavioral_mutation_test.raw_counts(path),
+                ({"killed": 0, "survived": 1, "unviable": 0}, False),
+            )
+            self.assertEqual(
+                behavioral_mutation_test.raw_survivors(path),
+                [{"mutation": "operator_mutant"}],
+            )
+        self.assertEqual(
+            behavioral_mutation_test.mutant_details(outcome),
+            {"file": "src/kernel.rs", "function": None, "line": None, "mutation": "operator_mutant"},
+        )
 
     def test_record_failure_keeps_the_real_tool_lane_failed(self) -> None:
         captured: list[list[dict]] = []

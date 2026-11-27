@@ -66,15 +66,35 @@ def raw_survivors(path: Path) -> list[dict]:
     document = json.loads(path.read_text(encoding="utf-8"))
     survivors = []
     for outcome in document.get("outcomes", []):
+        if not isinstance(outcome, dict):
+            continue
         if outcome.get("summary") not in {"MissedMutant", "Timeout"}:
             continue
-        mutant = outcome.get("scenario", {}).get("Mutant", {})
-        span = mutant.get("span", {}).get("start", {})
-        survivor = {"mutation": mutant.get("name") or outcome.get("summary")}
-        if span.get("line") is not None:
-            survivor["line"] = span["line"]
+        details = mutant_details(outcome)
+        survivor = {"mutation": details["mutation"] or outcome.get("summary")}
+        if details["line"] is not None:
+            survivor["line"] = details["line"]
         survivors.append(survivor)
     return survivors
+
+
+def mutant_details(outcome: dict) -> dict:
+    """Project optional cargo-mutants metadata without assuming nested objects."""
+    scenario = outcome.get("scenario")
+    mutant = scenario.get("Mutant") if isinstance(scenario, dict) else None
+    if not isinstance(mutant, dict):
+        mutant = {}
+    function = mutant.get("function")
+    function_name = function.get("function_name") if isinstance(function, dict) else None
+    span = mutant.get("span")
+    start = span.get("start") if isinstance(span, dict) else None
+    line = start.get("line") if isinstance(start, dict) else None
+    return {
+        "file": mutant.get("file"),
+        "function": function_name,
+        "line": line,
+        "mutation": mutant.get("name"),
+    }
 
 
 def main() -> int:
@@ -147,13 +167,13 @@ def main() -> int:
         failed |= run_failed
         raw = json.loads(outcomes.read_text(encoding="utf-8"))
         for item in raw.get("outcomes", []):
+            if not isinstance(item, dict):
+                continue
             if item.get("summary") not in {"MissedMutant", "Timeout"}:
                 continue
-            mutant = item.get("scenario", {}).get("Mutant", {})
-            disposition.append({"kernel": name, "file": mutant.get("file"),
-                                "function": mutant.get("function", {}).get("function_name"),
-                                "line": mutant.get("span", {}).get("start", {}).get("line"),
-                                "mutation": mutant.get("name"), "raw_outcome": item.get("summary"),
+            details = mutant_details(item)
+            disposition.append({"kernel": name, **details,
+                                "raw_outcome": item.get("summary"),
                                 "human_review_disposition": None})
 
     summary_path = evidence.ARTIFACTS / "mutation-summary.json"
