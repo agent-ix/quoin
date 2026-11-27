@@ -132,6 +132,7 @@ blocks of two relations shows two lines, one per `check` token.
 | FR-165-AC-19 | A `quire.design_matrix` failure other than an undeclared design relation, such as an oversized request, an engine refusal or a missing quire host, gives the error code and exit code `quire.coverage` gives for the same cause, not `design-matrix-failed`, and `quoin matrix` prints no matrix. | Test |
 | FR-165-AC-20 | Given a `coverage` in which requirement A carries `uncovered` blocks of relations P and Q, requirement B carries no block of P and an `uncovered` block of Q, and requirement C carries only `covered` blocks, `matrix.build` carries every block verbatim, B has no block of P, and markdown shows two `Design gap:` lines under A (one per `check` token), one under B (Q's) and none under C. | Test |
 | FR-165-AC-21 | Given quire-rs returns at least one valid design-matrix entry and at least one dropped-relation error, `quire.design_matrix` returns the valid entries in `coverage_matrix` and preserves the errors in `design_matrix_errors`. | Test |
+| FR-165-AC-22 | `quoin matrix --json` carries quire-rs `parented_target_groups` as a separate top-level field, preserving each parent and its sorted child ids, including an empty `child_ids` list for a parent with no child rows; the existing requirement and design coverage fields remain unchanged. | Test |
 
 ## Constraints
 
