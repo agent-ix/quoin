@@ -102,7 +102,7 @@ impl Fixture {
 #[test]
 fn tc_fr031_combined_advice_filters_are_a_union_with_full_population_footer() {
     let fixture = Fixture::new();
-    let rendered = fixture.rendered(&["--mismatch-only", "--inconclusive-only"]);
+    let rendered = fixture.rendered(&["--mismatch-only", "--inconclusive-only", "--json"]);
 
     assert!(rendered.contains("FR-001-AC-1"), "{rendered}");
     assert!(rendered.contains("FR-001-AC-2"), "{rendered}");
