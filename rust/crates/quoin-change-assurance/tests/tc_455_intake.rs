@@ -31,7 +31,9 @@ use quoin_change_assurance::{
 };
 use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{OUTPUT, attestation_text, history, json, record_text, replacing};
+use crate::common::{
+    OUTPUT, attestation_text, history, json, member, record_text, replacing, without,
+};
 
 /// The scenario attestation's canonical bytes and the output it attests to.
 fn pair() -> (Vec<u8>, Vec<u8>) {
@@ -111,6 +113,51 @@ fn tc_455_only_output_of_the_declared_size_is_retained() {
             "{store_name}: the output is retained whole"
         );
     });
+}
+
+/// Intake refuses absent producer premises instead of filling them from the
+/// record, tool defaults, or supplied output bytes.
+#[trace("FR-064-CON-2")]
+#[test]
+fn tc_455_intake_does_not_infer_proof_or_producer_fields() {
+    let attestation = json(&attestation_text());
+    let mut missing = vec![
+        (
+            "candidate_revision",
+            without(&attestation, "candidate_revision"),
+        ),
+        ("proof_id", without(&attestation, "proof_id")),
+        ("command", without(&attestation, "command")),
+        ("tool", without(&attestation, "tool")),
+        ("environment", without(&attestation, "environment")),
+        ("result", without(&attestation, "result")),
+    ];
+    let tool = without(member(&attestation, "tool"), "configuration_ref");
+    missing.push((
+        "tool.configuration_ref",
+        replacing(&attestation, "tool", tool),
+    ));
+    let output = without(member(&attestation, "retained_output"), "size_bytes");
+    missing.push((
+        "retained_output.size_bytes",
+        replacing(&attestation, "retained_output", output),
+    ));
+
+    for (field, candidate) in missing {
+        let bytes = canonical_bytes(&candidate).unwrap();
+        over_both_stores(|store_name, store| {
+            assert!(
+                intake_attestation(store, &bytes, OUTPUT).is_err(),
+                "{store_name}: missing `{field}` must not be inferred"
+            );
+            assert!(
+                read_attestation(store, &attestation_id())
+                    .unwrap()
+                    .is_none(),
+                "{store_name}: refusing `{field}` must leave no retained attestation"
+            );
+        });
+    }
 }
 
 /// Repeated identical intake preserves byte identity and reports that the
