@@ -30,6 +30,14 @@ fn plane_section<'a>(text: &'a str, heading: &str) -> Option<&'a str> {
     body.get(..end)
 }
 
+fn heading_section<'a>(text: &'a str, heading: &str) -> Option<&'a str> {
+    let marker = format!("## {heading}");
+    let start = text.find(&marker)? + marker.len();
+    let body = text.get(start..)?;
+    let end = body.find("\n## ").unwrap_or(body.len());
+    body.get(..end)
+}
+
 #[trace("FR-117-AC-1")]
 #[test]
 fn tc_fr117_ac1_defines_four_planes_with_concepts_authorities_and_projections() {
@@ -129,13 +137,13 @@ fn tc_fr118_ac1_assigns_quire_typed_markdown_scope_and_exclusions() {
     let ownership = normalized(OWNERSHIP);
     assert!(
         ownership
-            .contains("Quire | parse, validate, extract, address, and byte-splice typed Markdown")
+            .contains("Quire | parse, validate, extract, address, and byte-splice typed Markdown with module-provided contracts | template rendering, cross-language generation, schema-package publication, catalog sourcing, application policy")
     );
     for exclusion in [
         "template rendering",
         "cross-language generation",
         "schema-package publication",
-        "registry sourcing",
+        "catalog sourcing",
         "application policy",
     ] {
         assert!(
@@ -235,9 +243,24 @@ fn tc_fr119_ac3_cites_typespec_as_structural_source_without_reopening_choice() {
     let planes = normalized(PLANES);
     assert!(planes.contains("TypeSpec schema/package source (filament-core-data ADR-0005)"));
     assert!(planes.contains("normalized or bundled JSON Schema, language types, wire descriptors, and registry metadata are outputs or distribution forms."));
-    let ledger = normalized(LEDGER);
-    assert!(ledger.contains("TypeSpec is the structural source."));
-    assert!(ledger.contains("JSON Schema 2020-12 and Protobuf are official-emitter projections."));
+    assert!(plane_section(PLANES, "Meta plane").is_some_and(|section| {
+        let section = normalized(section);
+        let decision = section.to_lowercase();
+        section.contains("TypeSpec schema/package source (filament-core-data ADR-0005)")
+            && !decision.contains("preferred")
+            && !decision.contains("fallback")
+    }));
+    assert!(
+        heading_section(LEDGER, "TypeSpec and structural schema status").is_some_and(|section| {
+            let section = normalized(section);
+            let decision = section.to_lowercase();
+            section.contains("TypeSpec is the structural source.")
+                && section
+                    .contains("JSON Schema 2020-12 and Protobuf are official-emitter projections.")
+                && !decision.contains("preferred")
+                && !decision.contains("fallback")
+        })
+    );
     assert!(
         normalized(AUTHORITY_ADR)
             .contains("TypeSpec is the structural schema source per filament-core-data ADR-0005")
