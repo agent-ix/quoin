@@ -470,13 +470,33 @@ const DERIVED_ASSURANCE: [&str; 9] = [
     "2026-01-01T00:00:00Z",
 ];
 
-#[trace("FR-234-AC-3", "FR-228-AC-8")]
+#[trace("FR-234-AC-3", "FR-228-AC-8", "FR-040-AC-21")]
 #[test]
 fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
     let fixture = populated();
     let run_path = "spec/evidence/runs/unit/2026-01-01T00~3A00~3A00Z.json";
     let run = std::fs::read(fixture.repo().join(run_path)).expect("retained run record");
     let digest = quoin_store::attachment::sha256_hex(&run);
+
+    let markdown = fixture.ok(&DERIVED_ASSURANCE);
+    assert!(markdown.starts_with("# Assurance case\n"), "{markdown}");
+    assert!(
+        markdown.contains("```mermaid\nflowchart TD\n"),
+        "{markdown}"
+    );
+    assert!(!markdown.contains("quoin.gsn-case/v1"), "{markdown}");
+    assert!(
+        !markdown.contains("sacm:AssuranceCasePackage"),
+        "{markdown}"
+    );
+
+    let mut legacy_json_args = DERIVED_ASSURANCE.to_vec();
+    legacy_json_args.push("--json");
+    let legacy_json: Value = serde_json::from_str(&fixture.ok(&legacy_json_args))
+        .expect("the existing JSON mode remains case JSON");
+    assert!(legacy_json["claims"].as_array().is_some(), "{legacy_json}");
+    assert!(!legacy_json.get("format").is_some(), "{legacy_json}");
+
     let mut args = DERIVED_ASSURANCE.to_vec();
     args.push("--gsn");
     let gsn: Value = serde_json::from_str(&fixture.ok(&args)).expect("validated GSN");
