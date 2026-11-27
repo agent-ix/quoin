@@ -41,8 +41,8 @@ registries, schemas, skeletons, generated packages, runtime behavior, persistenc
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Writes outside the configured audit output directory | 0 | 0 | Test |
-| Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Test |
+| Writes outside the configured audit output directory | 0 | 0 | Withdrawn |
+| Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Withdrawn |
 | Major-interference recommendation advanced without its named gate | 0 | 0 | Inspection |
 
 ## Verification

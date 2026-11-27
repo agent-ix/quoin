@@ -9,6 +9,12 @@ relationships:
 
 # FR-103: Consolidate the Quoin side of corpus tooling
 
+> **⛔ Withdrawn — 2026-09-12.** The corpus-measurement and consolidation
+> capability was disposed under #388. The description, inputs, outputs,
+> behavior, and error conditions below are retained as historical context, not
+> active Quoin obligations. The surviving data-integrity constraint is
+> FR-103-CON-1; current Rust code remains governed by FR-100-CON-3.
+
 ## Description
 
 Quoin SHALL consolidate the corpus accounting and selection behaviour it owns
@@ -56,15 +62,15 @@ that resolves two corpus sources each block consolidation.
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-103-CON-1 | Consolidation SHALL NOT change an accepted-corpus byte. | Data Integrity | Test |
+| FR-103-CON-1 | Consolidation SHALL NOT change an accepted-corpus byte. | Data Integrity | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-103-AC-2 | `git diff` over the accepted-corpus tree between the commit before consolidation and the commit after it is empty, over a named non-empty population. | Test |
-| FR-103-AC-3 | A measurement run resolves exactly one corpus source, and a planted second source is refused. | Test |
-| FR-103-AC-4 | Corpus accounting is obtained from `engineering-assurance`, and no local corpus-accounting implementation exists in the workspace. | Test |
+| FR-103-AC-2 | Withdrawn: corpus consolidation was disposed under #388 before an accepted-corpus tree changed; this identifier is not reused. | Withdrawn |
+| FR-103-AC-3 | Withdrawn: Quoin no longer runs corpus measurement or selects a corpus source; a future capability requires a new requirement; this identifier is not reused. | Withdrawn |
+| FR-103-AC-4 | Withdrawn: Quoin has no current corpus-accounting capability; FR-100 governs any future shared capability; this identifier is not reused. | Withdrawn |
 | FR-103-AC-7 | Withdrawn: the corpus is not a submodule, so no revision is recorded or reported. | Withdrawn |
 
 ## Dependencies

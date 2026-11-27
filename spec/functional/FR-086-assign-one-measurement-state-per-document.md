@@ -99,22 +99,22 @@ than a failure against itself.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-086-CON-1 | The four states SHALL be exhaustive and mutually exclusive over the enumerated documents. | Interface | Test |
-| FR-086-CON-3 | A type key SHALL be the pair of module name and type name, never the type name alone. | Interface | Test |
-| FR-086-CON-2 | `out-of-model` SHALL NOT be reported as a failure of the document or of a module. | Interface | Test |
+| FR-086-CON-1 | The four states SHALL be exhaustive and mutually exclusive over the enumerated documents. | Interface | Withdrawn |
+| FR-086-CON-3 | A type key SHALL be the pair of module name and type name, never the type name alone. | Interface | Withdrawn |
+| FR-086-CON-2 | `out-of-model` SHALL NOT be reported as a failure of the document or of a module. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-086-AC-1 | A document whose `type` resolves to exactly one module is `measured` and names that module. | Test |
-| FR-086-AC-2 | A document with no frontmatter `type` is `out-of-model` with reason `no-declared-type`, and a document with an unrecognised `type` is `out-of-model` with reason `type-not-declared-by-any-module`. | Test |
-| FR-086-AC-3 | A document whose frontmatter fence is unterminated is `unreadable` with the failure recorded, and the documents beside it are still stated. | Test |
-| FR-086-AC-4 | A `type` declared by two resolved modules yields `contested` naming both modules, no aggregate reassigns it, and one `contract-defect` finding names the contesting modules. | Test |
-| FR-086-AC-5 | The four state counts sum to the enumerated document count of FR-084. | Test |
-| FR-086-AC-6 | No document appears in more than one state record. | Test |
-| FR-086-AC-7 | A document whose `type` differs from a declared type only by letter case is `out-of-model` with reason `type-not-declared-by-any-module`, not `measured`. | Test |
-| FR-086-AC-8 | Two modules declaring the same type name yield two distinct type keys in every breakdown, and neither type's documents are attributed to the other. | Test |
+| FR-086-AC-1 | A document whose `type` resolves to exactly one module is `measured` and names that module. | Withdrawn |
+| FR-086-AC-2 | A document with no frontmatter `type` is `out-of-model` with reason `no-declared-type`, and a document with an unrecognised `type` is `out-of-model` with reason `type-not-declared-by-any-module`. | Withdrawn |
+| FR-086-AC-3 | A document whose frontmatter fence is unterminated is `unreadable` with the failure recorded, and the documents beside it are still stated. | Withdrawn |
+| FR-086-AC-4 | A `type` declared by two resolved modules yields `contested` naming both modules, no aggregate reassigns it, and one `contract-defect` finding names the contesting modules. | Withdrawn |
+| FR-086-AC-5 | The four state counts sum to the enumerated document count of FR-084. | Withdrawn |
+| FR-086-AC-6 | No document appears in more than one state record. | Withdrawn |
+| FR-086-AC-7 | A document whose `type` differs from a declared type only by letter case is `out-of-model` with reason `type-not-declared-by-any-module`, not `measured`. | Withdrawn |
+| FR-086-AC-8 | Two modules declaring the same type name yield two distinct type keys in every breakdown, and neither type's documents are attributed to the other. | Withdrawn |
 
 ## Dependencies
 

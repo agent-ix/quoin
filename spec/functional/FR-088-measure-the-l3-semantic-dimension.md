@@ -94,21 +94,21 @@ check that never executed.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-088-CON-1 | A `not-applicable` document SHALL be absent from this check's numerator and denominator. | Interface | Test |
-| FR-088-CON-2 | The measurement SHALL NOT resolve a `Type` token, a multiplicity or a constraint keyword itself. | Interface | Inspection |
-| FR-088-CON-3 | The form census and the corpus enumeration SHALL walk one population, never two. | Interface | Test |
+| FR-088-CON-1 | A `not-applicable` document SHALL be absent from this check's numerator and denominator. | Interface | Withdrawn |
+| FR-088-CON-2 | The measurement SHALL NOT resolve a `Type` token, a multiplicity or a constraint keyword itself. | Interface | Withdrawn |
+| FR-088-CON-3 | The form census and the corpus enumeration SHALL walk one population, never two. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-088-AC-1 | Each of the five representation forms is classified from a document exhibiting it, and each document carries exactly one form. | Test |
-| FR-088-AC-2 | The form census counts documents, states that unit, and its per-form counts sum to the enumerated document count. | Test |
-| FR-088-AC-3 | A free-column table and a bullet list each yield one `unsupported-representation` advisory finding, and neither is counted as a conformance failure. | Test |
-| FR-088-AC-4 | A document with no `## Properties` heading records `not-applicable` and is absent from both sides of this check's rate. | Test |
-| FR-088-AC-5 | Every document's field-level record is `could-not-run` carrying a tool-defect ledger citation while no engine surface exposes semantic extraction. | Test |
-| FR-088-AC-6 | The document set the form census classified is the same set FR-084 enumerated, compared element by element. | Test |
-| FR-088-AC-7 | No source file of the measurement resolves a `Type` token, a multiplicity form or a constraint keyword. | Inspection |
+| FR-088-AC-1 | Each of the five representation forms is classified from a document exhibiting it, and each document carries exactly one form. | Withdrawn |
+| FR-088-AC-2 | The form census counts documents, states that unit, and its per-form counts sum to the enumerated document count. | Withdrawn |
+| FR-088-AC-3 | A free-column table and a bullet list each yield one `unsupported-representation` advisory finding, and neither is counted as a conformance failure. | Withdrawn |
+| FR-088-AC-4 | A document with no `## Properties` heading records `not-applicable` and is absent from both sides of this check's rate. | Withdrawn |
+| FR-088-AC-5 | Every document's field-level record is `could-not-run` carrying a tool-defect ledger citation while no engine surface exposes semantic extraction. | Withdrawn |
+| FR-088-AC-6 | The document set the form census classified is the same set FR-084 enumerated, compared element by element. | Withdrawn |
+| FR-088-AC-7 | No source file of the measurement resolves a `Type` token, a multiplicity form or a constraint keyword. | Withdrawn |
 
 ## Dependencies
 

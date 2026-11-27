@@ -1,6 +1,6 @@
 ---
 id: NFR-027
-title: "Rust implementation idioms and the gates that enforce them"
+title: "Rust implementation idioms and their verification"
 type: NFR
 quality_attribute: maintainability
 relationships:
@@ -12,15 +12,17 @@ relationships:
     type: "constrains"
 ---
 
-# NFR-027: Rust implementation idioms and the gates that enforce them
+# NFR-027: Rust implementation idioms and their verification
 
 ## Statement
 
 Every crate in the Quoin Rust workspace SHALL forbid `unsafe` code at its root,
 SHALL take its lints from one workspace-level declaration, SHALL expose one
 `thiserror`-derived error type per crate boundary drawn from a stable code
-catalog, and SHALL carry identifiers and resource references as newtypes, and the gates asserting
-these SHALL be run rather than assumed.
+catalog, and SHALL carry identifiers and resource references as newtypes. Each
+candidate revision SHALL run the workspace build, lint, test, and dependency
+  gates, and its release review SHALL inspect the public API, test-trace
+  population, and CI gate changes named in this requirement.
 
 ## Scope
 
@@ -35,8 +37,8 @@ these SHALL be run rather than assumed.
 ## Rationale
 
 The `/rust-review` skill is the standing review guide for this workspace.
-A review guide is advice; a requirement is a gate. This requirement promotes the subset of that guidance that a machine can check,
-so that a deviation is a failing run rather than a reviewer's recollection.
+This requirement records executable build, lint, test, and dependency gates,
+plus the specific source and trace-tag checks that the release review records.
 
 Each item is here because its absence has a named failure. An error variant whose
 payload is a human-readable string moves the discriminant into prose, and the
@@ -54,8 +56,8 @@ none for Rust today; the workspace stage creates
 `.claude/skills/rust-style/SKILL.md`, and until it exists `/rust-review` is the
 authority. This requirement is the enforceable floor under both.
 
-The last clause is the point of §12: a gate that is described and not run yields
-a green result for a check that did not execute.
+The final gate-run record distinguishes an executed check from one that was
+described but never run.
 
 ## Measurement and Evaluation
 
@@ -63,30 +65,23 @@ a green result for a check that did not execute.
 |--------|--------|-----------|--------|
 | Crate roots declaring `#![forbid(unsafe_code)]` | all | all | Test |
 | Crates taking lints from `[workspace.lints]` | all | all | Test |
-| Clippy findings under `-D warnings` | 0 | 0 | Test |
-| Public library APIs returning `Box<dyn Error>` or an `anyhow` error | 0 | 0 | Test |
-| Error types per crate boundary | 1 | 1 | Test |
-| Error codes absent from the crate's code catalog | 0 | 0 | Test |
-| Public functions taking or returning a bare `String` or `Uuid` identifier | 0 | 0 | Test |
-| New tests without a tracking tag resolving to a criterion | 0 | 0 | Test |
+| Clippy findings under `-D warnings` | 0 | 0 | Demonstration |
+| Public library APIs returning `Box<dyn Error>` or an `anyhow` error | 0 | 0 | Inspection |
+| Error types per crate boundary | 1 | 1 | Inspection |
+| Error codes absent from the crate's code catalog | 0 | 0 | Inspection |
+| Public functions taking or returning a bare `String` or `Uuid` identifier | 0 | 0 | Inspection |
+| New tests without a tracking tag resolving to a criterion | 0 | 0 | Inspection |
 
 ## Verification
 
 The gate runs, and records the output of, each of `cargo fmt --check`;
 `cargo clippy --workspace --all-targets --all-features -- -D warnings`;
-`cargo test --workspace`; and `cargo deny check` where `rust/deny.toml` exists. A
-source check asserts `#![forbid(unsafe_code)]` on every crate root, `[lints]
-workspace = true` in every crate manifest with the policy defined once at the
-workspace root, exactly one `thiserror`-derived error type on each crate
-boundary, every error code present in that crate's checked-in code catalog, no
-`Box<dyn Error>` or `anyhow` type in a public signature, and no bare `String` or
-`Uuid` identifier parameter or return in a public signature. A test check asserts
-every test function carries a tracking tag whose cited criterion ids resolve to
-an artefact in `spec/`. Planted violations of each rule must fail the
-corresponding check; a check whose scanned population is empty is reported as
-inconclusive rather than as clean. A change that removes a gate lane, narrows
-one, or adds `continue-on-error` fails this requirement independently of the code
-it accompanies.
+`cargo test --workspace`; and `cargo deny check` where `rust/deny.toml` exists.
+The release review records an inspection of crate roots and manifests, error
+types and code catalogs, public signatures, and test trace tags. The recorded
+review names the inspected population; an empty population is inconclusive.
+A change that removes a gate lane, narrows one, or adds `continue-on-error`
+is recorded as a review finding independently of the code it accompanies.
 
 ## Acceptance Criteria
 
@@ -94,13 +89,13 @@ it accompanies.
 |----|----------|--------------|
 | NFR-027-AC-1 | Every crate root declares `#![forbid(unsafe_code)]`, and a planted `unsafe` block fails the build. | Test |
 | NFR-027-AC-2 | The lint policy is declared once in `[workspace.lints]` at `rust/Cargo.toml`, every crate manifest opts in with `[lints] workspace = true`, and a per-crate override fails the gate. | Test |
-| NFR-027-AC-3 | `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` both exit zero, and their output is recorded with the run. | Test |
-| NFR-027-AC-4 | Each crate boundary exposes exactly one `thiserror`-derived error type whose every code appears in that crate's checked-in code catalog, and a code absent from the catalog fails the gate. | Test |
-| NFR-027-AC-5 | No public library signature returns `Box<dyn Error>` or an `anyhow` error, and a planted one fails the gate. | Test |
-| NFR-027-AC-6 | No public library signature takes or returns a bare `String` or `Uuid` as an identifier or resource reference, and a planted one fails the gate. | Test |
-| NFR-027-AC-7 | Every Rust test function carries a tracking tag whose cited criterion ids resolve to an artefact under `spec/`, and an untagged or unresolvable-tag test fails the gate. | Test |
-| NFR-027-AC-8 | A continuous-integration change that removes a gate lane, narrows one, or adds `continue-on-error` fails this requirement's check. | Test |
-| NFR-027-AC-9 | Each of the source and test checks reports the population it scanned, and a check that scanned nothing is reported as inconclusive rather than as passing. | Test |
+| NFR-027-AC-3 | `cargo fmt --check` and `cargo clippy --workspace --all-targets --all-features -- -D warnings` both exit zero, and their output is recorded with the run. | Demonstration |
+| NFR-027-AC-4 | Inspection of each crate boundary confirms exactly one `thiserror`-derived error type and verifies every code against that crate's checked-in code catalog. | Inspection |
+| NFR-027-AC-5 | Inspection of public library signatures finds no `Box<dyn Error>` or `anyhow` error return. | Inspection |
+| NFR-027-AC-6 | Inspection of public library signatures finds no bare `String` or `Uuid` used as an identifier or resource reference. | Inspection |
+| NFR-027-AC-7 | Inspection of the Rust test population confirms every test function carries a trace tag resolving to an artefact under `spec/`. | Inspection |
+| NFR-027-AC-8 | The release review inspects continuous-integration changes and records any removal or narrowing of a gate lane, or addition of `continue-on-error`. | Inspection |
+| NFR-027-AC-9 | The release review records the source and test populations inspected; an empty population is marked inconclusive rather than passing. | Inspection |
 
 ## Dependencies
 

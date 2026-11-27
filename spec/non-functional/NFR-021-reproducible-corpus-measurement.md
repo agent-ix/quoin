@@ -59,10 +59,10 @@ corpus change from a measurement change.
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Result artifacts differing between two runs at equal inputs | 0 artifacts | 0 artifacts | Repeat run and compare artifact bytes |
-| Ordering-dependent fields in result artifacts | 0 fields | 0 fields | Inspection of the emitted ordering contract |
-| Network requests during a measurement run | 0 requests | 0 requests | Run with networking disabled |
-| Repositories excluded from the reproducibility claim without being marked in the record | 0 repositories | 0 repositories | Automated cross-check of the corpus record |
+| Result artifacts differing between two runs at equal inputs | 0 artifacts | 0 artifacts | Withdrawn |
+| Ordering-dependent fields in result artifacts | 0 fields | 0 fields | Withdrawn |
+| Network requests during a measurement run | 0 requests | 0 requests | Withdrawn |
+| Repositories excluded from the reproducibility claim without being marked in the record | 0 repositories | 0 repositories | Withdrawn |
 
 ## Verification
 
@@ -75,10 +75,10 @@ a shuffled directory order and produces the same bytes.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| NFR-021-AC-1 | Two runs over the same recorded corpus and module revisions produce byte-identical artifacts, excluding the run manifest's timestamp field. | Test |
-| NFR-021-AC-2 | No emitted collection depends on filesystem enumeration order; every collection carries a declared ordering key. | Test |
-| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus produces byte-identical artifacts to a run with networking available. | Test |
-| NFR-021-AC-4 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record. | Test |
+| NFR-021-AC-1 | Two runs over the same recorded corpus and module revisions produce byte-identical artifacts, excluding the run manifest's timestamp field. | Withdrawn |
+| NFR-021-AC-2 | No emitted collection depends on filesystem enumeration order; every collection carries a declared ordering key. | Withdrawn |
+| NFR-021-AC-3 | A run executed with networking disabled over the fixture corpus produces byte-identical artifacts to a run with networking available. | Withdrawn |
+| NFR-021-AC-4 | Every repository outside the reproducibility claim is marked `clean: false` or `stable: false` in the corpus record. | Withdrawn |
 
 ## Dependencies
 
