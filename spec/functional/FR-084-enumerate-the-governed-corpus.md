@@ -91,9 +91,9 @@ the exclusion vocabulary is an input somebody authors, not a detail the walker d
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-084-CON-1 | The working tree and refs of every enumerated repository SHALL be unchanged by a measurement run; incidental Git index or lock activity from a read-only plumbing call is not a change. | Safety | Test |
-| FR-084-CON-2 | Every excluded candidate SHALL carry the rule that excluded it, never an empty reason. | Interface | Test |
-| FR-084-CON-3 | The exclusion vocabulary SHALL be a declared input, never a list compiled into the measurement. | Interface | Test |
+| FR-084-CON-1 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). The working tree and refs of every enumerated repository SHALL be unchanged by a measurement run; incidental Git index or lock activity from a read-only plumbing call is not a change. | Safety | Withdrawn |
+| FR-084-CON-2 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). Every excluded candidate SHALL carry the rule that excluded it, never an empty reason. | Interface | Withdrawn |
+| FR-084-CON-3 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). The exclusion vocabulary SHALL be a declared input, never a list compiled into the measurement. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 

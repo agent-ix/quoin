@@ -87,9 +87,9 @@ a statement about the real contract, and makes everything the engine cannot do v
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-087-CON-1 | A `could-not-run` outcome SHALL NOT be counted in the numerator or the denominator of a pass rate. | Interface | Test |
+| FR-087-CON-1 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A `could-not-run` outcome SHALL NOT be counted in the numerator or the denominator of a pass rate. | Interface | Withdrawn |
 | FR-087-CON-2 | The measurement SHALL NOT implement its own parser, extractor or record builder for a module's declared mappings. | Interface | Inspection |
-| FR-087-CON-3 | The measurement SHALL NOT rewrite the bytes of a corpus document. | Safety | Test |
+| FR-087-CON-3 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). The measurement SHALL NOT rewrite the bytes of a corpus document. | Safety | Withdrawn |
 
 ## Acceptance Criteria
 

@@ -78,9 +78,9 @@ resolved one module from satisfying every criterion.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-085-CON-1 | Module resolution SHALL NOT check out, fetch or otherwise mutate a module repository. | Safety | Test |
-| FR-085-CON-2 | An unresolved required module SHALL NOT be treated as a module declaring no types. | Interface | Test |
-| FR-085-CON-3 | The required module set SHALL be a declared input naming every module whose schema this campaign completed. | Interface | Test |
+| FR-085-CON-1 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). Module resolution SHALL NOT check out, fetch or otherwise mutate a module repository. | Safety | Withdrawn |
+| FR-085-CON-2 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). An unresolved required module SHALL NOT be treated as a module declaring no types. | Interface | Withdrawn |
+| FR-085-CON-3 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). The required module set SHALL be a declared input naming every module whose schema this campaign completed. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 

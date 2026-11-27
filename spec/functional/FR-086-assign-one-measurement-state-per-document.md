@@ -99,9 +99,9 @@ than a failure against itself.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-086-CON-1 | The four states SHALL be exhaustive and mutually exclusive over the enumerated documents. | Interface | Test |
-| FR-086-CON-3 | A type key SHALL be the pair of module name and type name, never the type name alone. | Interface | Test |
-| FR-086-CON-2 | `out-of-model` SHALL NOT be reported as a failure of the document or of a module. | Interface | Test |
+| FR-086-CON-1 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). The four states SHALL be exhaustive and mutually exclusive over the enumerated documents. | Interface | Withdrawn |
+| FR-086-CON-3 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A type key SHALL be the pair of module name and type name, never the type name alone. | Interface | Withdrawn |
+| FR-086-CON-2 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). `out-of-model` SHALL NOT be reported as a failure of the document or of a module. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 
