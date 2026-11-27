@@ -133,7 +133,9 @@ fn tc_235_ratings_coverage_reports_ratings_without_reading_selftest_assets() {
     assert_eq!(with_selftest_assets.stdout, output.stdout);
 }
 
+/// Provenance: SWM-393
 #[trace("FR-235-AC-11")]
+#[trace("FR-235-AC-15")]
 #[test]
 fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
@@ -155,7 +157,7 @@ fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
     );
     assert_eq!(
         json_at(&report, "/unreadable/0/path"),
-        "functional/FR-001-broken.md"
+        "spec/functional/FR-001-broken.md"
     );
     assert!(json_at(&report, "/unreadable/0/reason").as_str().is_some());
     assert_eq!(*json_at(&report, "/features"), serde_json::json!([]));
@@ -169,7 +171,7 @@ fn tc_235_ratings_coverage_reports_unreadable_spec_and_returns_partial() {
         .expect("quoin binary runs");
     assert_eq!(human_output.status.code(), Some(1));
     let stdout = String::from_utf8(human_output.stdout).expect("human output is UTF-8");
-    assert!(stdout.contains("unreadable: functional/FR-001-broken.md: "));
+    assert!(stdout.contains("unreadable: spec/functional/FR-001-broken.md: "));
 }
 
 #[trace("PLAT-1636-AC-6")]
@@ -269,8 +271,10 @@ fn tc_1636_ratings_reports_each_status_and_is_read_only() {
     );
 }
 
+/// Provenance: SWM-393
 #[trace("PLAT-1636-AC-6")]
 #[trace("PLAT-1636-AC-7")]
+#[trace("FR-235-AC-15")]
 #[test]
 fn tc_1636_unreadable_input_is_reported_in_json_and_human_output() {
     let scratch = tempfile::tempdir().expect("temporary repository created");
@@ -300,7 +304,7 @@ fn tc_1636_unreadable_input_is_reported_in_json_and_human_output() {
     );
     assert_eq!(
         json_at(&report, "/unreadable/0/path"),
-        "functional/FR-002-broken.md"
+        "spec/functional/FR-002-broken.md"
     );
     assert!(json_at(&report, "/unreadable/0/reason").as_str().is_some());
 
@@ -308,5 +312,73 @@ fn tc_1636_unreadable_input_is_reported_in_json_and_human_output() {
     assert_eq!(human_output.status.code(), Some(1));
     let stdout = String::from_utf8(human_output.stdout).expect("human output is UTF-8");
     assert!(stdout.contains("FR-001: unrated (rating IDs: none)"));
-    assert!(stdout.contains("unreadable: functional/FR-002-broken.md: "));
+    assert!(stdout.contains("unreadable: spec/functional/FR-002-broken.md: "));
+}
+
+/// Provenance: SWM-373
+#[trace("FR-235-AC-14")]
+#[test]
+fn tc_235_wrong_kind_supplier_target_emits_diagnostic_and_is_not_a_feature_rating() {
+    let scratch = tempfile::tempdir().expect("temporary repository created");
+    write(
+        scratch.path(),
+        "spec/functional/FR-001.md",
+        "---\nid: FR-001\ntype: FR\n---\nRequirement.\n",
+    );
+    write(
+        scratch.path(),
+        "spec/intended-use/IU-001.md",
+        "---\nid: IU-001\ntype: IntendedUse\n---\nIntended use.\n",
+    );
+    write(
+        scratch.path(),
+        "spec/ratings/RR-1.md",
+        "---\nid: RR-1\ntype: FeatureRiskRating\nscope: supplier\nrelationships:\n  - target: ix://agent-ix/quoin/IU-001\n    type: rates_feature\n---\n",
+    );
+
+    let output = invoke(scratch.path(), true);
+    assert_eq!(output.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&output.stdout).expect("ratings JSON parses");
+    assert_eq!(
+        report["features"],
+        serde_json::json!([{
+            "feature_id": "FR-001",
+            "status": "unrated",
+            "rating_ids": []
+        }])
+    );
+    let diagnostics: Value =
+        serde_json::from_slice(&output.stderr).expect("diagnostics JSON parses");
+    assert_eq!(diagnostics[0]["code"], "target-kind-mismatch");
+    assert_eq!(diagnostics[0]["context"]["path"], "spec/ratings/RR-1.md");
+    assert_eq!(
+        diagnostics[0]["context"]["target"],
+        "ix://agent-ix/quoin/IU-001"
+    );
+    assert_eq!(diagnostics[0]["context"]["actual_kind"], "IntendedUse");
+}
+
+/// Provenance: SWM-393
+#[trace("FR-235-AC-15")]
+#[test]
+fn tc_235_unreadable_rating_path_includes_repository_spec_prefix() {
+    let scratch = tempfile::tempdir().expect("temporary repository created");
+    write(
+        scratch.path(),
+        "spec/functional/FR-001-broken.md",
+        "---\nid: [invalid\ntype: FR\n---\nBroken frontmatter\n",
+    );
+
+    let json_output = invoke(scratch.path(), true);
+    assert_eq!(json_output.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(&json_output.stdout).expect("ratings JSON parses");
+    assert_eq!(
+        report["unreadable"][0]["path"],
+        "spec/functional/FR-001-broken.md"
+    );
+
+    let human_output = invoke(scratch.path(), false);
+    assert_eq!(human_output.status.code(), Some(1));
+    let stdout = String::from_utf8(human_output.stdout).expect("human output is UTF-8");
+    assert!(stdout.contains("unreadable: spec/functional/FR-001-broken.md: "));
 }
