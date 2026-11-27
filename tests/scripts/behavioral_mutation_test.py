@@ -22,6 +22,12 @@ KERNELS = [
     ("risk-completeness", "quoin-risk-advice", "crates/quoin-risk-advice/src/summary.rs", []),
     ("class-floor", "quoin-auditor", "crates/quoin-auditor/src/audit/class.rs", []),
 ]
+NFR_042_TRACE_IDS = ["NFR-042-M-1"]
+
+
+def mutation_entry(symbol: str, outcome: str, config: dict[str, str]) -> dict:
+    """Bind every retained behavioral mutation result to its criterion."""
+    return evidence.entry(symbol, outcome, config, NFR_042_TRACE_IDS)
 
 
 def adjacent_checkout(env: dict[str, str], variable: str, checkout: str, marker: str) -> None:
@@ -137,19 +143,19 @@ def main() -> int:
         if error:
             outcome, execution_state = evidence.classify_execution(status, error)
             config.update({"execution_state": execution_state, "reason": error})
-            entries.append(evidence.entry(name, outcome, config))
+            entries.append(mutation_entry(name, outcome, config))
             failed = True
             continue
         if not outcomes.is_file():
             config.update({"execution_state": "not-executed", "reason": "cargo-mutants did not retain outcomes.json"})
-            entries.append(evidence.entry(name, "error", config))
+            entries.append(mutation_entry(name, "error", config))
             failed = True
             continue
         try:
             counts, baseline_failed = raw_counts(outcomes)
         except (OSError, json.JSONDecodeError, ValueError) as error:
             config.update({"execution_state": "executed", "reason": f"invalid retained outcomes: {error}"})
-            entries.append(evidence.entry(name, "fail", config))
+            entries.append(mutation_entry(name, "fail", config))
             failed = True
             continue
         summaries[name] = {"package": package, "source": source, **counts,
@@ -163,7 +169,7 @@ def main() -> int:
             1 if run_failed or survivors else 0,
         )
         config["execution_state"] = execution_state
-        record_entry = evidence.entry(name, outcome, config)
+        record_entry = mutation_entry(name, outcome, config)
         viable = counts["killed"] + counts["survived"]
         if viable:
             record_entry["score"] = counts["killed"] / viable
