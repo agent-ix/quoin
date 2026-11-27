@@ -19,7 +19,7 @@
     reason = "in a test, a panic IS the failure report"
 )]
 
-use std::{fs, path::PathBuf};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use ix_trace_rs::trace;
 use quire_rs::coverage::CoverageMatrixStatus;
@@ -35,7 +35,8 @@ use quoin_evidence::types::{
     Binding, ProducerContext, RunRecord, TrustDecision, TrustDecisionKind, TrustTrigger, TrustUse,
 };
 use quoin_evidence::{
-    MemoryEvidence, Outcome, RunEntry, STORE_SCHEMA_VERSION, SuiteId, TrustDecisionId,
+    EvidenceSource, MemoryEvidence, Outcome, RunEntry, STORE_SCHEMA_VERSION, SuiteId,
+    TrustDecisionId,
 };
 use quoin_quire::coverage::Request as ScopeRequest;
 use quoin_quire::evidence::{Outcome as Counted, Query, Request, compute};
@@ -363,6 +364,22 @@ impl Recorded {
         read_bindings(&self.source).unwrap().bindings
     }
 
+    fn store_bytes(&self) -> BTreeMap<String, String> {
+        self.source
+            .paths()
+            .into_iter()
+            .map(|path| {
+                (
+                    path.to_owned(),
+                    self.source
+                        .read(path)
+                        .unwrap()
+                        .expect("listed record exists"),
+                )
+            })
+            .collect()
+    }
+
     fn mark_formal_rule_selection(&mut self, first_state: &str, second_state: &str) {
         let (_, projection) = self.reports.last_mut().unwrap();
         let source = [
@@ -489,7 +506,13 @@ fn satisfied_store(ids: &[&str]) -> Recorded {
     store
 }
 
-#[trace("FR-153-AC-1", "FR-184-AC-2", "FR-184-AC-13", "FR-184-AC-15")]
+#[trace(
+    "FR-153-AC-1",
+    "FR-184-AC-2",
+    "FR-184-AC-13",
+    "FR-184-AC-15",
+    "FR-116-AC-1"
+)]
 #[test]
 fn an_admitted_passing_report_is_a_qualified_record_for_its_own_target_only() {
     let outcome = satisfied_store(&[AC1]).count(&[AC1], admitted());
@@ -517,6 +540,24 @@ fn an_admitted_passing_report_is_a_qualified_record_for_its_own_target_only() {
             .provenance
             .contains(&"credit:consistency-evidence-only".to_owned())
     );
+    let premises = [
+        "tool:filament-analyze:0.1.0".to_owned(),
+        "reliance:ETD-1:accepted".to_owned(),
+        "actor-authority:signer-1:admission-7".to_owned(),
+        format!("performed-revision:{HEAD}"),
+        format!("selected-head:{HEAD}"),
+        "execution:ci:github/agent-ix/quoin/100/1/analysis/run-package:".to_owned(),
+    ];
+    for premise in &premises {
+        assert!(
+            binder
+                .provenance
+                .iter()
+                .any(|item| item.starts_with(premise)),
+            "the admitted premise is retained: {premise}; {:?}",
+            binder.provenance
+        );
+    }
     assert!(
         binder
             .provenance
@@ -1274,10 +1315,17 @@ fn a_second_report_in_the_same_suite_replaces_the_first() {
     assert_eq!(counted(&apart.count(&[AC1], admitted())), 0);
 }
 
-#[trace("FR-153-AC-9")]
+#[trace("FR-153-AC-9", "FR-116-AC-16")]
 #[test]
 fn trace_returns_the_record_claim_and_never_a_source_symbol() {
-    let outcome = satisfied_store(&[AC1]).count(&[AC1], admitted());
+    let store = satisfied_store(&[AC1]);
+    let bytes_before = store.store_bytes();
+    let outcome = store.count(&[AC1], admitted());
+    assert_eq!(
+        store.store_bytes(),
+        bytes_before,
+        "qualification only reads the canonical stores"
+    );
     let criterion = outcome
         .report
         .coverage_matrix
@@ -1300,6 +1348,11 @@ fn trace_returns_the_record_claim_and_never_a_source_symbol() {
     assert_eq!(
         outcome.trace(Query::Obligation(AC2)),
         [] as [quire_rs::evidence::RecordBinder; 0]
+    );
+    assert_ne!(
+        status(&outcome, AC2),
+        CoverageMatrixStatus::QualifiedRecord,
+        "legacy no-evidence matrix behavior stays unqualified"
     );
 
     // A source-symbol query for the retained entry's own identity returns no
