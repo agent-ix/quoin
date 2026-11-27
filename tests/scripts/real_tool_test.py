@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -50,6 +51,36 @@ def not_executed_entry(name: str, config: dict[str, str], trace_ids: list[str], 
     return evidence.entry(name, "error", config, trace_ids)
 
 
+def run_external_check(
+    name: str,
+    source: str,
+    test_names: set[str],
+    tool: str,
+    tool_version: str,
+    command: list[str],
+    env: dict[str, str],
+    prerequisites: list[str],
+) -> tuple[dict, bool]:
+    trace_ids = ignored_test_trace_ids(evidence.ROOT / source, test_names)
+    config = {"tool": tool, "tool_version": tool_version, "trace_source": source,
+              "trace_test_filter": ",".join(sorted(test_names)),
+              "input": "local generated assurance case and caller-supplied external tool/model"}
+    reason = []
+    if not trace_ids:
+        reason.append("no trace ids found on the selected ignored Rust test")
+    reason.extend(prerequisites)
+    if reason:
+        return not_executed_entry(name, config, trace_ids, "; ".join(reason)), True
+
+    log, status, error = evidence.execute(name, command, env)
+    config.update({"execution_state": "executed", "log": log})
+    outcome, execution_state = evidence.classify_execution(status, error)
+    config["execution_state"] = execution_state
+    if error:
+        config["reason"] = error
+    return evidence.entry(name, outcome, config, trace_ids), outcome != "pass"
+
+
 def run() -> int:
     evidence.prepare()
     entries: list[dict] = []
@@ -86,13 +117,16 @@ def run() -> int:
             failed = True
             continue
         env = os.environ.copy()
+        env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
+        env["CARGO_BUILD_JOBS"] = "4"
+        env["RUST_TEST_THREADS"] = "4"
         env["QUOIN_TEST_ENGINEERING_ASSURANCE"] = str(ea_path)
         env["QUOIN_E2E_EA"] = str(ea_path)
-        command = ["cargo", "test", "--locked", "--package", package]
+        command = ["cargo", "test", "-j", "4", "--locked", "--package", package]
         if test_kind == "--lib":
-            command.extend(["--lib", test_name, "--", "--ignored"])
+            command.extend(["--lib", test_name, "--", "--ignored", "--test-threads=4"])
         else:
-            command.extend([test_kind, target, test_name, "--", "--ignored", "--exact"])
+            command.extend([test_kind, target, test_name, "--", "--ignored", "--exact", "--test-threads=4"])
         log, status, error = evidence.execute(name, command, env)
         config.update({"execution_state": "executed", "input": config["input"], "log": log})
         outcome, execution_state = evidence.classify_execution(status, error)
@@ -101,6 +135,98 @@ def run() -> int:
             config["reason"] = error
         entries.append(evidence.entry(name, outcome, config, trace_ids))
         failed |= outcome != "pass"
+
+    case_source = "rust/crates/quoin-cli/tests/tc_1871_case_approval.rs"
+    ea_prerequisites = []
+    if not ea_available:
+        ea_prerequisites.append("QUOIN_TEST_ENGINEERING_ASSURANCE or QUOIN_E2E_EA must name an executable")
+    elif ea_version == "unavailable":
+        ea_prerequisites.append("Engineering Assurance version could not be read")
+    ea_env = os.environ.copy()
+    ea_env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
+    ea_env["CARGO_BUILD_JOBS"] = "4"
+    ea_env["RUST_TEST_THREADS"] = "4"
+    ea_env["QUOIN_TEST_ENGINEERING_ASSURANCE"] = str(ea_path) if ea_path else ""
+    ea_env["QUOIN_E2E_EA"] = str(ea_path) if ea_path else ""
+    entries_for_ea = [
+        ("case-approval-real-acceptance", "sacm_and_gsn_share_the_real_verified_approval_for_both_case_modes",
+         ["cargo", "test", "-j", "4", "--locked", "--package", "quoin-cli", "--test", "tc_1871_case_approval",
+          "sacm_and_gsn_share_the_real_verified_approval_for_both_case_modes", "--", "--ignored", "--exact",
+          "--test-threads=4"]),
+        ("case-approval-real-refusal", "sacm_case_approval_refuses_wrong_bindings_expired_keys_and_non_acceptance_meanings",
+         ["cargo", "test", "-j", "4", "--locked", "--package", "quoin-cli", "--test", "tc_1871_case_approval",
+          "sacm_case_approval_refuses_wrong_bindings_expired_keys_and_non_acceptance_meanings",
+          "--", "--ignored", "--exact", "--test-threads=4"]),
+    ]
+    for name, test_name, command in entries_for_ea:
+        item, check_failed = run_external_check(
+            name, case_source, {test_name}, "engineering-assurance", ea_version, command, ea_env,
+            ea_prerequisites)
+        entries.append(item)
+        failed |= check_failed
+
+    metamodel = os.environ.get("QUOIN_SACM_METAMODEL")
+    metamodel_path = Path(metamodel).expanduser() if metamodel else None
+    metamodel_reasons = []
+    if not metamodel_path or not metamodel_path.is_absolute() or not metamodel_path.is_file():
+        metamodel_reasons.append("QUOIN_SACM_METAMODEL must name an existing absolute SACM UML XML file")
+    metamodel_env = os.environ.copy()
+    if metamodel_path:
+        metamodel_env["QUOIN_SACM_METAMODEL"] = str(metamodel_path)
+    metamodel_env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
+    metamodel_env["CARGO_BUILD_JOBS"] = "4"
+    metamodel_env["RUST_TEST_THREADS"] = "4"
+    metamodel_command = ["make", "-C", str(evidence.ROOT), "test-sacm-metamodel"]
+    item, check_failed = run_external_check(
+        "sacm-published-metamodel", "rust/crates/quoin-assurance/tests/sacm/metamodel.rs",
+        {"sacm_uses_normative_metamodel"}, "OMG SACM 2.3 metamodel", "caller-supplied XML",
+        metamodel_command, metamodel_env, metamodel_reasons)
+    entries.append(item)
+    failed |= check_failed
+
+    sacm_tool_value = os.environ.get("QUOIN_SACM_TOOL")
+    sacm_tool = Path(sacm_tool_value).expanduser() if sacm_tool_value else None
+    importer_version = "unavailable"
+    importer_reasons = []
+    if not sacm_tool or not sacm_tool.is_absolute() or not sacm_tool.is_file() or not os.access(sacm_tool, os.X_OK):
+        importer_reasons.append("QUOIN_SACM_TOOL must name an executable Assurance Forge MCP server")
+    else:
+        importer_version, _ = evidence.version([str(sacm_tool), "--version"])
+        if importer_version == "unavailable":
+            importer_reasons.append("Assurance Forge version could not be read")
+    importer_env = os.environ.copy()
+    if sacm_tool:
+        importer_env["QUOIN_SACM_TOOL"] = str(sacm_tool)
+    importer_env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
+    importer_env["CARGO_BUILD_JOBS"] = "4"
+    importer_env["RUST_TEST_THREADS"] = "4"
+    importer_command = ["make", "-C", str(evidence.ROOT), "test-sacm-interop"]
+    offline_env = os.environ.copy()
+    offline_env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
+    offline_env["CARGO_BUILD_JOBS"] = "4"
+    offline_env["RUST_TEST_THREADS"] = "4"
+    item, check_failed = run_external_check(
+        "sacm-assurance-forge-interop", "rust/crates/quoin-assurance/tests/tc_sacm_export.rs",
+        {"export_external_interop_fixture"}, "Assurance Forge", importer_version,
+        importer_command, importer_env, importer_reasons)
+    entries.append(item)
+    failed |= check_failed
+
+    offline_source = "rust/crates/quoin-cli/tests/tc_1080_matrix_command.rs"
+    offline_reasons = []
+    if sys.platform != "linux":
+        offline_reasons.append("NFR-045 syscall assertion requires Linux")
+    if shutil.which("strace") is None:
+        offline_reasons.append("strace is unavailable")
+    offline_command = ["cargo", "test", "-j", "4", "--locked", "--package", "quoin-cli", "--test",
+                       "tc_1080_matrix_command", "sacm_and_gsn_derived_cli_make_no_network_syscalls",
+                       "--", "--ignored", "--exact", "--test-threads=4"]
+    item, check_failed = run_external_check(
+        "assurance-export-offline", offline_source,
+        {"sacm_and_gsn_derived_cli_make_no_network_syscalls"}, "Linux strace", "system strace",
+        offline_command, offline_env, offline_reasons)
+    entries.append(item)
+    failed |= check_failed
 
     report_value = os.environ.get("QUOIN_TEST_OSV_REPORT")
     mirror_date = os.environ.get("QUOIN_OSV_MIRROR_DATE")
@@ -129,12 +255,15 @@ def run() -> int:
         failed = True
     else:
         env = os.environ.copy()
+        env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
+        env["CARGO_BUILD_JOBS"] = "4"
+        env["RUST_TEST_THREADS"] = "4"
         env["QUOIN_TEST_OSV_REPORT"] = str(report_path)
         log, status, error = evidence.execute(
             "osv-authentic-report",
-            ["cargo", "test", "--locked", "--package", "quoin-soup", "--lib",
+            ["cargo", "test", "-j", "4", "--locked", "--package", "quoin-soup", "--lib",
              "soup::advisory::osv_tests::tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined",
-             "--", "--ignored", "--exact"], env)
+             "--", "--ignored", "--exact", "--test-threads=4"], env)
         osv_config.update({"execution_state": "executed", "log": log})
         outcome, execution_state = evidence.classify_execution(status, error)
         osv_config["execution_state"] = execution_state

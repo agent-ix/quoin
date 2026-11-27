@@ -36,18 +36,29 @@ def adjacent_checkout(env: dict[str, str], variable: str, checkout: str, marker:
 
 def raw_counts(path: Path) -> tuple[dict[str, int], bool]:
     document = json.loads(path.read_text(encoding="utf-8"))
+    outcomes = document.get("outcomes")
+    if not isinstance(outcomes, list) or not outcomes:
+        raise ValueError("cargo-mutants outcomes.json has no outcome rows")
     counts = {"killed": 0, "survived": 0, "unviable": 0}
     baseline_failed = False
-    for outcome in document.get("outcomes", []):
+    for index, outcome in enumerate(outcomes):
+        if not isinstance(outcome, dict):
+            raise ValueError(f"cargo-mutants outcome row {index} is not an object")
         summary = outcome.get("summary")
+        if outcome.get("scenario") == "Baseline":
+            if summary != "Success":
+                baseline_failed = True
+            continue
         if summary == "CaughtMutant":
             counts["killed"] += 1
         elif summary in {"MissedMutant", "Timeout"}:
             counts["survived"] += 1
         elif summary == "Unviable":
             counts["unviable"] += 1
-        elif outcome.get("scenario") == "Baseline" and summary != "Success":
-            baseline_failed = True
+        elif summary == "Success":
+            raise ValueError(f"cargo-mutants outcome row {index} reports Success outside Baseline")
+        else:
+            raise ValueError(f"cargo-mutants outcome row {index} has unrecognized summary {summary!r}")
     return counts, baseline_failed
 
 
@@ -83,6 +94,8 @@ def main() -> int:
         if test_args:
             command.extend(["--", "--", *test_args])
         env = os.environ.copy()
+        env.setdefault("CARGO_BUILD_JOBS", "4")
+        env.setdefault("RUST_TEST_THREADS", "4")
         env.pop("CARGO_MUTANTS_JOBS", None)
         adjacent_checkout(env, "SPEC_OBJECTS_SAFETY_DIR", "spec-objects-safety", "spec_objects_safety")
         if name == "risk-completeness":
@@ -105,7 +118,13 @@ def main() -> int:
             entries.append(evidence.entry(name, "error", config))
             failed = True
             continue
-        counts, baseline_failed = raw_counts(outcomes)
+        try:
+            counts, baseline_failed = raw_counts(outcomes)
+        except (OSError, json.JSONDecodeError, ValueError) as error:
+            config.update({"execution_state": "executed", "reason": f"invalid retained outcomes: {error}"})
+            entries.append(evidence.entry(name, "fail", config))
+            failed = True
+            continue
         summaries[name] = {"package": package, "source": source, **counts,
                            "cargo_mutants_exit": status, "baseline_failed": baseline_failed,
                            "raw_outcomes": str(outcomes)}

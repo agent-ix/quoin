@@ -12,10 +12,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import real_tool_test
 import wave2_evidence as evidence
+import behavioral_mutation_test
 
 
 class Wave2EvidenceTests(unittest.TestCase):
@@ -60,6 +63,7 @@ fn another_ignored_test() {}
             patch.dict(os.environ, {}, clear=True),
             patch.object(evidence, "prepare"),
             patch.object(evidence, "version", return_value=("unavailable", None)),
+            patch.object(real_tool_test.shutil, "which", return_value=None),
             patch.object(evidence, "write_entries", side_effect=lambda _path, entries: captured.append(entries)),
             patch.object(evidence, "record", return_value=0),
             contextlib.redirect_stdout(io.StringIO()),
@@ -68,13 +72,42 @@ fn another_ignored_test() {}
 
         self.assertEqual(len(captured), 1)
         entries = captured[0]
-        self.assertEqual(len(entries), 3)
+        self.assertEqual(len(entries), 8)
         for item in entries:
             self.assertEqual(item["outcome"], "error")
             self.assertEqual(item["config"]["execution_state"], "not-executed")
         osv = next(item for item in entries if item["symbol"] == "osv-authentic-report")
         self.assertNotIn("osv_mirror_date", osv["config"])
         self.assertEqual(osv["config"]["artifact_id"], evidence.RUN_ID)
+        trace_ids = {item["symbol"]: item.get("traceIds", []) for item in entries}
+        self.assertEqual(
+            trace_ids["case-approval-real-acceptance"],
+            ["FR-225-AC-1", "FR-225-AC-4", "FR-226-AC-9"],
+        )
+        self.assertEqual(trace_ids["case-approval-real-refusal"], ["FR-225-AC-2"])
+        self.assertEqual(trace_ids["sacm-published-metamodel"], ["FR-226-AC-11"])
+        self.assertEqual(trace_ids["sacm-assurance-forge-interop"], ["FR-226-AC-12"])
+        self.assertEqual(trace_ids["assurance-export-offline"], ["NFR-045-M-1"])
+
+    @pytest.mark.trace("NFR-042-M-1")
+    def test_unknown_mutation_outcomes_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "outcomes.json"
+            path.write_text(
+                '{"outcomes":[{"scenario":"Baseline","summary":"Success"},'
+                '{"scenario":{"Mutant":{}},"summary":"NewOutcome"}]}',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "unrecognized summary"):
+                behavioral_mutation_test.raw_counts(path)
+
+    @pytest.mark.trace("NFR-042-M-1")
+    def test_empty_mutation_outcomes_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "outcomes.json"
+            path.write_text('{"outcomes":[]}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "no outcome rows"):
+                behavioral_mutation_test.raw_counts(path)
 
     def test_record_failure_keeps_the_real_tool_lane_failed(self) -> None:
         captured: list[list[dict]] = []
@@ -82,6 +115,7 @@ fn another_ignored_test() {}
             patch.dict(os.environ, {}, clear=True),
             patch.object(evidence, "prepare"),
             patch.object(evidence, "version", return_value=("unavailable", None)),
+            patch.object(real_tool_test.shutil, "which", return_value=None),
             patch.object(evidence, "write_entries", side_effect=lambda _path, entries: captured.append(entries)),
             patch.object(evidence, "record", return_value=9),
             contextlib.redirect_stdout(io.StringIO()),
