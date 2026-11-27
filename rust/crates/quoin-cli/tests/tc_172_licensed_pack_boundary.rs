@@ -20,6 +20,7 @@ mod pack_support;
 
 use std::collections::BTreeSet;
 use std::path::{Component, Path, PathBuf};
+use std::process::Command;
 
 use ix_trace_rs::trace;
 use pack_support::{SENTINEL, quoin, scratch, semantic_root, text};
@@ -286,6 +287,39 @@ fn with_clause_text(set: &str) -> String {
         .collect::<Vec<_>>()
         .join("\n")
         + "\n"
+}
+
+#[trace("FR-172-AC-1")]
+#[test]
+fn tc_172_000_security_module_with_nist_and_asvs_sets_passes_quire_publish_check() {
+    let module = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../../.ci-deps/spec-objects-security")
+        });
+    let module = if module.join("manifest.yaml").is_file() {
+        module
+    } else {
+        module.join("spec_objects_security")
+    };
+    assert!(
+        module.join("manifest.yaml").is_file(),
+        "security module manifest is absent at {}",
+        module.display()
+    );
+
+    let output = Command::new("quire")
+        .args(["publish-check", "--module"])
+        .arg(&module)
+        .output()
+        .expect("quire publish-check starts");
+    assert!(
+        output.status.success(),
+        "quire publish-check refused {}: {}",
+        module.display(),
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 #[trace("FR-172-AC-7")]
