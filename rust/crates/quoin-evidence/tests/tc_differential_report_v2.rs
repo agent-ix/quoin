@@ -555,15 +555,52 @@ fn tc_001_an_input_over_the_limit_is_refused_by_size_before_parsing() {
 #[trace("FR-151-AC-11", "NFR-032-M-2")]
 #[test]
 fn tc_001_the_same_bytes_give_the_same_result_wherever_they_are_read() {
-    // The adapter takes bytes, never a path, so its result cannot depend on the
-    // working directory or the environment; repeated calls over the same bytes
-    // are equal for an accepted and for a refused document.
-    let first = accepted(DISAGREEMENT);
-    let second = accepted(DISAGREEMENT);
-    assert_eq!(first, second);
-    let pretty =
-        serde_json::to_string_pretty(&serde_json::from_str::<Value>(SATISFIED).unwrap()).unwrap();
-    assert_eq!(refusal(&pretty), refusal(&pretty));
+    const INPUT_PATH: &str = "QUIRE_TEST_DIFFERENTIAL_REPORT_PATH";
+    if let Some(path) = std::env::var_os(INPUT_PATH) {
+        let bytes = std::fs::read_to_string(path).unwrap();
+        println!("PARSE_RESULT: {:?}", parse_differential_report(&bytes));
+        return;
+    }
+
+    let root = tempfile::tempdir().unwrap();
+    let first_dir = root.path().join("first-cwd");
+    let second_dir = root.path().join("second-cwd");
+    std::fs::create_dir_all(&first_dir).unwrap();
+    std::fs::create_dir_all(&second_dir).unwrap();
+    let first_path = first_dir.join("report.json");
+    let second_path = second_dir.join("report.json");
+    std::fs::write(&first_path, SATISFIED).unwrap();
+    std::fs::write(&second_path, SATISFIED).unwrap();
+
+    let executable = std::env::current_exe().unwrap();
+    let run = |path: &std::path::Path, cwd: &std::path::Path, zone: &str| {
+        let output = std::process::Command::new(&executable)
+            .args([
+                "--exact",
+                "tc_001_the_same_bytes_give_the_same_result_wherever_they_are_read",
+                "--nocapture",
+                "--test-threads=1",
+            ])
+            .current_dir(cwd)
+            .env(INPUT_PATH, path)
+            .env("TZ", zone)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .find_map(|line| line.strip_prefix("PARSE_RESULT: "))
+            .expect("probe reports the adapter result")
+            .to_owned()
+    };
+
+    let first = run(&first_path, &first_dir, "UTC");
+    let second = run(&second_path, &second_dir, "Pacific/Auckland");
+    assert_eq!(first, second, "result changed across path, cwd, or TZ");
 }
 
 fn chosen(adapter: Option<&str>, tool: Option<&str>) -> &'static str {
