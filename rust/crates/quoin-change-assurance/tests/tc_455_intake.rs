@@ -24,13 +24,17 @@ use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::{AttestationId, RecordId, Revision};
 use quoin_change_assurance::intake::disk::{DiskEvidenceStore, STAGING_PREFIX};
 use quoin_change_assurance::intake::memory::MemoryEvidenceStore;
+use quoin_change_assurance::model::outcome::{Outcome, Reason};
 use quoin_change_assurance::{
     EvidenceStore, Published, RetainedPair, intake_attestation, prepare_change_record,
-    read_attestation, read_change_record, write_change_record,
+    read_attestation, read_change_record, record_digest, verify_change_assurance,
+    write_change_record,
 };
 use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{OUTPUT, attestation_text, json, record_text, replacing};
+use crate::common::{
+    OUTPUT, attestation_text, base_input, history, json, record_text, replacing, sealed,
+};
 
 /// The scenario attestation's canonical bytes and the output it attests to.
 fn pair() -> (Vec<u8>, Vec<u8>) {
@@ -186,6 +190,147 @@ fn tc_455_writing_a_successor_leaves_every_parent_byte_untouched() {
             }
         }
         assert_eq!(retained.len(), 3);
+    });
+}
+
+/// Rejected and revise-requested decisions do not make their retained record
+/// revisions disappear from either evidence store.
+#[trace("FR-063-CON-2")]
+#[test]
+fn tc_455_rejected_and_revision_requested_records_remain_addressable() {
+    let id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
+    over_both_stores(|store_name, store| {
+        for (number, decision, expected_reason) in [
+            (1_u32, "rejected", Reason::ReviewRejected),
+            (2_u32, "revise", Reason::ReviewRevisionRequested),
+        ] {
+            let record = prepare_change_record(&record_at(number)).unwrap();
+            let bytes = quoin_change_assurance::records::record_bytes(&record).unwrap();
+            let revision = Revision::new(u64::from(number), Subject::Record, "revision").unwrap();
+            assert_eq!(
+                write_change_record(store, &record).unwrap(),
+                Published::Retained,
+                "{store_name}: revision {number} is retained even when its decision is {decision}"
+            );
+
+            let event = format!(
+                r#"{{
+                  "id": "decision-{number}", "ts": "2026-08-31T00:00:00.000Z", "sequence": 1,
+                  "actor": {{"id": "reviewer-1", "kind": "human"}},
+                  "kind": "change_assurance.review_decided",
+                  "payload": {{"schema_version": 2, "record_id": "change-1", "revision": {number}, "decision": "{decision}"}}
+                }}"#
+            );
+            let mut input = base_input();
+            input.record = record.to_json().unwrap();
+            input.record_revision = revision;
+            input.record_digest = record_digest(&bytes);
+            input.decision_history = Some(history(&[event]));
+            let receipt = verify_change_assurance(&input).unwrap();
+            assert_eq!(
+                receipt.checks.review.outcome,
+                Outcome::Invalid,
+                "{store_name}: {decision} remains the review verdict"
+            );
+            assert_eq!(
+                receipt.checks.review.reasons,
+                [expected_reason],
+                "{store_name}: the receipt names the exact decision"
+            );
+
+            let stored = read_change_record(store, &id, revision)
+                .unwrap()
+                .expect("a rejected or revise-requested revision remains addressable");
+            assert_eq!(stored.revision, revision);
+            assert_eq!(
+                store.record(&id, revision).unwrap().as_deref(),
+                Some(bytes.as_slice()),
+                "{store_name}: decision verification did not replace retained bytes"
+            );
+        }
+    });
+}
+
+/// Intake retains producer-supplied facts rather than inferring them from the
+/// record, running command, configuration, result, environment or output.
+#[trace("FR-064-CON-2")]
+#[test]
+fn tc_455_intake_preserves_producer_fields_without_inference() {
+    let output = OUTPUT;
+    let original = json(&attestation_text());
+    let producer_fields = replacing(
+        &replacing(
+            &replacing(
+                &replacing(
+                    &replacing(
+                        &replacing(
+                            &original,
+                            "candidate_revision",
+                            JsonValue::string("producer-supplied-candidate"),
+                        ),
+                        "proof_id",
+                        JsonValue::string("producer-proof-17"),
+                    ),
+                    "command",
+                    json(
+                        r#"{"argv":["producer-test","--candidate"],"working_directory":"producer/worktree"}"#,
+                    ),
+                ),
+                "tool",
+                json(
+                    r#"{"identity":"producer/toolchain","version":"1.2.3","configuration_ref":"producer-config/v7"}"#,
+                ),
+            ),
+            "environment",
+            json(r#"{"worker":"runner-17","platform":"producer-platform"}"#),
+        ),
+        "result",
+        JsonValue::string("failed"),
+    );
+    let producer_attestation = sealed(&producer_fields, output);
+    let expected = canonical_bytes(&producer_attestation).unwrap();
+
+    over_both_stores(|store_name, store| {
+        assert_eq!(
+            intake_attestation(store, &expected, output).unwrap(),
+            Published::Retained
+        );
+        let (retained, retained_output) = read_attestation(store, &attestation_id())
+            .unwrap()
+            .expect("the producer attestation remains readable");
+        assert_eq!(
+            retained.to_json().unwrap(),
+            producer_attestation,
+            "{store_name}: intake preserves every supplied producer field"
+        );
+        assert_eq!(retained_output, output);
+        assert_eq!(
+            retained.candidate_revision.as_str(),
+            "producer-supplied-candidate"
+        );
+        assert_eq!(retained.proof_id.as_str(), "producer-proof-17");
+        assert_eq!(retained.command.argv, ["producer-test", "--candidate"]);
+        assert_eq!(
+            retained.command.working_directory.as_str(),
+            "producer/worktree"
+        );
+        assert_eq!(retained.tool.identity.as_str(), "producer/toolchain");
+        assert_eq!(
+            retained.tool.configuration_ref.as_str(),
+            "producer-config/v7"
+        );
+        assert_eq!(retained.result.as_str(), "failed");
+        assert_eq!(
+            retained.retained_output.size_bytes,
+            u64::try_from(output.len()).unwrap()
+        );
+        assert_eq!(retained.environment.len(), 2);
+        assert_eq!(
+            retained.environment["worker"],
+            quoin_change_assurance::model::attestation::EnvironmentValue::Text(
+                "runner-17".to_owned()
+            )
+        );
     });
 }
 
