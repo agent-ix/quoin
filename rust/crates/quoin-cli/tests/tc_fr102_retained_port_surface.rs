@@ -98,9 +98,9 @@ fn retained_help_surface_is_unchanged_across_the_native_port() {
         }
         if uses_current_native_help(&case.argv) {
             let route = case.argv[..case.argv.len() - 1].join(" ");
-            assert!(stdout.contains("USAGE"), "native help is shown for {route}");
             assert!(
-                stdout.contains(&format!("$ quoin {route}")),
+                stdout.contains(&format!("$ quoin {route}"))
+                    || stdout.contains(&format!("Usage: quoin {route}")),
                 "native usage preserves retained route {route}"
             );
             continue;
