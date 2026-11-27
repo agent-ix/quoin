@@ -71,7 +71,7 @@ fn over_both_stores(rule: impl Fn(&str, &mut dyn EvidenceStore)) {
 /// absent and extra bytes are each tried, because a store that wrote the
 /// attestation first and checked the output second would pass a test that
 /// only tried one.
-#[trace("FR-064-AC-3")]
+#[trace("FR-064-AC-3", "FR-064-CON-2")]
 #[test]
 fn tc_455_only_output_of_the_declared_size_is_retained() {
     let (attestation, output) = pair();
