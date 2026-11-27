@@ -3,11 +3,13 @@
 
 //! Opt-in conformance of the emitted XMI against the external OMG model.
 
+#[cfg(feature = "e2e-sacm-metamodel")]
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use ix_trace_rs::trace;
 
+#[cfg(feature = "e2e-sacm-metamodel")]
 use super::{Element, parse_xml, signed_shape_export};
 
 fn required_model_path(value: Option<std::ffi::OsString>) -> Result<PathBuf, &'static str> {
@@ -29,7 +31,7 @@ fn sacm_metamodel_check_rejects_an_unset_or_empty_model_path() {
 
 #[trace("FR-226-AC-11")]
 #[test]
-#[ignore = "requires the external OMG SACM 2.3 model at QUOIN_SACM_METAMODEL"]
+#[cfg(feature = "e2e-sacm-metamodel")]
 fn sacm_uses_normative_metamodel() {
     let path = required_model_path(std::env::var_os("QUOIN_SACM_METAMODEL"))
         .expect("QUOIN_SACM_METAMODEL must name the external OMG SACM 2.3 metamodel XML");
@@ -76,8 +78,10 @@ fn sacm_uses_normative_metamodel() {
     );
 }
 
+#[cfg(feature = "e2e-sacm-metamodel")]
 type Ids<'a> = BTreeMap<&'a str, &'a Element>;
 
+#[cfg(feature = "e2e-sacm-metamodel")]
 fn identified<'a>(items: &[&'a Element]) -> Ids<'a> {
     items
         .iter()
@@ -86,11 +90,13 @@ fn identified<'a>(items: &[&'a Element]) -> Ids<'a> {
         .collect()
 }
 
+#[cfg(feature = "e2e-sacm-metamodel")]
 struct Metamodel<'a> {
     by_id: Ids<'a>,
     classes: Ids<'a>,
 }
 
+#[cfg(feature = "e2e-sacm-metamodel")]
 impl<'a> Metamodel<'a> {
     fn class(&self, xmi_type: &str) -> &'a Element {
         let name = xmi_type

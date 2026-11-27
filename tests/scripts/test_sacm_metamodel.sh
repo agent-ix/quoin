@@ -12,4 +12,5 @@ esac
 cd "$repo_root/rust"
 QUOIN_SACM_METAMODEL="$model" cargo test --locked \
   --target-dir "${QUOIN_CARGO_TARGET:-$repo_root/rust/target}" \
-  -p quoin-assurance --test tc_sacm_export sacm_uses_normative_metamodel -- --ignored
+  -p quoin-assurance --features e2e-sacm-metamodel \
+  --test tc_sacm_export metamodel::sacm_uses_normative_metamodel -- --exact
