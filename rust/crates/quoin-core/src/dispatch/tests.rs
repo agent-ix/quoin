@@ -4,6 +4,7 @@
 //! Tests for the operation router and its self-census.
 
 use super::*;
+use ix_trace_rs::trace;
 
 /// Every `ops` source file, as `(domain, path, source)`.
 ///
@@ -865,4 +866,84 @@ fn usage_needs_exactly_one_dotted_argument() {
         parse_operation(&["core.".to_owned()]).unwrap_err().code,
         CoreErrorCode::BadUsage
     );
+}
+
+#[trace("FR-096-AC-9")]
+#[test]
+fn tc_096_transport_bound_is_strictly_larger_and_enforced_while_reading() {
+    // The operation bounds are discovered from the operation source census,
+    // not a second literal list. This keeps the inequality tied to every
+    // request-size limit the router can dispatch.
+    let bounds: Vec<(&str, usize)> = CENSUS_OF_THE_OLDER_DOMAINS
+        .iter()
+        .copied()
+        .chain(census_of_the_evidence_domain())
+        .chain(census_of_the_measurement_domain())
+        .collect();
+    assert!(
+        !bounds.is_empty(),
+        "per-operation request-bound population is non-empty"
+    );
+    assert!(
+        bounds.iter().all(|(_, bound)| *bound < MAX_REQUEST_BYTES),
+        "transport limit {MAX_REQUEST_BYTES} must exceed every operation bound: {bounds:?}"
+    );
+
+    let padding = MAX_REQUEST_BYTES - r#"{"echo":""}"#.len();
+    let exactly_at_limit = format!(r#"{{"echo":"{}"}}"#, "x".repeat(padding));
+    assert_eq!(exactly_at_limit.len(), MAX_REQUEST_BYTES);
+    assert_eq!(
+        read_request(exactly_at_limit.as_bytes()).expect("the exact bound is accepted")["echo"]
+            .as_str()
+            .map(str::len),
+        Some(padding)
+    );
+
+    // Valid JSON with one byte too much proves the transport refusal wins
+    // before parsing; the deliberately malformed variant proves the same
+    // order when a parser failure would otherwise be possible.
+    let over_padding = MAX_REQUEST_BYTES - r#"{"echo":""}"#.len() + 1;
+    let over_limit = format!(r#"{{"echo":"{}"}}"#, "x".repeat(over_padding));
+    assert_eq!(over_limit.len(), MAX_REQUEST_BYTES + 1);
+    let error = read_request(over_limit.as_bytes()).expect_err("one byte over is refused");
+    assert_eq!(error.code, CoreErrorCode::Refused);
+    assert_eq!(error.outcome().code(), 2);
+    assert_eq!(
+        error.context["read_bytes"],
+        (MAX_REQUEST_BYTES + 1).to_string()
+    );
+
+    let malformed_padding = MAX_REQUEST_BYTES - r#"{"echo":""}"#.len() + 2;
+    let malformed = format!(r#"{{"echo":"{}""#, "x".repeat(malformed_padding));
+    assert_eq!(malformed.len(), MAX_REQUEST_BYTES + 1);
+    assert_eq!(
+        read_request(malformed.as_bytes()).unwrap_err().code,
+        CoreErrorCode::Refused,
+        "an oversized but malformed document is refused before parsing"
+    );
+
+    let offered = MAX_REQUEST_BYTES * 4;
+    let consumed = std::rc::Rc::new(std::cell::Cell::new(0usize));
+    struct Counting<R> {
+        inner: R,
+        consumed: std::rc::Rc<std::cell::Cell<usize>>,
+    }
+    impl<R: Read> Read for Counting<R> {
+        fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+            let amount = self.inner.read(buffer)?;
+            self.consumed.set(self.consumed.get() + amount);
+            Ok(amount)
+        }
+    }
+    let error = read_request(Counting {
+        inner: std::io::repeat(b'x').take(u64::try_from(offered).unwrap_or(u64::MAX)),
+        consumed: std::rc::Rc::clone(&consumed),
+    })
+    .expect_err("the reader refuses while it consumes the first byte over the limit");
+    assert_eq!(error.code, CoreErrorCode::Refused);
+    assert_eq!(
+        error.context["read_bytes"],
+        (MAX_REQUEST_BYTES + 1).to_string()
+    );
+    assert_eq!(consumed.get(), MAX_REQUEST_BYTES + 1);
 }
