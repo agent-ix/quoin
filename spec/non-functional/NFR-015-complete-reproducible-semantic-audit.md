@@ -24,8 +24,8 @@ relationships:
 > output is deleted by quoin#654, so the thing it constrained no longer exists
 > and nothing surviving inherits the obligation.
 >
-> The text below is retained unchanged. It describes what was required, not what
-> is required.
+> The metric definitions below are retained for provenance. Their methods are marked
+> `Withdrawn` so the computed matrix matches this disposition.
 
 ## Statement
 
@@ -36,10 +36,10 @@ and reproduce the same canonical content from the same identified inputs.
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Default modules inventoried / default modules declared | 100% | 100% | Test |
-| Type declarations with complete axis assessments / type declarations inventoried | 100% | 100% | Test |
-| Markdown paths assigned exactly one parse state / Markdown paths discovered | 100% | 100% | Test |
-| Canonical artifact bytes differing across equal-input reruns | 0 | 0 | Test |
+| Default modules inventoried / default modules declared | 100% | 100% | Withdrawn |
+| Type declarations with complete axis assessments / type declarations inventoried | 100% | 100% | Withdrawn |
+| Markdown paths assigned exactly one parse state / Markdown paths discovered | 100% | 100% | Withdrawn |
+| Canonical artifact bytes differing across equal-input reruns | 0 | 0 | Withdrawn |
 
 ## Verification
 
