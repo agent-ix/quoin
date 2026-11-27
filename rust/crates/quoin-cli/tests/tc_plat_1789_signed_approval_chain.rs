@@ -493,7 +493,12 @@ fn a_forged_claimed_approval_stays_a_claim_and_the_real_verifier_refuses_it() {
         "tag": "approval-1",
         "record_id": "change-1",
         "record_digest": digest,
-        "trust": real["trust"],
+        // The event carries Quoin's declared claim projection. EA 0.11.0 adds
+        // diagnostic fields to its result's trust object; those are not part
+        // of this persisted claim shape.
+        "trust": {
+            "allowed_signers": real["trust"]["allowed_signers"],
+        },
         "approver": "reviewer@example.test",
         "meaning": ["reviewed", "tested"],
         "signature_kind": "ssh",
