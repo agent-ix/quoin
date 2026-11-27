@@ -1039,7 +1039,7 @@ fn tc_1080_205_never_spawns_ix_flow() {
 }
 
 /// Help describes the computed view, not the retired workflow.
-#[trace("FR-115-AC-15")]
+#[trace("FR-115-AC-15", "FR-115-AC-27")]
 #[test]
 fn tc_1080_206_help_describes_the_evidence_backed_render() {
     let fixture = repository(MODULE);
@@ -1056,6 +1056,13 @@ fn tc_1080_206_help_describes_the_evidence_backed_render() {
             && page.contains("floors by stated software safety class"),
         "help explains the class policy input: {page}"
     );
+    assert!(page.contains("--max-request-bytes <BYTES>"), "{page}");
+    assert!(
+        page.contains("64 MiB") || page.contains("67108864"),
+        "{page}"
+    );
+    assert!(page.contains("quoin.matrix_max_request_bytes"), "{page}");
+    assert!(page.contains("repeatable"), "{page}");
     let root = fixture.ok(&["--help"]);
     assert!(
         root.contains(
@@ -1063,6 +1070,44 @@ fn tc_1080_206_help_describes_the_evidence_backed_render() {
         )
     );
     assert!(!root.contains("Build or update a requirements test matrix"));
+}
+
+#[trace("FR-115-AC-27", "FR-115-AC-28")]
+#[test]
+fn tc_1080_212_project_limit_is_actionable_and_cli_override_takes_precedence() {
+    let fixture = repository(MODULE);
+    fixture.write(".ix/config.d/quoin.yaml", "matrix_max_request_bytes: 1\n");
+
+    let refused = fixture.quoin(&["matrix", "--module", ".", "--json"]);
+    assert_eq!(refused.status.code(), Some(1));
+    let error = String::from_utf8_lossy(&refused.stderr);
+    assert!(error.contains("selected 1-byte limit"), "{error}");
+    assert!(error.contains("--max-request-bytes"), "{error}");
+    assert!(error.contains("quoin.matrix_max_request_bytes"), "{error}");
+    assert!(error.contains("--module PATH"), "{error}");
+
+    let raised = fixture.quoin(&[
+        "matrix",
+        "--module",
+        ".",
+        "--json",
+        "--max-request-bytes",
+        "83886080",
+    ]);
+    assert_eq!(
+        raised.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&raised.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&raised.stderr).contains("Building evidence-backed matrix"),
+        "the progress line is on stderr"
+    );
+    assert!(
+        serde_json::from_slice::<Value>(&raised.stdout).is_ok(),
+        "the matrix JSON remains on stdout"
+    );
 }
 
 /// The matrix loads required-relation record keys through the released Quire

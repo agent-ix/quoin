@@ -76,6 +76,33 @@ fn tc_381_120_set_key_writes_only_the_named_key() {
     );
 }
 
+#[trace("FR-027-AC-10")]
+#[test]
+fn matrix_request_limit_round_trips_and_project_value_overrides_user_value() {
+    let f = fixture();
+    let svc = service(&f);
+    let mut log = IncidentLog::new();
+    svc.set_key("matrix_max_request_bytes", "12345", &mut log)
+        .expect("numeric request limit is accepted");
+    assert_eq!(
+        svc.get(&mut log).value.matrix_max_request_bytes,
+        Some(12_345)
+    );
+
+    let project_root = f._root.path().join(".ix");
+    let project_config = project_root.join("config.d/quoin.yaml");
+    fs::create_dir_all(project_config.parent().expect("project config parent"))
+        .expect("project config directory");
+    fs::write(&project_config, "matrix_max_request_bytes: 67890\n")
+        .expect("project value is written");
+    let project_context = RuntimeContext::new().with_project_config_root(project_root);
+    let project_service = ConfigService::<QuoinConfig>::for_plugin(&f.env, &project_context);
+    assert_eq!(
+        project_service.get(&mut log).value.matrix_max_request_bytes,
+        Some(67_890)
+    );
+}
+
 #[trace("FR-027-AC-6")]
 #[test]
 fn tc_381_121_set_refuses_an_unknown_key_and_writes_nothing() {

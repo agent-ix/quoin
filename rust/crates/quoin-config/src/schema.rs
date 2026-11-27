@@ -4,14 +4,16 @@
 //! Quoin's persistent configuration schema (quoin#381, FR-027).
 //!
 //! The TypeScript oracle is `src/config-schema.ts`: a *strict* zod object
-//! `{ org?: string (min 1) }`. Strictness is not decoration — it is what makes
+//! `{ org?: string (min 1), matrix_max_request_bytes?: positive integer }`.
+//! Strictness is not decoration — it is what makes
 //! `config set` reject an unknown key instead of silently writing it, and what
 //! `registerPluginSchema` requires at registration.
 //!
-//! Every leaf is optional rather than defaulted: an absent `org` must stay
-//! absent, because "nobody said" is a distinct outcome from any value quoin
-//! could pick (FR-025).
+//! Every leaf is optional rather than defaulted: absent `org` and matrix-limit
+//! keys stay absent, because "nobody said" is distinct from any value quoin
+//! could pick.
 
+use ix_trace_rs::implements;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_yaml_ng::Value as Yaml;
@@ -46,8 +48,10 @@ pub struct EnvBinding {
 /// How `config set` must interpret a raw command-line value for a key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyKind {
-    /// A string/number/boolean/enum leaf: the raw argument is the value.
+    /// A string/boolean/enum leaf: the raw argument is stored as text.
     Scalar,
+    /// A numeric leaf parsed as a JSON number rather than stored as text.
+    Number,
     /// An array/object/record/tuple: the raw argument is parsed as JSON.
     Complex,
     /// The schema declares no such key.
@@ -95,6 +99,21 @@ pub struct QuoinConfig {
         skip_serializing_if = "Option::is_none"
     )]
     pub org: Option<OrgName>,
+    /// The configured `quoin matrix` request limit in bytes, when set.
+    #[serde(
+        default,
+        deserialize_with = "deserialize_optional_matrix_limit",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub matrix_max_request_bytes: Option<usize>,
+}
+
+#[implements("FR-027-AC-10")]
+fn deserialize_optional_matrix_limit<'de, D>(d: D) -> Result<Option<usize>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    usize::deserialize(d).map(Some)
 }
 
 /// Deserialize a *present* `org` key.
@@ -129,6 +148,7 @@ impl PluginConfigSchema for QuoinConfig {
         QUOIN_ENV_BINDINGS
     }
 
+    #[implements("FR-027-AC-6", "FR-027-AC-10")]
     fn validate(value: &Yaml) -> Result<Self, Vec<ConfigIssue>> {
         // Unknown keys are collected before serde sees the document. serde's
         // `deny_unknown_fields` stops at the first one, so a config with three
@@ -153,18 +173,28 @@ impl PluginConfigSchema for QuoinConfig {
             return Err(unknown);
         }
 
-        Self::deserialize(value.clone()).map_err(|e| {
+        let config = Self::deserialize(value.clone()).map_err(|e| {
             vec![ConfigIssue {
                 key_path: String::new(),
                 expected: "quoin config object".to_owned(),
                 message: e.to_string(),
             }]
-        })
+        })?;
+        if config.matrix_max_request_bytes == Some(0) {
+            return Err(vec![ConfigIssue {
+                key_path: "matrix_max_request_bytes".to_owned(),
+                expected: "a positive integer byte limit".to_owned(),
+                message: "matrix_max_request_bytes must be greater than zero".to_owned(),
+            }]);
+        }
+        Ok(config)
     }
 
+    #[implements("FR-027-AC-10")]
     fn key_kind(key_path: &str) -> KeyKind {
         match key_path {
             "org" => KeyKind::Scalar,
+            "matrix_max_request_bytes" => KeyKind::Number,
             _ => KeyKind::Unknown,
         }
     }
@@ -265,5 +295,18 @@ mod tests {
         )]
         let text = serde_yaml_ng::to_string(&cfg).expect("serializes");
         assert_eq!(text, "{}\n");
+    }
+
+    #[trace("FR-027-AC-10")]
+    #[test]
+    fn matrix_request_limit_is_positive_and_absent_by_default() {
+        let cfg = QuoinConfig::validate(&yaml("{}")).expect("empty config is valid");
+        assert_eq!(cfg.matrix_max_request_bytes, None);
+
+        let cfg = QuoinConfig::validate(&yaml("matrix_max_request_bytes: 12345"))
+            .expect("positive byte limit is valid");
+        assert_eq!(cfg.matrix_max_request_bytes, Some(12_345));
+        assert!(QuoinConfig::validate(&yaml("matrix_max_request_bytes: 0")).is_err());
+        assert!(QuoinConfig::validate(&yaml("matrix_max_request_bytes: null")).is_err());
     }
 }

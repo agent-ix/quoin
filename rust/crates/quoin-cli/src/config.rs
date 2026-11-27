@@ -4,6 +4,7 @@
 //! The persisted `quoin config get` and `set` commands.
 
 use clap::{Arg, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_config::{
     ConfigService, DoctorStatus, IncidentLog, ProcessEnvironment, QuoinConfig, RuntimeContext,
 };
@@ -38,6 +39,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     }
 }
 
+#[implements("FR-027-AC-10")]
 fn get(key: &str) -> Result<Response, String> {
     let environment = ProcessEnvironment;
     let context = context()?;
@@ -53,7 +55,7 @@ fn get(key: &str) -> Result<Response, String> {
                 service.file_path().display()
             )
         },
-        |value| format!("quoin.{key}: {}", value.as_str().unwrap_or_default()),
+        |value| format!("quoin.{key}: {value}"),
     );
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
 }
@@ -139,7 +141,7 @@ fn edit() -> Result<Response, String> {
     ))
 }
 
-fn context() -> Result<RuntimeContext, String> {
+pub(crate) fn context() -> Result<RuntimeContext, String> {
     let invocation = invocation::current();
     let cwd = std::env::current_dir()
         .map_err(|error| format!("cannot read current directory: {error}"))?;

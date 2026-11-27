@@ -12,7 +12,8 @@
 use std::collections::BTreeMap;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use ix_trace_rs::implements;
+use ix_trace_rs::{implements, trace};
+use quoin_config::{ConfigService, IncidentLog, ProcessEnvironment, QuoinConfig};
 use quoin_core::protocol::{Response, canonical_json};
 
 use crate::core_runtime::{Failure, invoke};
@@ -23,12 +24,26 @@ use crate::evidence::{json_arg, repo_arg, required};
 
 /// The one-line summary, shared by the grammar and the root help catalogue.
 pub(crate) const ABOUT: &str = "Render the evidence-backed test matrix, per criterion.";
+const DEFAULT_MAX_REQUEST_BYTES: usize = 64 * 1024 * 1024;
+
+const HARD_MAX_REQUEST_BYTES: usize = quoin_core::ops::matrix::MAX_MATRIX_BUILD_BYTES;
 
 pub(crate) fn command() -> Command {
     Command::new("matrix")
         .about(ABOUT)
         .arg(repo_arg())
-        .arg(module_arg())
+        .arg(
+            module_arg().help("Limit assembly to this traceability module (repeatable)"),
+        )
+        .arg(
+            Arg::new("max-request-bytes")
+                .long("max-request-bytes")
+                .value_name("BYTES")
+                .value_parser(clap::value_parser!(usize))
+                .help(format!(
+                    "Set the serialized matrix request limit in bytes (default {DEFAULT_MAX_REQUEST_BYTES}; hard maximum {HARD_MAX_REQUEST_BYTES}); overrides quoin.matrix_max_request_bytes"
+                )),
+        )
         .arg(json_arg())
         .arg(
             Arg::new("run-observation")
@@ -41,7 +56,9 @@ pub(crate) fn command() -> Command {
         .args(policy_args())
 }
 
+#[implements("FR-115-AC-27", "FR-115-AC-28")]
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
+    eprintln!("Building evidence-backed matrix...");
     let run_observation_paths = arguments
         .get_many::<String>("run-observation")
         .map(|paths| paths.cloned().collect::<Vec<_>>())
@@ -102,6 +119,7 @@ pub(crate) enum Built {
 ///
 /// The one path `quoin matrix` and `quoin release snapshot` share (FR-115).
 #[implements("FR-165-AC-21")]
+#[implements("FR-115-AC-27")]
 pub(crate) fn build(
     options: &AuditOptions,
     repo: &str,
@@ -171,6 +189,8 @@ pub(crate) fn build(
             .map_err(|error| format!("the retained runs are malformed: {error}"))?,
     );
     let request = serde_json::Value::Object(request);
+    let limit = selected_request_limit(arguments)?;
+    ensure_request_size(&request, limit)?;
     let response = invoke("matrix.build", &request)?;
     let mut diagnostics = audited.response.diagnostics;
     diagnostics.extend(design_errors.into_iter().map(|error| {
@@ -184,4 +204,108 @@ pub(crate) fn build(
         response,
         audit_diagnostics: diagnostics,
     }))
+}
+
+#[implements("FR-115-AC-27")]
+fn selected_request_limit(arguments: &ArgMatches) -> Result<usize, String> {
+    let configured = if arguments.get_one::<usize>("max-request-bytes").is_none() {
+        let environment = ProcessEnvironment;
+        let context = crate::config::context()?;
+        let service = ConfigService::<QuoinConfig>::for_plugin(&environment, &context);
+        service
+            .get(&mut IncidentLog::new())
+            .value
+            .matrix_max_request_bytes
+    } else {
+        None
+    };
+    select_request_limit(
+        arguments.get_one::<usize>("max-request-bytes").copied(),
+        configured,
+    )
+}
+
+fn select_request_limit(cli: Option<usize>, configured: Option<usize>) -> Result<usize, String> {
+    let limit = cli.or(configured).unwrap_or(DEFAULT_MAX_REQUEST_BYTES);
+    if limit == 0 {
+        return Err("the matrix request limit must be greater than zero".to_owned());
+    }
+    if limit > HARD_MAX_REQUEST_BYTES {
+        return Err(format!(
+            "the selected matrix request limit is {limit} bytes; the hard maximum is {} bytes. Reduce the configured value or use repeatable --module PATH to scope the matrix",
+            HARD_MAX_REQUEST_BYTES
+        ));
+    }
+    Ok(limit)
+}
+
+#[implements("FR-115-AC-27")]
+fn ensure_request_size(request: &serde_json::Value, limit: usize) -> Result<(), String> {
+    let observed = serde_json::to_vec(request)
+        .map_err(|error| format!("cannot measure the matrix request: {error}"))?
+        .len();
+    if observed <= limit {
+        return Ok(());
+    }
+    let error = if observed <= HARD_MAX_REQUEST_BYTES {
+        format!(
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit. Raise it with --max-request-bytes {observed}, `quoin config set matrix_max_request_bytes {observed}` for the user setting, or `matrix_max_request_bytes: {observed}` in project .ix/config.d/quoin.yaml (quoin.matrix_max_request_bytes); reduce the request with repeatable --module PATH. The hard maximum is {} bytes",
+            HARD_MAX_REQUEST_BYTES
+        )
+    } else {
+        format!(
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {}-byte hard maximum. This request cannot be raised further; reduce its size with repeatable --module PATH",
+            HARD_MAX_REQUEST_BYTES
+        )
+    };
+    Err(error)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        DEFAULT_MAX_REQUEST_BYTES, HARD_MAX_REQUEST_BYTES, ensure_request_size,
+        select_request_limit,
+    };
+    use ix_trace_rs::trace;
+    use serde_json::json;
+
+    #[trace("FR-115-AC-27")]
+    #[test]
+    fn request_limit_accepts_hand_written_under_value_and_refuses_over_value_actionably() {
+        let request = json!({"request": "fixture"});
+        let observed = serde_json::to_vec(&request)
+            .expect("request serializes")
+            .len();
+        assert!(ensure_request_size(&request, observed + 1).is_ok());
+
+        let error = ensure_request_size(&request, observed - 1)
+            .expect_err("request exceeds the hand-written limit");
+        assert!(error.contains(&format!("request is {observed} bytes")));
+        assert!(error.contains(&format!("selected {}-byte limit", observed - 1)));
+        assert!(error.contains("--max-request-bytes"));
+        assert!(error.contains("quoin.matrix_max_request_bytes"));
+        assert!(error.contains("--module PATH"));
+    }
+
+    #[trace("FR-115-AC-27")]
+    #[test]
+    fn request_limit_override_precedence_and_hard_ceiling_are_enforced() {
+        assert_eq!(
+            select_request_limit(None, None).expect("default limit"),
+            DEFAULT_MAX_REQUEST_BYTES
+        );
+        assert_eq!(
+            select_request_limit(None, Some(32)).expect("configured limit"),
+            32
+        );
+        assert_eq!(
+            select_request_limit(Some(48), Some(32)).expect("CLI overrides config"),
+            48
+        );
+        assert!(select_request_limit(Some(0), None).is_err());
+        let error = select_request_limit(Some(HARD_MAX_REQUEST_BYTES + 1), None)
+            .expect_err("hard ceiling cannot be overridden");
+        assert!(error.contains("hard maximum"));
+    }
 }
