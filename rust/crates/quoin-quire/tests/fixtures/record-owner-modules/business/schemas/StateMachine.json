@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/StateMachine.json",
+  "type": "object",
+  "properties": {
+    "operations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/OperationDecl.json"
+      },
+      "minItems": 1
+    },
+    "operationExpressions": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/OperationExpression.json"
+      }
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/FieldDecl.json"
+      }
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/EnumValue.json"
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Transition.json"
+      }
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/ClauseRef.json"
+      }
+    }
+  },
+  "required": [
+    "operations"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A state machine: one operation per transition command."
+}

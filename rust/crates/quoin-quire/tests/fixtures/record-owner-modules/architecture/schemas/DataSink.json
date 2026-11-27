@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/DataSink.json",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/SinkKind.json"
+    },
+    "processorAgreement": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ProcessorAgreement.json"
+    },
+    "processor": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ObjectId.json"
+    },
+    "region": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/RegionCode.json"
+      }
+    },
+    "purpose": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/PurposeToken.json"
+      }
+    },
+    "audienceRoles": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ObjectId.json"
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/RelationDecl.json"
+      }
+    }
+  },
+  "required": [
+    "kind",
+    "processorAgreement"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A place where classified data is rendered, stored, logged or transmitted."
+}

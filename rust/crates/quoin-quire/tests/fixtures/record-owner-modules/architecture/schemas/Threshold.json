@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Threshold.json",
+  "type": "object",
+  "properties": {
+    "scope": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/LimitScope.json"
+    },
+    "metric": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Identifier.json"
+    },
+    "limit": {
+      "type": "number",
+      "minimum": 0
+    },
+    "window": {
+      "type": "string",
+      "minLength": 1
+    },
+    "on_exceeded": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ExceedResponse.json"
+    }
+  },
+  "required": [
+    "scope",
+    "metric",
+    "limit",
+    "window",
+    "on_exceeded"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "One rate-limit threshold."
+}

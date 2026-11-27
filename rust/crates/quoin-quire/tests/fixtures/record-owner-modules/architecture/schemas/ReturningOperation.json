@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ReturningOperation.json",
+  "type": "object",
+  "properties": {
+    "returns": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/TypeRef.json"
+    }
+  },
+  "required": [
+    "returns"
+  ],
+  "description": "Open marker: an `OperationDecl` that declares a return value."
+}

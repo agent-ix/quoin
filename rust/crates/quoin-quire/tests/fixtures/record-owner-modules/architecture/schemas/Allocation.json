@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Allocation.json",
+  "type": "object",
+  "properties": {
+    "sourceElement": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+    },
+    "targetElement": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+    }
+  },
+  "required": [
+    "sourceElement",
+    "targetElement"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "An allocation of a source element (a part, a port or an operation) to a\ntarget element (a part). `fields` and `operations` are forbidden by the seal."
+}

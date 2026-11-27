@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/PurposeToken.json",
+  "type": "string",
+  "minLength": 1,
+  "pattern": ".*\\S.*",
+  "description": "A non-blank purpose label for a data sink."
+}

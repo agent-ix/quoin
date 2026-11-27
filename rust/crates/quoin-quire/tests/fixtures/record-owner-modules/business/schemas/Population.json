@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Population.json",
+  "type": "object",
+  "properties": {
+    "extent": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/PopulationExtent.json"
+    },
+    "members": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/PopulationMember.json"
+      }
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/ClauseRef.json"
+      }
+    }
+  },
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A population: the declared types whose instances a model ranges over, with\none `extent` for the whole population. A population declares membership,\nnot data: `fields` and `operations` are forbidden by the seal."
+}

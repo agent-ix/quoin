@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/DataSinkFrontmatter.json",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": [
+        "ui_screen",
+        "log",
+        "export_file",
+        "analytics_event",
+        "llm_prompt",
+        "tool_call",
+        "outbound_message",
+        "datastore"
+      ]
+    },
+    "processor_agreement": {
+      "type": "string",
+      "enum": [
+        "covered",
+        "not_covered",
+        "not_applicable",
+        "unknown"
+      ]
+    },
+    "processor": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]*(?:-[A-Za-z0-9_]+)*$"
+    },
+    "audience_roles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*(?:-[A-Za-z0-9_]+)*$"
+      }
+    },
+    "region": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^([A-Z]{2}|eu|eea)$"
+      }
+    },
+    "purpose": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": ".*\\S.*"
+      }
+    }
+  },
+  "required": [
+    "kind",
+    "processor_agreement"
+  ],
+  "unevaluatedProperties": {},
+  "description": "Open frontmatter fields used by data-sink flow-rule conditions. Keep these\nfields inline: the flow-rule loader resolves this schema offline, so it\ncannot follow external scalar `$ref`s. Their scalar and item constraints\nmirror ObjectId, RegionCode and PurposeToken without external references."
+}

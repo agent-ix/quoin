@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/GuaranteedOperation.json",
+  "type": "object",
+  "properties": {
+    "post": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/ClauseRef.json"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "post"
+  ],
+  "description": "Open marker: an `OperationDecl` carrying at least one postcondition — the\nguarantee shape an external contract exists to pin."
+}

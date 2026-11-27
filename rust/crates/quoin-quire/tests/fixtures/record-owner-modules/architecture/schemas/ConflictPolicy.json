@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ConflictPolicy.json",
+  "type": "string",
+  "enum": [
+    "last_wins",
+    "first_wins",
+    "error"
+  ],
+  "description": "What an extension point does with a duplicate registration."
+}

@@ -1,0 +1,553 @@
+manifest_version: 1.0.0
+name: spec-objects-business
+version: 0.10.0
+description: 'Filament Module: tier-2 business ObjectTypes (DDD: domain, entity, value_object, aggregate_root, nested_entity, repository, event, state_machine, process, enumeration, population, variant_set, graph)'
+semantic:
+  contract_version: 1.0.0
+  package: agent-ix/spec-objects-business
+  exports:
+  - domain
+  - entity
+  - value_object
+  - aggregate_root
+  - nested_entity
+  - repository
+  - event
+  - state_machine
+  - process
+  - enumeration
+  - population
+  - variant_set
+  - graph
+  imports: {}
+  targets: [json-schema, markdown]
+  mappings: [typed-table, sysml-fence, generalization, abstract-types, presence, subsetting, redefinition, effect-frames, relationships, record-sections]
+  compatibility_posture: strict
+  legacy_forms: warning
+nav:
+  category:
+    slug: business
+    label: Business
+    icon: Boxes
+    order: 51
+edge_types:
+  specializes: { description: "Generalization: the source type specializes the target type and inherits its declarations.", category: structural, inverse: generalizes }
+  # The domain verbs the allowed_links below and the `## Relationships`
+  # tables use, declared byte-identical to spec-artifacts-iso so a registry
+  # that loads both modules merges them without a duplicate-edge-type finding.
+  contains: { description: "Composition; the source owns the target's lifecycle.", category: structural, inverse: contained_in, composite: true }
+  aggregates: { description: "Aggregate root owns member entities.", category: structural, inverse: part_of, composite: true }
+  composes: { description: "Value object composed of other value objects/enums.", category: structural, inverse: composed_by }
+  triggers: { description: "Initiates a process or action.", category: behavioral, inverse: triggered_by }
+  transitions_to: { description: "State-machine flow to another state.", category: behavioral }
+  raises: { description: "State machine raises a domain event.", category: behavioral }
+  reads: { description: "Non-mutating data access.", category: dataflow }
+  writes: { description: "Mutating data access.", category: dataflow }
+  consumes: { description: "Asynchronous reception from a channel.", category: dataflow }
+  emits: { description: "Source produces the target domain event.", category: dataflow, inverse: emitted_by }
+  carries: { description: "Channel/event carries a payload type.", category: dataflow }
+  persists: { description: "Repository persists an aggregate/entity.", category: dependency }
+  owns: { description: "Entity owns a state machine.", category: dependency }
+  operates_on: { description: "Process/endpoint manipulates a domain object.", category: realization }
+  references: { description: "Loose, untyped linkage.", category: traceability }
+# FR-040 roles this module introduces for its FR-008 construct references.
+# The other roles its object types carry (domain-object, persistable,
+# event-like, measurable) are declared by spec-artifacts-iso.
+roles:
+  aggregate-member: { description: "A type an aggregate root may list as a member." }
+  composite-owner: { description: "A type that may own a nested entity." }
+archetypes: []
+grammars: []
+artifact_types: []
+lint_rules: []
+object_types:
+- name: domain
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  construct:
+    identity: none
+    shape: namespace
+    members: {members: required, vocabulary: required, fields: forbidden, operations: forbidden}
+    rules: [no_fields, no_operations, exclusive_membership, members_not_namespace]
+    meaning: filament.meaning.model.namespace/v1
+  allowed_links:
+    contains: [entity, aggregate_root, value_object, repository, event, state_machine, process, enumeration]
+  data_schema:
+    schema: schemas/Domain.json
+  body_extraction:
+    yield_pattern:
+      match:
+        # FR-009: the frontmatter schema admits segmented artifact ids; this
+        # locator preserves the document id when Quire composes `object:`.
+        id: &id001
+          from: frontmatter_field
+          path:
+          - id
+          required: true
+        title: &id002
+          from: frontmatter_field
+          path:
+          - title
+          required: true
+        type: &id003
+          from: frontmatter_field
+          path:
+          - type
+          required: true
+        # Format-walkthrough decision #18 (2026-06-11): Bounded Context
+        # is the domain object's required kernel. `entities` is an OPTIONAL
+        # summary — entities are first-class `entity` FRs linked via
+        # `contains` edges, never duplicated inline. The optional `erd`
+        # extracts the whole-domain mermaid diagram.
+        bounded_context:
+          from: section_body
+          after_heading: Bounded Context
+          required: true
+        entities:
+          from: section_body
+          after_heading: Entities
+          required: false
+        ubiquitous_language:
+          from: section_body
+          after_heading: Ubiquitous Language
+          required: false
+        erd:
+          from: code_block
+          after_heading: Entity Relationship Diagram
+          language: mermaid
+          required: false
+        vocabulary:
+          from: table_row
+          under_section: Ubiquitous Language
+          required: false
+          assert:
+            columns: [Term, Description]
+            min_rows: 1
+        relationships:
+          from: table_row
+          under_section: Relationships
+          required: false
+          assert:
+            columns: [Name, Verb, Target, Multiplicity]
+- name: entity
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  roles: [domain-object, persistable, aggregate-member, composite-owner]
+  construct:
+    identity: identified
+    shape: record
+    members: {fields: required, identityFields: required}
+    rules: [identity_field_required]
+    meaning: filament.meaning.model.object-type/v1
+  allowed_links:
+    specializes: [entity]
+    contains: [nested_entity, value_object]
+    owns: [state_machine]
+    references: [entity, aggregate_root, value_object, enumeration]
+  data_schema:
+    schema: schemas/Entity.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: true
+        relationships:
+          from: table_row
+          under_section: Relationships
+          required: false
+          assert:
+            columns: [Name, Verb, Target, Multiplicity]
+- name: value_object
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  roles: [domain-object, aggregate-member]
+  construct:
+    identity: value
+    shape: record
+    members: {fields: required}
+    rules: [identity_field_forbidden]
+    meaning: filament.meaning.model.record-value-type/v1
+  allowed_links:
+    specializes: [value_object]
+    composes: [value_object, enumeration]
+    references: [enumeration]
+  data_schema:
+    schema: schemas/ValueObject.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: true
+        fields:
+          from: section_body
+          after_heading: Fields
+          required: false
+- name: aggregate_root
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  roles: [domain-object, persistable, composite-owner]
+  construct:
+    identity: identified
+    shape: record
+    members: {fields: required, identityFields: required, clauses: required, members: required}
+    references:
+      members: [aggregate-member]
+    rules: [identity_field_required, min_clauses]
+    meaning: filament.meaning.model.object-type/v1
+  allowed_links:
+    specializes: [aggregate_root]
+    aggregates: [entity, nested_entity]
+    contains: [value_object]
+    emits: [event]
+    references: [aggregate_root, enumeration]
+  data_schema:
+    schema: schemas/AggregateRoot.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        members:
+          from: table_row
+          under_section: Members
+          required: true
+          assert:
+            columns: [Member, Multiplicity]
+            min_rows: 1
+        relationships:
+          from: table_row
+          under_section: Relationships
+          required: false
+          assert:
+            columns: [Name, Verb, Target, Multiplicity]
+- name: nested_entity
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  roles: [domain-object, aggregate-member, composite-owner]
+  construct:
+    identity: identified
+    shape: record
+    members: {fields: required, identityFields: required, owner: required}
+    references:
+      owner: [composite-owner]
+    rules: [identity_field_required, single_owner]
+    meaning: filament.meaning.model.object-type/v1
+  allowed_links:
+    specializes: [nested_entity]
+    contains: [value_object]
+    references: [enumeration]
+  data_schema:
+    schema: schemas/NestedEntity.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        parent:
+          from: section_body
+          after_heading: Parent
+          required: true
+- name: repository
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  construct:
+    identity: none
+    shape: interface
+    members: {operations: required, persists: required, fields: forbidden}
+    references:
+      persists: [persistable]
+    rules: [no_fields, min_operations]
+    meaning: filament.meaning.model.persistence-interface/v1
+  allowed_links:
+    persists: [aggregate_root, entity]
+    references: [data_schema]
+  data_schema:
+    schema: schemas/Repository.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        operations:
+          from: section_body
+          after_heading: Operations
+          required: true
+        relationships:
+          from: table_row
+          under_section: Relationships
+          required: false
+          assert:
+            columns: [Name, Verb, Target, Multiplicity]
+- name: event
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  roles: [event-like]
+  construct:
+    identity: none
+    shape: record
+    members: {fields: required, occurrenceField: required}
+    rules: [identity_field_forbidden, occurrence_field_required]
+    meaning: filament.meaning.model.event-type/v1
+    immutable: true
+  allowed_links:
+    specializes: [event]
+    carries: [value_object, entity]
+    references: [aggregate_root, enumeration]
+  data_schema:
+    schema: schemas/Event.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        source:
+          from: section_body
+          after_heading: Source
+          required: false
+        schema_json:
+          from: code_block
+          after_heading: Schema
+          required: true
+          language: json
+- name: state_machine
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  construct:
+    identity: none
+    shape: state_machine
+    members: {operations: required, states: required, transitions: required}
+    references:
+      transitions: [event-like]
+    rules: [min_operations]
+    meaning: filament.meaning.model.state-machine/v1
+  allowed_links:
+    specializes: [state_machine]
+    transitions_to: [state_machine]
+    raises: [event]
+    references: [entity, aggregate_root, enumeration]
+  data_schema:
+    schema: schemas/StateMachine.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        operations:
+          from: section_body
+          after_heading: Operations
+          required: false
+        states:
+          from: table_row
+          under_section: States
+          required: true
+          assert:
+            columns: [State, Description]
+            min_rows: 1
+        transitions:
+          from: table_row
+          under_section: Transitions
+          required: true
+          assert:
+            columns: [From, To, Trigger, Guard, Emits]
+            min_rows: 1
+- name: process
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  roles: [measurable]
+  construct:
+    identity: identified
+    shape: sequence
+    members: {fields: required, identityFields: required, steps: required}
+    references:
+      steps: [event-like]
+    rules: [identity_field_required]
+    meaning: filament.meaning.model.process/v1
+  allowed_links:
+    specializes: [process]
+    triggers: [process, action]
+    consumes: [event]
+    emits: [event]
+    reads: [aggregate_root, entity]
+    writes: [aggregate_root, entity]
+    operates_on: [domain-object]
+  data_schema:
+    schema: schemas/Process.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        steps:
+          from: table_row
+          under_section: Workflow
+          required: true
+          assert:
+            columns: [Step, Kind, Consumes, Emits, Description]
+            min_rows: 1
+        states:
+          from: table_row
+          under_section: States
+          required: false
+          assert:
+            columns: [State, Description]
+            min_rows: 1
+        specification:
+          from: section_body
+          after_heading: Specification
+          required: false
+        algorithm:
+          from: section_body
+          after_heading: Algorithm
+          required: false
+        relationships:
+          from: table_row
+          under_section: Relationships
+          required: false
+          assert:
+            columns: [Name, Verb, Target, Multiplicity]
+- name: enumeration
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  roles: [aggregate-member]
+  construct:
+    identity: none
+    shape: enumeration
+    members: {variants: required, fields: forbidden, relationships: forbidden, operations: forbidden}
+    rules: []
+    meaning: filament.meaning.model.variant-type/v1
+  allowed_links:
+    references: [enumeration]
+  data_schema:
+    schema: schemas/Enumeration.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        # Format-walkthrough decision #7 (2026-06-11): controlled label
+        # vocabularies (codec kinds, surface labels, ISA labels, step
+        # kinds) as first-class extractable objects instead of prose or
+        # values smuggled into data_schema JSON.
+        values:
+          from: table_row
+          under_section: Values
+          required: true
+          assert:
+            columns:
+            - Value
+            - Description
+            min_rows: 1
+- name: population
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  allowed_links:
+    references: [entity, aggregate_root, nested_entity, value_object, event, process]
+  data_schema:
+    schema: schemas/Population.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+        population:
+          from: table_row
+          under_section: Members
+          required: true
+          assert:
+            columns: [Type]
+            min_rows: 1
+- name: variant_set
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  allowed_links:
+    references: [enumeration, value_object, variant_set]
+  data_schema:
+    schema: schemas/VariantSet.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        variants:
+          from: table_row
+          under_section: Variants
+          required: true
+          assert:
+            columns: [Name, Payload, Description]
+            min_rows: 1
+- name: graph
+  frontmatter_schema_ref: schemas/ObjectFrontmatter.json
+  allowed_links:
+    references: [entity, aggregate_root, value_object, enumeration, event, process, graph]
+  data_schema:
+    schema: schemas/Graph.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        graph:
+          from: code_block
+          after_heading: Graph
+          language: mermaid
+          required: true

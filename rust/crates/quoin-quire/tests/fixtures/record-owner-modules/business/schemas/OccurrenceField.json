@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/OccurrenceField.json",
+  "type": "object",
+  "properties": {
+    "type": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/OccurrenceTypeRef.json"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "description": "Open marker: a `FieldDecl` whose type targets `Timestamp` — the occurrence\ntime an event declaration must carry. Used as a `@contains` predicate."
+}

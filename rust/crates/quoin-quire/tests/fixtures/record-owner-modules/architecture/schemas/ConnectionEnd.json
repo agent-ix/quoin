@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ConnectionEnd.json",
+  "type": "object",
+  "properties": {
+    "type": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+    },
+    "multiplicity": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Multiplicity.json"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "One end of a systems connection: the port it attaches to and, optionally, the\nmultiplicity at that end."
+}

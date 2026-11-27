@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/VersioningScheme.json",
+  "type": "string",
+  "enum": [
+    "semver",
+    "date",
+    "header",
+    "none"
+  ],
+  "description": "How an external contract signals a change."
+}

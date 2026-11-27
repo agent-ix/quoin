@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Part.json",
+  "type": "object",
+  "properties": {
+    "owner": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+    },
+    "declaredType": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/TypeRef.json"
+    },
+    "multiplicity": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Multiplicity.json"
+    },
+    "softwareSafetyClass": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-assigned software safety class; plain string, the vocabulary is declared by the ISO module. Never defaulted."
+    },
+    "softwareSafetyClassAssignedBy": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Person who assigned the class."
+    },
+    "softwareSafetyClassRationale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "That person's reason for the class."
+    }
+  },
+  "required": [
+    "owner",
+    "declaredType",
+    "multiplicity"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A part: a typed, multiplicity-bearing member of its owning composite type.\n`fields` and `operations` are forbidden by the seal.",
+  "dependentRequired": {
+    "softwareSafetyClass": [
+      "softwareSafetyClassAssignedBy",
+      "softwareSafetyClassRationale"
+    ],
+    "softwareSafetyClassAssignedBy": [
+      "softwareSafetyClass"
+    ],
+    "softwareSafetyClassRationale": [
+      "softwareSafetyClass"
+    ]
+  }
+}

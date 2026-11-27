@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ObjectId.json",
+  "type": "string",
+  "pattern": "^[A-Za-z][A-Za-z0-9_]*(?:-[A-Za-z0-9_]+)*$",
+  "description": "The frontmatter id of an artifact whose type is one of this module's object\ntypes. It may contain hyphen-separated segments, as in `IF-001`; semantic\ntype and member names remain governed by the core Identifier grammar.\nThe manifest's shared `id` locator carries the same pattern."
+}

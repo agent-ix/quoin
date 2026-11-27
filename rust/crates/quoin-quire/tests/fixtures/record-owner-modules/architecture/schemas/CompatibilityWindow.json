@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/CompatibilityWindow.json",
+  "type": "string",
+  "enum": [
+    "major",
+    "minor",
+    "none"
+  ],
+  "description": "The compatibility window an extension point offers implementers."
+}

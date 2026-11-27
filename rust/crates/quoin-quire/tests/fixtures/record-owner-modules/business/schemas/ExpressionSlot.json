@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/ExpressionSlot.json",
+  "type": "string",
+  "enum": [
+    "pre",
+    "post"
+  ],
+  "description": "Which contract line of an operation an expression was authored on."
+}

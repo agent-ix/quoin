@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Repository.json",
+  "type": "object",
+  "properties": {
+    "operations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/OperationDecl.json"
+      },
+      "minItems": 1
+    },
+    "persists": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/SemanticId.json"
+      }
+    }
+  },
+  "required": [
+    "operations"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A repository: persistence operations over an aggregate. `fields` and\n`clauses` are forbidden by the seal, and each operation's `pre`/`post` (a\n`Pre:`/`Post:` contract) must be empty or absent (QSpec FR-208: an\noperation contract or a `quire` clause on a persistence interface is\n`unsupported_construct`/`declaration-form`).",
+  "allOf": [
+    {
+      "properties": {
+        "operations": {
+          "not": {
+            "contains": {
+              "anyOf": [
+                {
+                  "required": [
+                    "pre"
+                  ],
+                  "properties": {
+                    "pre": {
+                      "minItems": 1
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "post"
+                  ],
+                  "properties": {
+                    "post": {
+                      "minItems": 1
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Queue.json",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/FieldDecl.json"
+      },
+      "minItems": 1,
+      "contains": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/IdentityField.json"
+      }
+    },
+    "delivery": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/DeliveryPolicy.json"
+    },
+    "carries": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+      }
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/ClauseRef.json"
+      }
+    }
+  },
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A message queue. Its `fields` are the message envelope, one of which is the\npartition key, so at least one is an identity field. `operations` and\n`relations` are forbidden by the seal: a queue carries messages, it does not\nexpose calls."
+}

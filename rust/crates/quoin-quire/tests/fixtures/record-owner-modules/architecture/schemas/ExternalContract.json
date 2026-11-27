@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ExternalContract.json",
+  "type": "object",
+  "properties": {
+    "operations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/OperationDecl.json"
+      },
+      "minItems": 1,
+      "contains": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/GuaranteedOperation.json"
+      }
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/ClauseRef.json"
+      },
+      "minItems": 1
+    },
+    "provider": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+    },
+    "versioning": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/VersioningPolicy.json"
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/RelationDecl.json"
+      }
+    }
+  },
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A contract with a system outside this one. It exists to pin guarantees, so it\ncarries at least one clause and at least one operation with a postcondition.\n`fields` is forbidden by the seal."
+}

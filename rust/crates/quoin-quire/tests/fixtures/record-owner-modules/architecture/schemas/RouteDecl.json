@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/RouteDecl.json",
+  "type": "object",
+  "properties": {
+    "method": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/HttpMethod.json"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operation": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Identifier.json"
+    }
+  },
+  "required": [
+    "method",
+    "path",
+    "operation"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "One concrete route of an API endpoint.\n\nReader rule JSON Schema cannot express (FR-004): `operation` names an\n`operations[].name` of the same record. It is stated for the extractor that\nfirst populates `routes` and is not claimed as a schema refusal."
+}

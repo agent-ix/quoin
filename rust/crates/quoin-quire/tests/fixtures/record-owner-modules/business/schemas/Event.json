@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Event.json",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/FieldDecl.json"
+      },
+      "minItems": 1,
+      "contains": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/IdentityField.json"
+      },
+      "minContains": 0,
+      "maxContains": 0
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/ClauseRef.json"
+      }
+    },
+    "source": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/SemanticId.json"
+    }
+  },
+  "required": [
+    "fields"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A domain event declaration.\n\nThe declared shape carries no identity field and no `eventId`: occurrence\nidentity belongs to the runtime record, not the declaration. It must carry at\nleast one occurrence field (a `Timestamp`), expressed as a second `contains`\npredicate through `allOf`, because JSON Schema admits one `contains` per\narray. `operations` is forbidden by the seal.",
+  "allOf": [
+    {
+      "properties": {
+        "fields": {
+          "contains": {
+            "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/OccurrenceField.json"
+          }
+        }
+      }
+    }
+  ]
+}
