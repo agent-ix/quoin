@@ -162,9 +162,10 @@ fn tc_031_122_temporal_phrasing_recommends_monitoring_and_model_checking() {
 
 #[trace("FR-031-AC-13")]
 #[test]
-fn tc_031_123_temporal_characteristic_is_mintable_and_reaches_its_method() {
+fn tc_031_123_mintable_characteristics_reach_their_methods() {
     let mintable = mintable_characteristics();
     assert!(mintable.contains("temporal"));
+    assert!(mintable.contains("quantified-threshold"));
 
     let active = catalog(vec![method(
         "model-checking",
@@ -178,6 +179,25 @@ fn tc_031_123_temporal_characteristic_is_mintable_and_reaches_its_method() {
     let advice = advise(&active, &facts);
     assert_eq!(advice.recommended.len(), 1);
     assert_eq!(advice.recommended[0].method, "model-checking");
+
+    let threshold_only = catalog(vec![method(
+        "benchmark",
+        &[("characteristics", &["quantified-threshold"])],
+    )]);
+    assert!(unjustified_unreachable_methods(&threshold_only).is_empty());
+
+    let parameterised = ObligationFacts {
+        id: "FR-9-AC-4".to_owned(),
+        statement: "The service SHALL meet its target.".to_owned(),
+        parameters: Some(std::collections::BTreeMap::from([(
+            "threshold".to_owned(),
+            "≤ 4 minutes".to_owned(),
+        )])),
+        ..ObligationFacts::default()
+    };
+    let advice = advise(&threshold_only, &parameterised);
+    assert_eq!(advice.recommended.len(), 1);
+    assert_eq!(advice.recommended[0].method, "benchmark");
 }
 
 #[trace("FR-031-AC-16")]
