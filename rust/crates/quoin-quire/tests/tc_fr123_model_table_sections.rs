@@ -46,6 +46,14 @@ fn fixture_case(id: &str) -> (Value, Value, BTreeMap<String, Value>) {
 
 fn run_fixture(id: &str) -> (Value, Value) {
     let (case, schema, schema_documents) = fixture_case(id);
+    run_fixture_case(case, schema, schema_documents)
+}
+
+fn run_fixture_case(
+    case: Value,
+    schema: Value,
+    schema_documents: BTreeMap<String, Value>,
+) -> (Value, Value) {
     let mut request = json!({
         "markdown": case["artifact"],
         "module": {
@@ -399,8 +407,24 @@ fn typed_emits_persists_and_event_source_keep_their_declared_owners() {
     assert_eq!(process["availability"]["relations"]["state"], "available");
     assert_eq!(process["diagnostics"], json!([]));
 
-    let (_, repository) = run_fixture("persists-and-emits-sections-are-prose");
+    let (mut repository_case, schema, schema_documents) =
+        fixture_case("persists-and-emits-sections-are-prose");
+    let artifact = repository_case["artifact"].as_str().expect("artifact");
+    let artifact = artifact.replace(
+        "## Persists\n\n- agg-001\n\n## Emits\n\n- order-placed",
+        "## Persists\n\n- order-line\n\n## Emits\n\n- money",
+    );
+    assert_ne!(
+        artifact,
+        repository_case["artifact"]
+            .as_str()
+            .expect("original artifact"),
+        "fixture sections to distinguish prose from relationship values"
+    );
+    repository_case["artifact"] = Value::String(artifact);
+    let (_, repository) = run_fixture_case(repository_case, schema, schema_documents);
     assert_eq!(repository["persists"], json!(["ix://acme/shop/agg-001"]));
+    assert!(repository.get("emits").is_none());
     assert_eq!(repository["diagnostics"], json!([]));
     assert!(repository["record"].is_null());
 
