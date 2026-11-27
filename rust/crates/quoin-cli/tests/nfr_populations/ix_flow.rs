@@ -239,6 +239,11 @@ fn surfaced(cx: &Context, command: &CommandHelp, mode: &Mode) -> bool {
     let (output, operations) = launch(cx, command, stub_mode);
     let stderr = text(&output.stderr);
     let evidence = stderr.contains(mode.evidence);
+    // A successful process with empty stdout is still an invalid response.
+    // Keep this condition explicit so the empty-success mode cannot pass on
+    // stderr alone if the stub or command starts emitting a payload.
+    let empty_success_is_refused = mode.id != "ix-flow-prints-nothing"
+        || (!output.status.success() && output.stdout.is_empty());
     let operation = if command.id() == "design-gate" && mode.id == "ix-flow-fails-the-context" {
         Some("run")
     } else {
@@ -246,7 +251,29 @@ fn surfaced(cx: &Context, command: &CommandHelp, mode: &Mode) -> bool {
     };
     let reached =
         operation.is_none_or(|wanted| operations.iter().any(|operation| operation == wanted));
-    !output.status.success() && evidence && reached
+    !output.status.success() && empty_success_is_refused && evidence && reached
+}
+
+/// A successful response with empty stdout is still an invalid ix-flow result.
+/// This single-command probe keeps that empty-success assertion deterministic;
+/// the population test below exercises the full command-by-mode product.
+#[test]
+fn tc_3004_empty_success_is_refused_with_no_stdout() {
+    let cx = Context::new();
+    let command = workflow_commands(&cx)
+        .into_iter()
+        .next()
+        .expect("the command catalogue declares a workflow command");
+    let (output, operations) = launch(&cx, command, Some("prints-nothing"));
+
+    assert!(!output.status.success(), "{}", text(&output.stderr));
+    assert!(output.stdout.is_empty(), "{}", text(&output.stdout));
+    assert!(
+        text(&output.stderr).contains("ix-flow returned invalid JSON"),
+        "{}",
+        text(&output.stderr)
+    );
+    assert!(operations.iter().any(|operation| operation == "run"));
 }
 
 /// NFR-007-M-1: each workflow command with each way `ix-flow` fails, as
