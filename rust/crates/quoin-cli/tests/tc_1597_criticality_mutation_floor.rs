@@ -133,7 +133,7 @@ impl Fixture {
         );
     }
 
-    fn audit(&self) -> Value {
+    fn audit_with_floor(&self, floor: &str) -> Value {
         let module = process_module();
         let output = self.invoke(&[
             "evidence",
@@ -143,7 +143,7 @@ impl Fixture {
             "--module",
             module.to_str().unwrap(),
             "--mutation-floor",
-            "high=0.8",
+            floor,
             "--json",
         ]);
         assert_eq!(
@@ -153,6 +153,10 @@ impl Fixture {
             String::from_utf8_lossy(&output.stderr)
         );
         serde_json::from_slice(&output.stdout).unwrap()
+    }
+
+    fn audit(&self) -> Value {
+        self.audit_with_floor("high=0.8")
     }
 }
 
@@ -195,5 +199,25 @@ fn tc_1597_002_absent_rating_does_not_apply_high_floor() {
                     && finding["obligation"] == "FR-1597-AC-1"
             }),
         "an unrated obligation has no high-specific floor: {report}"
+    );
+}
+
+#[trace("FR-039-AC-8")]
+#[test]
+fn tc_1597_003_mutation_floor_pair_is_applied_by_audit() {
+    let fixture = Fixture::new("high");
+    fixture.record_score();
+
+    let report = fixture.audit_with_floor("high=0.8");
+    assert!(
+        report["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|finding| {
+                finding["kind"] == "insufficient-mutation-score"
+                    && finding["obligation"] == "FR-1597-AC-1"
+            }),
+        "the CLI must parse the floor pair and apply it to the matching obligation: {report}"
     );
 }
