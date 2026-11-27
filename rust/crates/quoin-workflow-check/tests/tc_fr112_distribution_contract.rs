@@ -234,7 +234,18 @@ fn tc_fr112_selftest_gates_linux_assets_and_marks_other_targets_not_run() {
         script.contains("x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu"),
         "{script}"
     );
-    assert!(script.contains("selftest --run --out"), "{script}");
+    let invocation = script
+        .lines()
+        .find(|line| line.contains("selftest --run --out"))
+        .expect("Linux self-test invocation exists");
+    assert_eq!(
+        invocation.trim(),
+        "\"$BINARY\" selftest --run --out \"$RUNNER_TEMP/quoin-selftest-$TARGET.json\""
+    );
+    assert!(
+        !invocation.contains("||"),
+        "Linux self-test failure must propagate through the shell: {invocation}"
+    );
     assert!(script.contains("not run on %s"), "{script}");
     assert!(
         script.contains("tee -a \"$GITHUB_STEP_SUMMARY\""),
