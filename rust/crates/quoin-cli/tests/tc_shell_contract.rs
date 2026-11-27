@@ -23,6 +23,32 @@ fn text(bytes: &[u8]) -> String {
     String::from_utf8(bytes.to_vec()).expect("the native shell emits UTF-8")
 }
 
+fn command_names(help: &str) -> Vec<(String, String)> {
+    let mut section = None;
+    let mut names = Vec::new();
+    for line in help.lines() {
+        let heading = line.trim().trim_end_matches(':');
+        if matches!(heading, "TOPICS" | "COMMANDS") {
+            section = Some(heading.to_owned());
+            continue;
+        }
+        if line.trim().is_empty() {
+            continue;
+        }
+        if line.starts_with("  ") && !line.starts_with("    ") {
+            if let (Some(section), Some(name)) = (section.as_ref(), line.split_whitespace().next())
+            {
+                names.push((section.clone(), name.to_owned()));
+            }
+        } else if !line.starts_with(' ') {
+            section = None;
+        }
+    }
+    names.sort();
+    names.dedup();
+    names
+}
+
 /// The root help response keeps the retained stdout-only shell contract and
 /// advertises the native command inventory, not Clap's synthetic help route.
 #[trace("FR-003", "FR-102")]
@@ -38,6 +64,39 @@ fn tc_1650_root_help_is_a_successful_stdout_catalogue() {
     assert!(stdout.contains("TOPICS\n  assurance"));
     assert!(stdout.contains("COMMANDS\n  advise"));
     assert!(!stdout.contains("help            "));
+}
+
+#[trace("FR-102-CON-3")]
+#[test]
+fn tc_1650_root_command_inventory_matches_the_retained_shell() {
+    let capture: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/retained-command-help.json"))
+            .expect("retained command help is valid JSON");
+    let retained = capture["cases"]
+        .as_array()
+        .expect("retained cases")
+        .iter()
+        .find(|case| {
+            case["argv"]
+                .as_array()
+                .is_some_and(|argv| argv.len() == 1 && argv[0] == "--help")
+        })
+        .and_then(|case| case["stdout"].as_str())
+        .expect("retained root help case");
+
+    let output = invoke(&["--help"]);
+    assert!(output.status.success(), "stderr: {}", text(&output.stderr));
+    let current = text(&output.stdout);
+    let retained = command_names(retained);
+    let current: std::collections::BTreeSet<_> = command_names(&current).into_iter().collect();
+    let missing: Vec<_> = retained
+        .into_iter()
+        .filter(|command| !current.contains(command))
+        .collect();
+    assert!(
+        missing.is_empty(),
+        "retained root topics or commands disappeared during the port: {missing:?}"
+    );
 }
 
 /// Unknown command refusals are not parser-success output: they retain exit 2

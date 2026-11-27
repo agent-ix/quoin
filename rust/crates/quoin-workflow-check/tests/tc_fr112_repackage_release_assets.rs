@@ -17,11 +17,18 @@ fn workflow_text(name: &str) -> String {
         .unwrap_or_else(|error| panic!("read workflow {}: {error}", path.display()))
 }
 
-#[trace("FR-112-AC-2")]
+fn workspace_text(relative: &str) -> String {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(relative);
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read workspace file {}: {error}", path.display()))
+}
+
+#[trace("FR-112-AC-2", "FR-102-AC-7")]
 #[test]
 fn npm_repack_downloads_manifest_named_assets_and_never_rebuilds_quoin() {
     let release = workflow_text("release.yml");
     let native = workflow_text("native-release.yml");
+    let workspace = workspace_text("../../Cargo.toml");
 
     assert!(release.contains("ref: ${{ inputs.tag }}"), "{release}");
     assert!(
@@ -75,5 +82,31 @@ fn npm_repack_downloads_manifest_named_assets_and_never_rebuilds_quoin() {
     assert!(
         native.contains("gh release create \"$TAG\" --repo \"$GITHUB_REPOSITORY\""),
         "native workflow publishes GitHub Release assets before the repackage workflow consumes them"
+    );
+    assert!(native.contains("name: release-artifacts"), "{native}");
+    assert!(native.contains("path: release"), "{native}");
+    assert!(native.contains("release/*"), "{native}");
+    assert!(workspace.contains("publish = false"), "{workspace}");
+
+    let crate_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../");
+    let mut crate_count = 0;
+    for entry in fs::read_dir(&crate_root).expect("workspace crate directory is readable") {
+        let entry = entry.expect("workspace crate entry");
+        let manifest = entry.path().join("Cargo.toml");
+        if manifest.is_file() {
+            let content = fs::read_to_string(&manifest).unwrap_or_else(|error| {
+                panic!("read crate manifest {}: {error}", manifest.display())
+            });
+            assert!(
+                content.contains("publish.workspace = true"),
+                "{} must inherit the workspace no-publish policy",
+                manifest.display()
+            );
+            crate_count += 1;
+        }
+    }
+    assert!(
+        crate_count > 0,
+        "the native workspace crate population is non-empty"
     );
 }
