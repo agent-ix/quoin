@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ConnectionDirection.json",
+  "type": "string",
+  "enum": [
+    "source-to-target",
+    "target-to-source",
+    "bidirectional"
+  ],
+  "description": "The direction a systems connection declares between its source and target\nport ends (QSpec FR-152). `undirected` is never a connection direction."
+}

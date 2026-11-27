@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/DeliveryPolicy.json",
+  "type": "object",
+  "properties": {
+    "semantics": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/DeliverySemantics.json"
+    },
+    "ordering": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/OrderingScope.json"
+    },
+    "retention": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "semantics"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "The delivery guarantee profile of a queue."
+}

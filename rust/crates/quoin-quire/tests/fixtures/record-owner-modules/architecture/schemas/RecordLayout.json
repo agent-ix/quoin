@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/RecordLayout.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Identifier.json"
+    },
+    "tag": {
+      "type": "string"
+    },
+    "size": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/LayoutField.json"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "name",
+    "fields"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "One record type of a persisted binary layout."
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Interface.json",
+  "type": "object",
+  "properties": {
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/FieldDecl.json"
+      }
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/OperationDecl.json"
+      }
+    },
+    "featureOrder": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Identifier.json"
+      }
+    },
+    "associated_types": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/TypeRef.json"
+      }
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/ClauseRef.json"
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/RelationDecl.json"
+      }
+    }
+  },
+  "required": [
+    "featureOrder"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A contract within the system: its features, each a field or an operation\n(QSpec FR-152, FR-208). `featureOrder` orders the interface's own field and\noperation names as one sequence across both kinds of feature."
+}

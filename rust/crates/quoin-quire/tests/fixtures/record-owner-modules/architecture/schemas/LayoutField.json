@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/LayoutField.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Identifier.json"
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "size": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        {
+          "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Identifier.json"
+        }
+      ]
+    },
+    "type": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/LayoutType.json"
+    }
+  },
+  "required": [
+    "name",
+    "offset",
+    "size",
+    "type"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "One physical field of a binary record.\n\nA `size` naming an `Identifier` names the one field of the same layout,\nin this record or another, whose value carries the length; that\ncross-reference is a reader rule."
+}

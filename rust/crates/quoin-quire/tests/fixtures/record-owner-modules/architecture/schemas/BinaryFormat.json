@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/BinaryFormat.json",
+  "type": "object",
+  "properties": {
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/ClauseRef.json"
+      },
+      "minItems": 1
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/RecordLayout.json"
+      }
+    },
+    "endianness": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Endianness.json"
+    },
+    "serializes": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+      }
+    }
+  },
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A persisted binary layout — offsets, strides and endianness JSON Schema has\nno vocabulary for. It exists to pin layout invariants, so it carries at least\none clause; `fields` and `operations` are forbidden by the seal."
+}

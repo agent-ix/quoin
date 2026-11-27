@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ObjectFrontmatter.json",
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ObjectId.json"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "object": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "type"
+  ],
+  "unevaluatedProperties": {},
+  "description": "The frontmatter every object-type artifact carries, shared by all fourteen\nobject types. Keys beyond these (`relationships`, ...) are governed\nelsewhere and admitted here."
+}

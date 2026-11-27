@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/RegionCode.json",
+  "type": "string",
+  "pattern": "^([A-Z]{2}|eu|eea)$",
+  "description": "A country or region code used to describe a data sink's location."
+}

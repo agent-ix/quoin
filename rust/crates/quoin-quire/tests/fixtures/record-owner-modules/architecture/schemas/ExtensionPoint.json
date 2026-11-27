@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ExtensionPoint.json",
+  "type": "object",
+  "properties": {
+    "operations": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/OperationDecl.json"
+      },
+      "minItems": 1
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/ClauseRef.json"
+      },
+      "minItems": 1
+    },
+    "exposes": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+    },
+    "registration": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/RegistrationPolicy.json"
+    },
+    "stability": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/StabilityPolicy.json"
+    }
+  },
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "Pluggability as a first-class node: the operations third-party implementers\nwrite against, plus the stability guarantee they rely on. `fields` and\n`relations` are forbidden by the seal."
+}

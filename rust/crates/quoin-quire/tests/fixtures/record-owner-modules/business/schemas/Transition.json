@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Transition.json",
+  "type": "object",
+  "properties": {
+    "from": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/Identifier.json"
+    },
+    "to": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/Identifier.json"
+    },
+    "trigger": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/Identifier.json"
+    },
+    "guard": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/ClauseRef.json"
+    },
+    "guardExpression": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Expression.json"
+    },
+    "emits": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/SemanticId.json"
+    }
+  },
+  "required": [
+    "from",
+    "to",
+    "trigger"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "One state-machine transition.\n\nReader rules JSON Schema cannot express (FR-004): `from` and `to` name a\n`states[].value` of the same record, and `trigger` names an\n`operations[].name` of the same record. Neither is claimed as a schema\nrefusal; both are stated for the extractor that first populates `states`\nand `transitions`.",
+  "not": {
+    "required": [
+      "guard",
+      "guardExpression"
+    ]
+  }
+}

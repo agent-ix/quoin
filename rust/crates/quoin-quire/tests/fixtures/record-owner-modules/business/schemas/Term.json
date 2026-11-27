@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Term.json",
+  "type": "object",
+  "properties": {
+    "term": {
+      "type": "string",
+      "minLength": 1
+    },
+    "doc": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "term",
+    "doc"
+  ],
+  "description": "One entry of a domain's ubiquitous language."
+}

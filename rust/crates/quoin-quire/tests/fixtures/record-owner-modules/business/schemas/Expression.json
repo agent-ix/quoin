@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Expression.json",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "expression"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceSpan": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/SourceLocus.json"
+    }
+  },
+  "required": [
+    "kind",
+    "text",
+    "sourceSpan"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "An inline Quire expression carried opaquely: the authored text and the span\nof that text. A `Guard` cell or a `Pre:`/`Post:` line holding an expression\nrather than a clause id is carried this way (quire-rs FR-071, FR-075)."
+}

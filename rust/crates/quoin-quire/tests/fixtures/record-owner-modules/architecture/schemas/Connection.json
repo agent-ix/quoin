@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Connection.json",
+  "type": "object",
+  "properties": {
+    "sourceEnd": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ConnectionEnd.json"
+    },
+    "targetEnd": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ConnectionEnd.json"
+    },
+    "flowDirection": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ConnectionDirection.json"
+    }
+  },
+  "required": [
+    "sourceEnd",
+    "targetEnd",
+    "flowDirection"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A connection between two port ends with a declared flow direction. `fields`\nand `operations` are forbidden by the seal."
+}

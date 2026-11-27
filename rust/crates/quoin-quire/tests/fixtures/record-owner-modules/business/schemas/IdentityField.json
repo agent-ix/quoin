@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/IdentityField.json",
+  "type": "object",
+  "properties": {
+    "identity": {
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "required": [
+    "identity"
+  ],
+  "description": "Open marker: a `FieldDecl` flagged as identity. Used only as the `@contains`\npredicate for the \"≥ 1 identity field\" and \"0 identity fields\" item rules;\nit is deliberately open so it matches any identity-flagged field."
+}

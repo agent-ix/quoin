@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Graph.json",
+  "type": "object",
+  "properties": {
+    "clauses": {
+      "type": "array",
+      "items": {
+        "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/ClauseRef.json"
+      }
+    }
+  },
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "An acyclic partial order: nodes, edges, and the concurrent branches the\nedges leave unordered. It has no current state, so it declares no `states`,\n`transitions`, `fields` or `operations`; the seal forbids them. The\ngraph itself is the required `## Graph` mermaid block, which the module's\nbody extraction reads."
+}
