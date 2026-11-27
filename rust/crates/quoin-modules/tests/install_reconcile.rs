@@ -353,6 +353,90 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     );
 }
 
+#[trace("NFR-001-M-2")]
+#[test]
+fn tc_381_284_a_settled_reconcile_leaves_the_module_store_unchanged() {
+    fn snapshot(root: &Path) -> std::collections::BTreeMap<PathBuf, Vec<u8>> {
+        fn visit(
+            root: &Path,
+            current: &Path,
+            files: &mut std::collections::BTreeMap<PathBuf, Vec<u8>>,
+        ) {
+            let entries = fs::read_dir(current).unwrap_or_else(|error| {
+                panic!("read store directory {}: {error}", current.display())
+            });
+            for entry in entries {
+                let entry = entry.expect("store directory entry");
+                let path = entry.path();
+                if path.is_dir() {
+                    visit(root, &path, files);
+                } else {
+                    let relative = path
+                        .strip_prefix(root)
+                        .expect("path is under store")
+                        .to_path_buf();
+                    let contents = fs::read(&path).unwrap_or_else(|error| {
+                        panic!("read store file {}: {error}", path.display())
+                    });
+                    files.insert(relative, contents);
+                }
+            }
+        }
+
+        let mut files = std::collections::BTreeMap::new();
+        if root.exists() {
+            visit(root, root, &mut files);
+        }
+        files
+    }
+
+    let h = home();
+    let tree = h.fixtures.join("repo");
+    fs::create_dir_all(tree.join("nested/artifacts")).expect("nested fixture dirs");
+    fs::write(tree.join(".quoin-extract-complete"), "").expect("resolved git tree is complete");
+    fs::write(
+        tree.join("nested/manifest.yaml"),
+        "name: mod\nversion: 1.0.0\nartifact_types:\n  - name: FR\n",
+    )
+    .expect("fixture declares a catalog artifact");
+    fs::write(tree.join("nested/artifacts/marker.txt"), "v1").expect("artifact fixture");
+    let resolver =
+        CountingResolver::new().serving("https://github.com/agent-ix/fixture.git", "v1.0.0", tree);
+    let gate = PermissiveGate;
+    let installer = ModuleInstaller::new(h.paths.clone(), &resolver, &gate, &NoPacks);
+    let manifest = MarketplaceManifest {
+        schema_version: 1,
+        name: Some("test-set".to_owned()),
+        entries: vec![MarketplaceEntry {
+            name: ModuleName::new("mod").expect("legal name"),
+            source: Source::Git {
+                url: "https://github.com/agent-ix/fixture.git".to_owned(),
+                r#ref: Some("v1.0.0".to_owned()),
+            },
+            default_enabled: None,
+            path: Some("nested".to_owned()),
+        }],
+    };
+
+    ensure_defaults(&manifest, &installer).expect("first reconcile installs module");
+    let installed = snapshot(&h.paths.target_root);
+    let registry = fs::read(&h.paths.registry_path).expect("installed module registry");
+
+    let report = ensure_defaults(&manifest, &installer).expect("settled reconcile succeeds");
+    assert_eq!(
+        report.unchanged,
+        vec![ModuleName::new("mod").expect("legal name")]
+    );
+    assert!(report.installed.is_empty());
+    assert!(report.updated.is_empty());
+    assert_eq!(snapshot(&h.paths.target_root), installed);
+    assert_eq!(
+        fs::read(&h.paths.registry_path).expect("module registry remains present"),
+        registry,
+        "repeat reconcile must not change the module registry"
+    );
+}
+
 #[trace("FR-212-AC-8")]
 #[test]
 fn tc_212_008_ensure_defaults_updates_an_installed_module_to_a_newer_pin() {
