@@ -280,7 +280,13 @@ enum CoveragePurpose {
     DesignMatrix,
 }
 
-#[implements("FR-165-AC-21")]
+#[implements(
+    "FR-165-AC-21",
+    "FR-116-AC-7",
+    "FR-116-AC-8",
+    "FR-116-AC-13",
+    "FR-116-AC-15"
+)]
 fn compute_with<T>(
     request: &Request,
     purpose: CoveragePurpose,
@@ -533,6 +539,7 @@ fn conflicting_selection(
 }
 
 /// Build the engine's input over borrowed views and run `use_backing` on it.
+#[implements("FR-116-AC-7", "FR-116-AC-8", "FR-116-AC-13", "FR-116-AC-15")]
 fn with_backing<T>(
     selected: &SelectedInventory,
     entries: &[CriterionEntry<'_>],

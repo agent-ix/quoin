@@ -284,7 +284,7 @@ pub enum Qualification {
 /// erroring, superseded or unqualified entry leaves the obligation uncounted
 /// (FR-032, FR-153-AC-6).
 #[must_use]
-#[implements("FR-116")]
+#[implements("FR-116", "FR-116-AC-7", "FR-116-AC-8", "FR-116-AC-13", "FR-116-AC-15")]
 pub fn qualify(request: &Request<'_>) -> Qualification {
     let runs::Disposition {
         candidates,

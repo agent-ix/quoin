@@ -199,6 +199,7 @@ pub fn resolve_org(
 /// `origin` remote. Returns the degradation [`Resolved::degraded`] recorded and
 /// the schema issues behind it, so the boundary can report a degraded read as a
 /// diagnostic instead of losing it.
+#[implements("FR-023-AC-5")]
 #[must_use]
 pub fn resolve_org_from_documents(
     options: &OrgOptions<'_>,
