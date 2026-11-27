@@ -46,17 +46,6 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22.15.0
-      - name: Install release-check toolchain
-        shell: bash
-        working-directory: rust
-        run: rustup show active-toolchain || rustup toolchain install
-      - name: Authenticate private Cargo build inputs
-        env:
-          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
-        run: git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
-      - name: Build native release checker
-        working-directory: rust
-        run: cargo build --locked --target-dir target -p quoin-workflow-check
       - name: Download the release
         shell: bash
         env:
@@ -145,25 +134,72 @@ jobs:
           self-update-command: update
           publish: ${{ inputs.publish }}
 
-      - name: Smoke the published npm packages
-        if: inputs.publish
+  smoke-npm:
+    name: Smoke npm install on ${{ matrix.target }}
+    needs: publish-npm
+    if: inputs.publish
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: linux-x64
+            native-package: quoin-linux-x64
+            linux: true
+          - runner: ubuntu-24.04-arm
+            target: linux-arm64
+            native-package: quoin-linux-arm64
+            linux: true
+          - runner: macos-15
+            target: darwin-arm64
+            native-package: quoin-darwin-arm64
+            linux: false
+          - runner: windows-2025
+            target: win32-x64
+            native-package: quoin-win32-x64
+            linux: false
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        if: matrix.target == 'linux-x64'
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Build the workflow smoke checker
+        if: matrix.target == 'linux-x64'
         shell: bash
+        working-directory: rust
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
           set -euo pipefail
-
-          PREFIX="$(mktemp -d)"
+          rustup show active-toolchain || rustup toolchain install
+          test -n "$REGISTRY_TOKEN" || { echo "::error::REGISTRY_TOKEN must read private Rust build dependencies" >&2; exit 1; }
+          git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
+          cleanup() {
+            git config --global --unset-all "url.https://x-access-token:${REGISTRY_TOKEN}@github.com/.insteadOf" || true
+          }
+          trap cleanup EXIT
+          cargo build --locked --target-dir target -p quoin-workflow-check
+      - name: Install and verify the published package on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+          NATIVE_PACKAGE: ${{ matrix.native-package }}
+          LINUX_PACKAGE: ${{ matrix.linux }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          PREFIX="$RUNNER_TEMP/quoin-smoke"
+          mkdir -p "$PREFIX"
           NPMRC="$(mktemp)"
           printf '@agent-ix:registry=https://registry.npmjs.org/\n' > "$NPMRC"
-          export NPM_CONFIG_USERCONFIG="$NPMRC"
-          export NPM_CONFIG_PREFIX="$PREFIX"
-          export PATH="$PREFIX/bin:$PATH"
-
-          # Public npm can take a little while to serve a just-published
-          # version; retry with backoff for roughly two minutes rather than
-          # failing the run on ordinary propagation delay.
           attempt=0
           max_attempts=8
-          until npm install --global "@agent-ix/quoin@${VERSION}"; do
+          until npm install --global --prefix "$PREFIX" --userconfig "$NPMRC" \
+            --registry=https://registry.npmjs.org/ "@agent-ix/quoin@${VERSION}"; do
             attempt=$((attempt + 1))
             if [ "$attempt" -ge "$max_attempts" ]; then
               echo "::error::npm install of @agent-ix/quoin@${VERSION} did not succeed after $attempt attempts" >&2
@@ -172,21 +208,65 @@ jobs:
             sleep 15
           done
 
-          npm install --global @agent-ix/ix-flow@0.3.4
-          rust/target/debug/quoin-workflow-check smoke "$PREFIX/bin/quoin" "$PREFIX/lib/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" "$GITHUB_WORKSPACE"
           actual_version="$("$PREFIX/bin/quoin" --version)"
           if [ "$actual_version" != "$VERSION" ]; then
             echo "::error::quoin --version printed '$actual_version', expected '$VERSION'" >&2
             exit 1
           fi
 
-          if "$PREFIX/bin/quoin" update 2>update.err; then
+          if [ "$LINUX_PACKAGE" = true ]; then
+            package_json="$PREFIX/lib/node_modules/@agent-ix/$NATIVE_PACKAGE/package.json"
+            test -f "$package_json"
+            node - "$package_json" <<'NODE'
+          const fs = require("node:fs");
+          const pkg = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+          if (JSON.stringify(pkg.libc) !== JSON.stringify(["glibc"])) {
+            throw new Error(`${pkg.name} libc must be ["glibc"], got ${JSON.stringify(pkg.libc)}`);
+          }
+          NODE
+          fi
+
+          if [ "$TARGET" = linux-x64 ]; then
+            npm install --global --prefix "$PREFIX" --userconfig "$NPMRC" \
+              --registry=https://registry.npmjs.org/ @agent-ix/ix-flow@0.3.4
+            rust/target/debug/quoin-workflow-check smoke \
+              "$PREFIX/bin/quoin" \
+              "$PREFIX/lib/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" \
+              "$GITHUB_WORKSPACE"
+          fi
+          "$PREFIX/bin/quoin" update 2>update.err && {
             echo "::error::quoin update exited 0 under an npm install; it must defer to npm instead" >&2
-            cat update.err >&2
             exit 1
-          fi
-          if ! grep -q "npm install -g @agent-ix/quoin@latest" update.err; then
-            echo "::error::quoin update's stderr did not name the exact npm command to run" >&2
-            cat update.err >&2
-            exit 1
-          fi
+          }
+          grep -q "npm install -g @agent-ix/quoin@latest" update.err
+
+      - name: Install and verify the published package on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          TAG: ${{ inputs.tag }}
+          NATIVE_PACKAGE: ${{ matrix.native-package }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = $env:TAG -replace '^v', ''
+          $prefix = Join-Path $env:RUNNER_TEMP 'quoin-smoke'
+          $npmrc = Join-Path $env:RUNNER_TEMP 'quoin-smoke.npmrc'
+          Set-Content -Path $npmrc -Value '@agent-ix:registry=https://registry.npmjs.org/'
+          $installed = $false
+          for ($attempt = 1; $attempt -le 8; $attempt++) {
+            npm install --global --prefix $prefix --userconfig $npmrc --registry=https://registry.npmjs.org/ "@agent-ix/quoin@$version"
+            if ($LASTEXITCODE -eq 0) { $installed = $true; break }
+            if ($attempt -lt 8) { Start-Sleep -Seconds 15 }
+          }
+          if (-not $installed) { throw 'npm install failed after 8 attempts' }
+
+          $quoin = Join-Path $prefix 'quoin.cmd'
+          $actualVersion = (& $quoin --version | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $actualVersion -ne $version) {
+            throw "quoin --version printed '$actualVersion', expected '$version'"
+          }
+          & $quoin update 2> (Join-Path $env:RUNNER_TEMP 'update.err')
+          if ($LASTEXITCODE -eq 0) { throw 'quoin update must defer to npm under an npm install' }
+          if (-not (Select-String -Path (Join-Path $env:RUNNER_TEMP 'update.err') -Pattern 'npm install -g @agent-ix/quoin@latest')) {
+            throw 'quoin update stderr did not name the npm command to run'
+          }
