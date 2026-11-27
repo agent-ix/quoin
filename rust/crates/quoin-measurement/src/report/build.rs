@@ -18,6 +18,7 @@
 
 use std::path::Path;
 
+use ix_trace_rs::implements;
 use quoin_store::JsonValue;
 
 use crate::error::MeasurementError;
@@ -86,6 +87,9 @@ pub struct CurrentRow {
     pub plan_ground_truth_kind: Option<GroundTruthKind>,
     /// The observation, when one was computed.
     pub observation: Option<MeasurementObservation>,
+    /// Position of the observation in its source collection, for published
+    /// figure provenance.
+    pub observation_index: Option<usize>,
     /// The collection it was computed in, when there is one.
     pub collection: Option<CollectionSummary>,
     /// What the plan's stage and `objective` say about this row, when the
@@ -168,6 +172,8 @@ pub fn build_measurement_report<S: MeasurementSource + ?Sized>(
 /// [`crate::MeasurementErrorCode::CollectionIdUnsafe`] for a retained
 /// collection whose id does not name a file — `measurementPath` re-checks the
 /// same grammar on every call (`store.ts:26`).
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
 pub fn build_measurement_report_from(
     repo: &Path,
     all_plans: &[MeasurementPlan],
@@ -205,25 +211,33 @@ pub fn build_measurement_report_from(
         let summary = collection
             .map(|found| summary_of(repo, found))
             .transpose()?;
-        let observations: Vec<&MeasurementObservation> = collection.map_or_default(|found| {
-            found
-                .observations
-                .iter()
-                .filter(|observation| observation.metric.as_str() == plan.metric.as_str())
-                .collect()
-        });
+        let observations: Vec<(usize, &MeasurementObservation)> =
+            collection.map_or_default(|found| {
+                found
+                    .observations
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, observation)| observation.metric.as_str() == plan.metric.as_str())
+                    .collect()
+            });
         // `observations.length > 0 ? observations : [null]`: a plan with no
         // observation is still a row.
-        let row = |observation: Option<&MeasurementObservation>| CurrentRow {
+        let row = |observation: Option<(usize, &MeasurementObservation)>| CurrentRow {
             metric: plan.metric.as_str().to_owned(),
             plan_id: plan.id.as_str().to_owned(),
             plan_path: plan.path.clone(),
             plan_definition_version: plan.definition_version.as_str().to_owned(),
             stage: plan.stage,
             plan_ground_truth_kind: plan.ground_truth_kind,
-            observation: observation.cloned(),
+            observation: observation.map(|(_, observation)| observation.clone()),
+            observation_index: observation.map(|(index, _)| index),
             collection: summary.clone(),
-            stage_verdict: stage_verdict(plan, observation, collection, earlier),
+            stage_verdict: stage_verdict(
+                plan,
+                observation.map(|(_, observation)| observation),
+                collection,
+                earlier,
+            ),
         };
         if observations.is_empty() {
             current.push(row(None));

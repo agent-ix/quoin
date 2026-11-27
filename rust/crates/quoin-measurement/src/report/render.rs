@@ -16,6 +16,7 @@
 
 use std::collections::BTreeMap;
 
+use ix_trace_rs::implements;
 use quoin_store::{JsonObject, JsonValue};
 
 use crate::common::scalar::{js_f64_string, js_string};
@@ -155,23 +156,62 @@ pub(crate) fn plan_cell_of(id: &str, path: &str, kind: Option<GroundTruthKind>) 
 /// `report.ts:125-133` and `portfolio.ts:189-196` differ only in the two
 /// sentences a caller supplies: what to say when a `not_computed` observation
 /// gave no reason, and what to say when there is no observation at all.
-pub(crate) fn observation_cell(row: &CurrentRow, no_reason: &str, no_observation: &str) -> String {
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
+#[implements("NFR-023-AC-3")]
+pub(crate) fn observation_cell(
+    row: &CurrentRow,
+    no_reason: &str,
+    no_observation: &str,
+) -> Result<String, MeasurementError> {
     let Some(observation) = &row.observation else {
-        return no_observation.to_owned();
+        return Ok(no_observation.to_owned());
     };
     if observation.definition_version.as_str() != row.plan_definition_version {
-        return format!(
+        return Ok(format!(
             "incomparable: definition {}; active plan {}",
             observation.definition_version, row.plan_definition_version
-        );
+        ));
     }
     match observation.state {
-        MeasurementState::Measured => measured_text(observation.value, observation.unit.as_str()),
-        MeasurementState::NotComputed => format!(
+        MeasurementState::Measured => {
+            let text = measured_text(observation.value, observation.unit.as_str());
+            let Some(binding) = figure_binding(row, observation)? else {
+                return Ok(text);
+            };
+            Ok(format!("{text} {binding}"))
+        }
+        MeasurementState::NotComputed => Ok(format!(
             "not_computed: {}",
             observation.reason.as_deref().unwrap_or(no_reason)
-        ),
+        )),
     }
+}
+
+/// The source artifact and observation fields for one published figure.
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
+#[implements("NFR-023-AC-3")]
+fn figure_binding(
+    row: &CurrentRow,
+    observation: &MeasurementObservation,
+) -> Result<Option<String>, MeasurementError> {
+    let (Some(collection), Some(index)) = (&row.collection, row.observation_index) else {
+        return Ok(None);
+    };
+    let population = observation
+        .population
+        .as_ref()
+        .and_then(|population| population.identity.as_ref())
+        .map(crate::json_bridge::to_serde)
+        .transpose()?;
+    let binding = serde_json::json!({
+        "artifact": collection.path.as_str(),
+        "field": format!("/observations/{index}/value"),
+        "unit": observation.unit.as_str(),
+        "population": population,
+    });
+    Ok(Some(format!("<!-- ix-figure: {binding} -->")))
 }
 
 /// `${observation.value}` — `String(x)` for a value that may be `null`.
@@ -203,6 +243,9 @@ pub(crate) fn unverified_artifacts_suffix(names: &[String]) -> String {
 /// # Errors
 ///
 /// As [`dimension_suffix`].
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
+#[implements("NFR-023-AC-3")]
 pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, MeasurementError> {
     let mut lines: Vec<String> = vec![
         "# QA measurement report".to_owned(),
@@ -226,7 +269,7 @@ pub fn render_measurement_report(report: &MeasurementReport) -> Result<String, M
                     row,
                     "producer did not compute it",
                     "not_computed: no record"
-                )
+                )?
             ));
         }
         lines.push(String::new());
@@ -321,7 +364,7 @@ fn attention(report: &MeasurementReport) -> Result<Vec<String>, MeasurementError
             continue;
         };
         let name = metric_label(&row.metric, observation.dimensions.entries())?;
-        if let Some(item) = attention_for(row, observation, &name) {
+        if let Some(item) = attention_for(row, observation, &name)? {
             out.push(item);
         }
         if let Some(StageVerdict::Ratchet {
@@ -366,34 +409,45 @@ fn attention(report: &MeasurementReport) -> Result<Vec<String>, MeasurementError
 }
 
 /// One row's attention sentence, if it has one.
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
+#[implements("NFR-023-AC-3")]
 fn attention_for(
     row: &CurrentRow,
     observation: &MeasurementObservation,
     name: &str,
-) -> Option<String> {
+) -> Result<Option<String>, MeasurementError> {
     if observation.state == MeasurementState::NotComputed {
-        return Some(format!(
+        return Ok(Some(format!(
             "{name}: not computed — {}.",
             observation
                 .reason
                 .as_deref()
                 .unwrap_or("no reason supplied")
-        ));
+        )));
     }
     if observation.definition_version.as_str() != row.plan_definition_version {
-        return Some(format!(
+        return Ok(Some(format!(
             "{name}: stored definition {} does not match active plan {}; do not compare the \
              value.",
             observation.definition_version, row.plan_definition_version
-        ));
+        )));
     }
-    match AttentionMetric::of(&row.metric)? {
-        AttentionMetric::FindingRecall => (observation.value == Some(0.0)).then(|| {
-            format!(
+    let Some(metric) = AttentionMetric::of(&row.metric) else {
+        return Ok(None);
+    };
+    let item = match metric {
+        AttentionMetric::FindingRecall => {
+            if observation.value != Some(0.0) {
+                return Ok(None);
+            }
+            let binding = figure_binding(row, observation)?
+                .map_or_else(|| String::new(), |binding| format!(" {binding}"));
+            Some(format!(
                 "{name}: zero seeded defects detected; add or connect the detector named by the \
-                 family."
-            )
-        }),
+                 family.{binding}"
+            ))
+        }
         AttentionMetric::UnadjudicatedPrecision => {
             (observation.value.unwrap_or(0.0) > 0.0).then(|| {
                 format!(
@@ -403,10 +457,13 @@ fn attention_for(
             })
         }
         AttentionMetric::ActionabilityRate => {
-            let examined = observation
+            let Some(examined) = observation
                 .population
                 .as_ref()
-                .and_then(|population| population.examined)?;
+                .and_then(|population| population.examined)
+            else {
+                return Ok(None);
+            };
             let matched = observation
                 .population
                 .as_ref()
@@ -419,5 +476,6 @@ fn attention_for(
                 js_f64_string(examined)
             ))
         }
-    }
+    };
+    Ok(item)
 }

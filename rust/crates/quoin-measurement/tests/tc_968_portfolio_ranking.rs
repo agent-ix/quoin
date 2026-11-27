@@ -121,6 +121,7 @@ fn repository_with_row(
         stage: plan.stage,
         plan_ground_truth_kind: None::<GroundTruthKind>,
         observation: Some(observation(plan.id.as_str(), value)),
+        observation_index: Some(0),
         collection: Some(collection(timestamp)),
         stage_verdict: None,
     };
@@ -583,6 +584,7 @@ fn multi_slice_report(slices: &[(&str, Option<f64>)]) -> PortfolioReport {
             stage: sliced_plan.stage,
             plan_ground_truth_kind: None::<GroundTruthKind>,
             observation: Some(observation),
+            observation_index: Some(0),
             collection: Some(collection("2026-01-01T00:00:00.000Z")),
             stage_verdict: None,
         }
