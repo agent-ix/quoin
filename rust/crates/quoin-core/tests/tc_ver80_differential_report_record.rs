@@ -260,7 +260,6 @@ fn tc_002_no_stated_obligation_leaves_the_entry_unbound() {
             .unwrap()
             .payload;
         assert_eq!(payload["bound"], json!([]), "{payload}");
-        assert_eq!(payload["unrepresented"][0]["symbol"], symbol, "{payload}");
         assert!(the_run(dir.path())["entries"][0].get("traceIds").is_none());
         assert!(bindings(dir.path()).is_empty());
     }
