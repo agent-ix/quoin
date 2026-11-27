@@ -807,6 +807,20 @@ fn assert_uncounted_naming(outcome: &Counted, cause: CauseCode, premise: &str) {
             .all(|result| result.requested_target == AC1),
         "every refusal keeps the original requested target"
     );
+    if cause == CauseCode::Unevaluated {
+        let refusal = evidence_result(outcome, cause);
+        if !refusal.detail.starts_with("FR-032 audit premise") {
+            assert_eq!(
+                refusal.locator.as_ref(),
+                Some(&quire_rs::evidence::RetainedLocator {
+                    record: "runs/SUITE-A/2026-11-13T10~3A00~3A00Z.json".to_owned(),
+                    run: "SUITE-A@2026-11-13T10:00:00Z".to_owned(),
+                    entry: SATISFIED_SYMBOL.to_owned(),
+                }),
+                "a run-specific unevaluated refusal identifies its retained entry"
+            );
+        }
+    }
 }
 
 fn evidence_result(outcome: &Counted, cause: CauseCode) -> &quire_rs::evidence::EvidenceResult {
@@ -982,11 +996,22 @@ fn an_observation_of_one_record_never_qualifies_another() {
 
     // No observation of its own: unevaluated, whatever the other record has.
     runs[1].observation = RunObservation::default();
+    let expected_unobserved = expected_locator(&runs[1]);
     let outcome = count(runs, store.bindings(), &[AC1], admitted());
     assert_eq!(counted(&outcome), 0);
-    assert!(causes(&outcome).iter().any(|(cause, detail)| {
-        *cause == CauseCode::Unevaluated && detail.starts_with("execution association premise")
-    }));
+    let unobserved = outcome
+        .report
+        .evidence_results
+        .as_ref()
+        .unwrap()
+        .iter()
+        .find(|result| {
+            result.cause == CauseCode::Unevaluated
+                && result.detail.starts_with("execution association premise")
+        })
+        .expect("the missing host observation has a named refusal");
+    assert_eq!(unobserved.requested_target, AC1);
+    assert_eq!(unobserved.locator.as_ref(), Some(&expected_unobserved));
 }
 
 #[trace("FR-030-AC-12", "FR-030-AC-30", "FR-116-AC-7", "FR-153-AC-2")]
