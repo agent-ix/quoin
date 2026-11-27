@@ -288,6 +288,17 @@ impl Harness {
             "NODE_AUTH_TOKEN",
             "NPM_TOKEN",
             "NPM_CONFIG_USERCONFIG",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_AUTH_TOKEN",
+            "CLAUDE_CODE_OAUTH_TOKEN",
+            "CODEX_API_KEY",
+            "GEMINI_API_KEY",
+            "GOOGLE_API_KEY",
+            "AZURE_OPENAI_API_KEY",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "AWS_SESSION_TOKEN",
             "QUOIN_SEMANTIC_ROOT",
             "QUOIN_MODULE_PATHS",
             "IX_FILAMENT_MODULES_PATH",
@@ -1523,7 +1534,6 @@ mod tests {
     use ix_trace_rs::trace;
 
     #[cfg(feature = "workflow-test")]
-    #[cfg(feature = "workflow-test")]
     mod formalize_criterion_tests;
 
     fn harness() -> Harness {
@@ -1565,7 +1575,26 @@ mod tests {
     }
 
     #[cfg(feature = "workflow-test")]
-    use super::{review_base_lifecycle, review_scenarios};
+    use super::{lifecycle, plan_scenario, review_base_lifecycle, review_scenarios};
+
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-021-AC-6")]
+    #[test]
+    fn tc_fr021_review_and_plan_require_human_acknowledgement() {
+        let h = harness();
+        review_base_lifecycle(&h)
+            .expect("review requires and records explicit human acknowledgement");
+        plan_scenario(&h).expect("plan acceptance remains deferred to a human");
+    }
+
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-021-AC-7")]
+    #[test]
+    fn tc_fr021_packaged_install_runs_plugin_workflow_without_credentials() {
+        let h = harness();
+        lifecycle(&h).expect("packaged executable runs the installed workflow lifecycle");
+        assert!(!h.config.join("workflows").exists());
+    }
 
     #[cfg(feature = "workflow-test")]
     #[trace(
