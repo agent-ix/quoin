@@ -26,9 +26,8 @@ fn native_release_workflow() -> Value {
         .unwrap_or_else(|error| panic!("parse native release workflow {}: {error}", path.display()))
 }
 
-#[trace("FR-151-CON-4")]
 #[test]
-fn windows_release_target_uses_a_native_quoin_build() {
+fn windows_release_workflow_selects_a_native_quoin_build() {
     let workflow = native_release_workflow();
     let include = workflow["jobs"]["package"]["strategy"]["matrix"]["include"]
         .as_sequence()
