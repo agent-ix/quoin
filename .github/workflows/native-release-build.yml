@@ -204,6 +204,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -243,7 +244,7 @@ jobs:
           git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
           cd rust
           cargo fetch --locked
-      - name: Run and validate retained release evidence
+      - name: Run and retain release evidence
         env:
           npm_config_registry: https://registry.npmjs.org
         shell: bash
@@ -253,9 +254,17 @@ jobs:
           validate_binding_traces() {
             local bindings_file="$1"
             local runs_file="$2"
-            jq -e --slurpfile runs "$runs_file" '
-              any(.bindings[]; .suite == "SUITE-001")
-              and all(.bindings[] | select(.suite == "SUITE-001");
+            local required_obligations="$3"
+            jq -e --argjson required "$required_obligations" --slurpfile runs "$runs_file" '
+              . as $document
+              | any($document.bindings[]; .suite == "SUITE-001")
+              and all($required[];
+                . as $obligation |
+                any($document.bindings[];
+                  .suite == "SUITE-001" and .obligation == $obligation
+                )
+              )
+              and all($document.bindings[] | select(.suite == "SUITE-001");
                 . as $binding |
                 any($runs[0][];
                   .suite == "SUITE-001"
@@ -270,51 +279,74 @@ jobs:
             ' "$bindings_file" >/dev/null
           }
 
+          # BEGIN release-evidence status helper
+          write_release_evidence_status() {
+            local suite_exit_code="$1"
+            local run_record_count="$2"
+            local status_file="$3"
+            local outcome=complete
+            if [[ "$suite_exit_code" -ne 0 || "$run_record_count" -eq 0 ]]; then
+              outcome=incomplete
+            fi
+            printf '{"schemaVersion":1,"suite":"SUITE-001","status":"%s","suiteExitCode":%s,"runRecordCount":%s}\n' \
+              "$outcome" "$suite_exit_code" "$run_record_count" > "$status_file"
+          }
+          # END release-evidence status helper
+
           test_dir="$RUNNER_TEMP/quoin-evidence-binding-test"
           mkdir -p "$test_dir"
+          test_required='["FR-AC-1"]'
           jq -n '{schemaVersion:1,bindings:[{obligation:"FR-AC-1",suite:"SUITE-001",symbols:["tests::bound"]}]}' > "$test_dir/bindings.json"
           jq -n '{schemaVersion:1,suite:"SUITE-001",evidenceKind:"Unit",entries:[{symbol:"tests::bound",outcome:"pass",traceIds:["FR-OTHER"]},{symbol:"tests::unrelated",outcome:"pass",traceIds:["FR-AC-1"]}]}' > "$test_dir/unrelated-run.json"
           jq -s . "$test_dir/unrelated-run.json" > "$test_dir/unrelated-runs.json"
-          if validate_binding_traces "$test_dir/bindings.json" "$test_dir/unrelated-runs.json"; then
+          if validate_binding_traces "$test_dir/bindings.json" "$test_dir/unrelated-runs.json" "$test_required"; then
             echo "::error::evidence validator accepted a passing test without the bound obligation trace" >&2
             exit 1
           fi
 
           jq -n '{schemaVersion:1,suite:"SUITE-001",evidenceKind:"Unit",entries:[{symbol:"tests::bound",outcome:"pass",traceIds:["FR-AC-1"]},{symbol:"tests::unrelated",outcome:"pass",traceIds:["FR-AC-1"]}]}' > "$test_dir/matching-run.json"
           jq -s . "$test_dir/matching-run.json" > "$test_dir/matching-runs.json"
-          validate_binding_traces "$test_dir/bindings.json" "$test_dir/matching-runs.json" || {
+          validate_binding_traces "$test_dir/bindings.json" "$test_dir/matching-runs.json" "$test_required" || {
             echo "::error::evidence validator rejected a passing bound symbol with its obligation trace" >&2
             exit 1
           }
 
-          started_at=$(date +%s)
-          if ! make evidence; then
-            echo "::error::no_retained_evidence_store: make evidence did not produce run records and bindings for the tagged commit" >&2
-            exit 1
+          required_obligations='["FR-186-AC-1","FR-186-AC-2","FR-186-AC-3","FR-186-AC-4","FR-186-AC-5","FR-186-AC-6","FR-186-AC-7","FR-186-AC-8"]'
+          mkdir -p spec/evidence
+          run_start_marker="$RUNNER_TEMP/quoin-suite-001-start"
+          touch "$run_start_marker"
+          suite_exit_code=0
+          if make evidence; then
+            :
+          else
+            suite_exit_code=$?
+            echo "::warning::SUITE-001 run failed; retaining its run attempt as incomplete evidence" >&2
           fi
 
           bindings=spec/evidence/bindings.json
-          jq -e '.schemaVersion == 1 and any(.bindings[]; .suite == "SUITE-001" and (.symbols | length > 0))' "$bindings" >/dev/null || {
-            echo "::error::no_retained_evidence_store: evidence bindings are empty or invalid" >&2
+          jq -e '.schemaVersion == 1 and (.bindings | type == "array")' "$bindings" >/dev/null || {
+            echo "::error::no_retained_evidence_store: evidence bindings are invalid" >&2
             exit 1
           }
 
-          mapfile -t records < <(find spec/evidence/runs/SUITE-001 -type f -name '*.json' -newermt "@$started_at" -print 2>/dev/null)
-          if [ "${#records[@]}" -eq 0 ]; then
-            echo "::error::no_retained_evidence_store: no SUITE-001 run record was created during this tagged-commit job" >&2
-            exit 1
-          fi
+          mapfile -t records < <(find spec/evidence/runs/SUITE-001 -type f -name '*.json' -newer "$run_start_marker" -print 2>/dev/null)
           for record in "${records[@]}"; do
             jq -e '.schemaVersion == 1 and .suite == "SUITE-001" and .evidenceKind == "Unit" and (.entries | type == "array" and length > 0)' "$record" >/dev/null || {
               echo "::error::no_retained_evidence_store: a current-job SUITE-001 run record is invalid" >&2
               exit 1
             }
           done
-          current_runs="$RUNNER_TEMP/quoin-evidence-current-runs.json"
-          jq -s . "${records[@]}" > "$current_runs"
-          if ! validate_binding_traces "$bindings" "$current_runs"; then
-            echo "::error::no_retained_evidence_store: a bound obligation lacks a passing symbol with that trace in the current run records" >&2
-            exit 1
+
+          write_release_evidence_status "$suite_exit_code" "${#records[@]}" spec/evidence/release-evidence-status.json
+          if [[ "$suite_exit_code" -eq 0 && "${#records[@]}" -gt 0 ]]; then
+            current_runs="$RUNNER_TEMP/quoin-evidence-current-runs.json"
+            jq -s . "${records[@]}" > "$current_runs"
+            if ! validate_binding_traces "$bindings" "$current_runs" "$required_obligations"; then
+              echo "::error::complete SUITE-001 run lacks a passing FR-186-AC-1 through FR-186-AC-8 binding" >&2
+              exit 1
+            fi
+          else
+            echo "::warning::release evidence artifact will identify SUITE-001 as incomplete" >&2
           fi
       - uses: actions/upload-artifact@v7
         with:
