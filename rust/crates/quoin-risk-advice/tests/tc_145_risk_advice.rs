@@ -29,12 +29,61 @@ use common::*;
 
 impl Corpus {
     fn json(&self) -> Value {
+        let before = snapshot(self.dir.path());
         let advice = advise(self.dir.path(), &modules()).unwrap();
-        serde_json::from_str(&advice.to_json().unwrap()).unwrap()
+        let json = serde_json::from_str(&advice.to_json().unwrap()).unwrap();
+        assert_eq!(
+            snapshot(self.dir.path()),
+            before,
+            "JSON advice changed the input files"
+        );
+        json
     }
 
     fn markdown(&self) -> String {
-        advise(self.dir.path(), &modules()).unwrap().to_markdown()
+        let before = snapshot(self.dir.path());
+        let markdown = advise(self.dir.path(), &modules()).unwrap().to_markdown();
+        assert_eq!(
+            snapshot(self.dir.path()),
+            before,
+            "Markdown advice changed the input files"
+        );
+        markdown
+    }
+}
+
+fn assert_no_decision_keys(value: &Value, path: &str) {
+    match value {
+        Value::Object(entries) => {
+            for (key, nested) in entries {
+                let normalized: String = key
+                    .chars()
+                    .filter(|character| character.is_ascii_alphanumeric())
+                    .flat_map(char::to_lowercase)
+                    .collect();
+                assert!(
+                    !matches!(
+                        normalized.as_str(),
+                        "score"
+                            | "weight"
+                            | "total"
+                            | "rank"
+                            | "verdict"
+                            | "recommendation"
+                            | "proposal"
+                            | "priority"
+                    ),
+                    "decision-shaped JSON key at {path}.{key}"
+                );
+                assert_no_decision_keys(nested, &format!("{path}.{key}"));
+            }
+        }
+        Value::Array(entries) => {
+            for (index, nested) in entries.iter().enumerate() {
+                assert_no_decision_keys(nested, &format!("{path}[{index}]"));
+            }
+        }
+        _ => {}
     }
 }
 
@@ -137,15 +186,26 @@ fn a_run_changes_no_file() {
     assert_eq!(snapshot(c.dir.path()), before);
 }
 
-#[trace("FR-145-AC-3", "NFR-031-AC-6")]
+#[trace("NFR-031-M-3")]
+#[test]
+fn no_json_section_emits_a_decision_shaped_key() {
+    let c = corpus();
+    chain(&c);
+    let json = c.json();
+    assert_no_decision_keys(&json, "$");
+}
+
+#[trace("FR-145-AC-3", "NFR-031-AC-6", "NFR-031-M-4")]
 #[test]
 fn two_runs_are_byte_identical() {
     let c = corpus();
     chain(&c);
+    let before = snapshot(c.dir.path());
     let a = advise(c.dir.path(), &modules()).unwrap();
     let b = advise(c.dir.path(), &modules()).unwrap();
     assert_eq!(a.to_json().unwrap(), b.to_json().unwrap());
     assert_eq!(a.to_markdown(), b.to_markdown());
+    assert_eq!(snapshot(c.dir.path()), before);
 }
 
 #[trace("FR-145-AC-4", "FR-145-AC-5")]
@@ -192,7 +252,9 @@ fn a_malformed_decision_record_stops_the_report_and_names_the_record() {
     ];
     for (id, kind, front, body) in broken {
         c.put(id, kind, &front, body);
+        let before = snapshot(c.dir.path());
         let error = advise(c.dir.path(), &modules()).err().unwrap();
+        assert_eq!(snapshot(c.dir.path()), before, "{id}");
         assert_eq!(error.code, ErrorCode::Record, "{id}");
         assert!(error.message.contains(id), "{}", error.message);
         std::fs::remove_file(c.dir.path().join(format!("{id}.md"))).ok();
@@ -215,7 +277,9 @@ fn a_policy_with_a_placeholder_level_stops_the_report() {
         text.replace("| Minor |\n| Serious |", "| <level> |\n| Serious |"),
     )
     .unwrap();
+    let before = snapshot(c.dir.path());
     let error = advise(c.dir.path(), &modules()).err().unwrap();
+    assert_eq!(snapshot(c.dir.path()), before);
     assert_eq!(error.code, ErrorCode::Record);
     assert!(error.message.contains("POL-1"), "{}", error.message);
 }
@@ -905,7 +969,7 @@ fn with_every_optional_input_absent_each_value_is_null_a_marker_a_token_or_copie
     );
 }
 
-#[trace("NFR-031-AC-2", "FR-148-AC-9")]
+#[trace("NFR-031-AC-2", "FR-148-AC-9", "NFR-031-M-2")]
 #[test]
 fn the_markdown_never_says_the_tool_accepts() {
     let c = corpus();
@@ -972,9 +1036,11 @@ fn without_the_safety_types() -> ModuleSelection {
 fn a_type_no_loaded_module_declares_stops_the_report_naming_the_flag_and_the_types() {
     let c = corpus();
     chain(&c);
+    let before = snapshot(c.dir.path());
     let error = advise(c.dir.path(), &without_the_safety_types())
         .err()
         .unwrap();
+    assert_eq!(snapshot(c.dir.path()), before);
     assert_eq!(error.code, ErrorCode::TypeUndeclared);
     for needle in [
         "--module DIR",
@@ -1066,11 +1132,49 @@ fn a_file_the_reader_cannot_load_is_listed_not_dropped() {
     let c = corpus();
     chain(&c);
     std::fs::write(c.dir.path().join("RR-9.md"), [0xff, 0xfe, 0x00, 0x41]).unwrap();
+    let before = snapshot(c.dir.path());
     let advice = advise(c.dir.path(), &modules()).unwrap();
+    assert_eq!(snapshot(c.dir.path()), before);
     assert_eq!(advice.unreadable.len(), 1);
     assert!(
         advice.unreadable[0].contains("RR-9.md"),
         "{:?}",
         advice.unreadable
     );
+}
+
+#[trace("NFR-031-M-1")]
+#[test]
+fn every_fr145_through_fr148_fixture_is_read_only() {
+    the_json_has_exactly_the_six_keys_and_no_chain_rows();
+    a_run_changes_no_file();
+    no_json_section_emits_a_decision_shaped_key();
+    two_runs_are_byte_identical();
+    an_empty_scope_prints_five_empty_sections_and_the_attribution();
+    a_malformed_decision_record_stops_the_report_and_names_the_record();
+    a_policy_with_a_placeholder_level_stops_the_report();
+    an_estimate_that_breaks_its_contract_is_skipped();
+    each_estimate_shows_the_region_its_policy_cell_names();
+    a_pre_control_estimate_takes_the_policy_of_its_situation_and_is_not_compared();
+    an_undeclared_level_or_a_marker_gives_a_finding_and_no_region();
+    a_pair_the_policy_lists_no_region_for_is_a_cell_finding_not_a_level_finding();
+    no_policy_and_two_policies_show_no_region();
+    control_links_are_tested_by_their_edges_alone();
+    entries_with_different_gap_counts_are_ordered_by_estimate_id();
+    a_missing_verification_reads_no_verification_is_linked();
+    only_open_anomalies_naming_the_hazard_or_a_requirement_are_listed();
+    estimate_level_gaps_are_named_and_pre_control_estimates_have_no_entry();
+    several_situations_give_the_first_by_id_the_union_of_hazards_and_a_finding_per_bare_situation();
+    only_undecided_records_are_queued_in_kind_then_id_order();
+    the_region_list_of_the_policy_does_not_order_the_queue();
+    two_residual_risks_on_different_policies_each_show_their_own_region();
+    a_residual_risk_with_a_marker_level_carries_the_marker_finding_and_no_region();
+    an_estimate_with_no_residual_risk_is_listed_apart();
+    with_every_optional_input_absent_each_value_is_null_a_marker_a_token_or_copied();
+    the_markdown_never_says_the_tool_accepts();
+    an_all_acceptable_policy_and_an_undecided_risk_state_nothing_accepted();
+    a_type_no_loaded_module_declares_stops_the_report_naming_the_flag_and_the_types();
+    a_link_in_a_table_cell_is_no_edge_and_both_sections_name_one_policy();
+    one_residual_risk_naming_two_policies_is_ambiguous_in_both_sections();
+    a_file_the_reader_cannot_load_is_listed_not_dropped();
 }

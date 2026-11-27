@@ -15,6 +15,7 @@ use filament_contract_model::{
     CatalogReadError, CheckedPackageReadLimits, ContractPackageReadResult, ContractPackageV1,
     ContractPackageWireV1,
 };
+use ix_trace_rs::implements;
 use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -343,8 +344,6 @@ struct ResultEnvelope {
 enum Outcome {
     Passed {
         invariant: String,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        details: Option<BTreeMap<String, Value>>,
     },
     Failed {
         invariant: String,
@@ -429,6 +428,7 @@ fn read_request(input: impl Read) -> Result<Request, Failure> {
     Ok(request)
 }
 
+#[implements("FR-189-AC-1", "FR-209-AC-2")]
 fn evaluate(request: &Request) -> ResultEnvelope {
     let outcomes = request
         .invariants
@@ -440,13 +440,10 @@ fn evaluate(request: &Request) -> ResultEnvelope {
                 &request.run.instance_id,
                 request.run.state_version,
             ) {
-                Ok(None) => Outcome::Passed {
+                // ix-flow accepts details only on failed outcomes; a successful
+                // provider result has the closed `{invariant, status}` shape.
+                Ok(_) => Outcome::Passed {
                     invariant: name.clone(),
-                    details: None,
-                },
-                Ok(Some(details)) => Outcome::Passed {
-                    invariant: name.clone(),
-                    details: Some(details),
                 },
                 Err(error) => Outcome::Failed {
                     invariant: name.clone(),

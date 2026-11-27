@@ -1123,7 +1123,7 @@ edge_types:
     );
 }
 
-#[trace("FR-208-AC-7")]
+#[trace("FR-208-AC-7", "FR-208-CON-1")]
 #[test]
 fn tc_208_006_vocabulary_provider_approval_roles_do_not_apply_to_owner_set() {
     let env = env();
@@ -1161,6 +1161,21 @@ fn tc_208_006_vocabulary_provider_approval_roles_do_not_apply_to_owner_set() {
         text(&provider_install)
     );
 
+    let provider_fact = record_output(&env, &env.repo, "provider-set", "1", &[direct("C-1")]);
+    assert_eq!(
+        provider_fact.status.code(),
+        Some(3),
+        "{}",
+        text(&provider_fact)
+    );
+    assert!(
+        stderr(&provider_fact).contains("approval-missing"),
+        "{}",
+        text(&provider_fact)
+    );
+
+    // Both sets name C-1; only the exact owner-set identity selects the policy
+    // that permits a direct fact without an approval reference.
     let recorded = record_output(&env, &env.repo, "owner-set", "1", &[direct("C-1")]);
     assert!(recorded.status.success(), "{}", text(&recorded));
     let report = json(&discharge_output(&env, &env.repo, "owner-set"));

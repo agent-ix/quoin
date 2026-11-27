@@ -20,8 +20,8 @@
 
 mod common;
 
-use std::collections::BTreeSet;
-use std::path::Path;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 
 use common::{Repo, fixture, fixtures, walk, with_status};
 use ix_trace_rs::trace;
@@ -116,6 +116,69 @@ fn keys(value: &Value) -> BTreeSet<&str> {
 const CONTEXT: Context = Context {
     hazard_installed: true,
 };
+
+fn file_snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
+    let mut files = BTreeMap::new();
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(directory) = pending.pop() {
+        for entry in std::fs::read_dir(directory).unwrap().flatten() {
+            let path = entry.path();
+            if entry.file_type().unwrap().is_dir() {
+                pending.push(path);
+            } else {
+                files.insert(path.clone(), std::fs::read(path).unwrap());
+            }
+        }
+    }
+    files
+}
+
+#[trace("NFR-035-M-1")]
+#[test]
+fn reporting_every_shipped_anomaly_fixture_leaves_all_files_unchanged() {
+    let mut repo = corpus();
+    let fixture_root = fixtures();
+    let mut source_files = walk(&fixture_root);
+    source_files.sort();
+    assert_eq!(
+        source_files.len(),
+        100,
+        "the complete anomaly fixture set changed"
+    );
+
+    for (index, source) in source_files.iter().enumerate() {
+        let id = format!("AN-{:03}", 100 + index);
+        let text = std::fs::read_to_string(source).unwrap();
+        let text = set_key(&text, "id", Some(&format!("id: {id}")));
+        repo.write(&anomaly_path(&id), &text);
+    }
+    let last = source_files.last().unwrap();
+    let last_id = format!("AN-{:03}", 100 + source_files.len() - 1);
+    let last_text = set_key(
+        &std::fs::read_to_string(last).unwrap(),
+        "id",
+        Some(&format!("id: {last_id}")),
+    );
+    repo.commit(&anomaly_path(&last_id), &last_text);
+
+    let before = file_snapshot(repo.dir.path());
+    let both = [GateMode::Unassessed, GateMode::UnjustifiedImpacting];
+    for modes in [
+        &[][..],
+        &[GateMode::Unassessed][..],
+        &[GateMode::UnjustifiedImpacting][..],
+        &both[..],
+    ] {
+        let report = report_with(&repo, modes);
+        let _ = report.to_json().unwrap();
+        let _ = report.to_markdown();
+    }
+    assert_eq!(
+        file_snapshot(repo.dir.path()),
+        before,
+        "reporting changed or created a file"
+    );
+}
 
 #[trace("FR-162-AC-1", "FR-162-AC-2")]
 #[test]
@@ -1164,27 +1227,76 @@ fn without_fail_on_there_is_no_gate_and_unassessed_anomalies_do_not_fail() {
     assert!(!keys(&json_of(&report)).contains("gate"));
 }
 
-/// The stem "accept" may appear only in cells copied from a record: the
-/// title, the assessment, the affected targets and the release rationale.
-fn assert_accept_only_in_copied_values(markdown: &str) {
+/// The stem "accept" may appear only in exact cells copied from a record:
+/// the title, assessment, affected targets and release rationale.
+fn assert_accept_only_in_copied_values(markdown: &str, report: &Report) {
+    let cell = |value: &str| value.replace('|', "\\|").replace(['\r', '\n'], " ");
+    let joined = |items: Vec<String>| {
+        if items.is_empty() {
+            "none".to_owned()
+        } else {
+            items.join("<br>")
+        }
+    };
+    let mut copied = BTreeSet::new();
+    for row in &report.anomalies {
+        copied.insert(cell(row.title.as_deref().unwrap_or("not stated")));
+        copied.insert(joined(
+            row.assessment
+                .iter()
+                .map(|entry| {
+                    cell(&format!(
+                        "{} {} {}: {}",
+                        entry.kind,
+                        entry.target.as_deref().unwrap_or("not stated"),
+                        entry.impact,
+                        entry.rationale,
+                    ))
+                })
+                .collect(),
+        ));
+        copied.insert(joined(
+            row.affected
+                .iter()
+                .map(|affected| {
+                    cell(&format!(
+                        "{} {} ({})",
+                        affected.kind, affected.target, affected.impact
+                    ))
+                })
+                .collect(),
+        ));
+        copied.insert(joined(
+            row.release_rationale
+                .iter()
+                .map(|entry| cell(&format!("{}: {}", entry.author, entry.rationale)))
+                .collect(),
+        ));
+    }
+
     for line in markdown.lines() {
-        let lower = line.to_lowercase();
-        if !lower.contains("accept") {
+        if !line.to_lowercase().contains("accept") {
             continue;
         }
         assert!(line.starts_with("| AN-"), "tool prose says accept: {line}");
-        for (index, cell) in line.trim_matches('|').split(" | ").enumerate() {
-            if !matches!(index, 1 | 8 | 9 | 10) {
+        for (index, output_cell) in line.trim_matches('|').split(" | ").enumerate() {
+            if output_cell.to_lowercase().contains("accept") {
                 assert!(
-                    !cell.to_lowercase().contains("accept"),
-                    "cell {index} is not copied from a record: {cell}"
+                    copied.contains(output_cell),
+                    "cell {index} is not an exact value copied from a record: {output_cell}"
                 );
             }
         }
     }
 }
 
-#[trace("FR-164-AC-11", "NFR-035-AC-2", "NFR-035-AC-3")]
+#[trace(
+    "FR-164-AC-11",
+    "NFR-035-AC-2",
+    "NFR-035-AC-3",
+    "NFR-035-M-2",
+    "NFR-035-M-3"
+)]
 #[test]
 fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
     let repo = corpus_with(&[
@@ -1205,7 +1317,7 @@ fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
             markdown.to_lowercase().contains("accept"),
             "values are copied"
         );
-        assert_accept_only_in_copied_values(&markdown);
+        assert_accept_only_in_copied_values(&markdown, &report);
         let json = report.to_json().unwrap().to_lowercase();
         for key in ["score", "rank", "verdict", "grade", "recommend", "priority"] {
             assert!(!json.contains(&format!("\"{key}")), "{key}");
@@ -1217,5 +1329,38 @@ fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
     );
     let markdown = clean.to_markdown();
     assert!(markdown.contains("No anomaly fails the evaluated modes"));
-    assert_accept_only_in_copied_values(&markdown);
+    assert_accept_only_in_copied_values(&markdown, &clean);
+}
+
+#[trace("NFR-035-M-4")]
+#[test]
+fn output_bytes_repeat_for_each_fail_on_configuration() {
+    let repo = corpus_with(&[
+        ("AN-001", "valid", "closed-wont-fix-rationale"),
+        ("AN-002", "valid", "identified"),
+        ("AN-003", "invalid", "closed-unassessed"),
+    ]);
+    let unassessed = [GateMode::Unassessed];
+    let unjustified = [GateMode::UnjustifiedImpacting];
+    let both = [GateMode::Unassessed, GateMode::UnjustifiedImpacting];
+    let configurations: [&[GateMode]; 4] = [&[], &unassessed, &unjustified, &both];
+
+    for modes in configurations {
+        let first = report_with(&repo, modes);
+        let second = report_with(&repo, modes);
+        let first_json = first.to_json().unwrap();
+        let second_json = second.to_json().unwrap();
+        let first_markdown = first.to_markdown();
+        let second_markdown = second.to_markdown();
+        assert_eq!(
+            first_json.as_bytes(),
+            second_json.as_bytes(),
+            "JSON differs for {modes:?}"
+        );
+        assert_eq!(
+            first_markdown.as_bytes(),
+            second_markdown.as_bytes(),
+            "Markdown differs for {modes:?}"
+        );
+    }
 }

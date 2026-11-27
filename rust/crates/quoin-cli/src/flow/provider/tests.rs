@@ -444,10 +444,9 @@ fn design_gate_passes_only_for_valid_report_with_no_denials() {
     let mut errors = Vec::new();
     assert_eq!(super::serve(input.as_slice(), &mut output, &mut errors), 0);
     let result: Value = serde_json::from_slice(&output).expect("provider result");
-    assert_eq!(result["outcomes"][0]["status"], "passed");
     assert_eq!(
-        result["outcomes"][0]["details"]["report"]["denials"],
-        json!([])
+        result["outcomes"][0],
+        json!({"invariant":"dataflow_rules_pass","status":"passed"})
     );
 }
 

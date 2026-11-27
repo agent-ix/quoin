@@ -1468,6 +1468,9 @@ mod tests {
     use ix_trace_rs::trace;
 
     #[cfg(feature = "workflow-test")]
+    mod formalize_criterion_tests;
+
+    #[cfg(feature = "workflow-test")]
     use super::{review_base_lifecycle, review_scenarios};
 
     #[cfg(feature = "workflow-test")]

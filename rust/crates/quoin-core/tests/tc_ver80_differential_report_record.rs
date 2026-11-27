@@ -237,18 +237,25 @@ fn tc_002_a_stated_obligation_binds_a_satisfied_report() {
     assert_eq!(held[0]["symbols"], json!([expected]));
 }
 
-#[trace("FR-152-AC-2", "FR-152-AC-3")]
+#[trace("FR-152-AC-2", "FR-152-AC-3", "NFR-033-M-1")]
 #[test]
 fn tc_002_no_stated_obligation_leaves_the_entry_unbound() {
     // AC-3: ids unrelated to the symbol or analysisKind.
     // NFR-033: an id equal to the analysisKind still binds nothing.
-    for ids in [
-        ["FR-001-AC-1", "FR-002-AC-1"],
-        ["FR-001-AC-1", "consistency"],
-    ] {
+    let symbol = expected_symbol(SATISFIED);
+    let mismatched_ids = ["FR-001-AC-1", "FR-002-AC-1"];
+    assert!(
+        mismatched_ids.iter().all(|id| *id != symbol),
+        "the report symbol differs from every obligation id"
+    );
+    for ids in [mismatched_ids, ["FR-001-AC-1", "consistency"]] {
         let dir = repo();
         let mut body = request(dir.path(), "filament-analyze 0.1.0", SATISFIED);
         body["obligations"] = ids.iter().map(|id| obligation(id)).collect();
+        assert!(
+            body.get("discharges").is_none(),
+            "no --discharges was supplied"
+        );
         let payload = dispatch("evidence.record", &body, &RuntimeSettings::default())
             .unwrap()
             .payload;

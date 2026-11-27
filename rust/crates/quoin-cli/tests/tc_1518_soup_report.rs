@@ -434,7 +434,7 @@ fn absent_empty_and_stated_lists_render_not_stated_none_and_the_ids() {
     assert!(markdown.contains("- Support status: unknown"), "{markdown}");
 }
 
-#[trace("FR-144-AC-5", "NFR-030-AC-2")]
+#[trace("FR-144-AC-5", "NFR-030-AC-2", "NFR-030-M-3")]
 #[test]
 fn unmatched_advisories_and_unusable_scans_follow_the_rows_and_no_record_is_called_free() {
     let (repo, binding) = standard();
@@ -476,6 +476,49 @@ fn unmatched_advisories_and_unusable_scans_follow_the_rows_and_no_record_is_call
         .as_array()
         .unwrap();
     assert!(free.is_empty(), "{report}");
+}
+
+#[trace("NFR-030-AC-4")]
+#[test]
+fn failed_empty_and_idless_osv_reports_never_make_a_record_look_free_of_advisories() {
+    let reports = [
+        ("failed", "not JSON"),
+        ("empty", r#"{"results":[]}"#),
+        (
+            "idless",
+            r#"{"results":[{"packages":[{"package":{"purl":"pkg:npm/example@1.0.0"},"vulnerabilities":[{}],"groups":[]}]}]}"#,
+        ),
+    ];
+    for (suite, raw) in reports {
+        let adapter = select_finding_adapter(AdapterSelection {
+            adapter: None,
+            tool: Some("osv-scanner"),
+        })
+        .unwrap();
+        assert!(
+            adapter.run(raw, None).is_err(),
+            "{suite} report must be refused"
+        );
+
+        let repo = Repo::new();
+        repo.record("example", "pkg:npm/example@1.0.0", &[]);
+        let binding = repo.binding(&[]);
+        let report = report_json(&repo, &binding, &[]);
+        let osv = report["scans"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|scan| scan["tool"] == "osv-scanner")
+            .unwrap();
+        assert_eq!(osv["state"], "not run");
+        let record = row(&report, "pkg:npm/example@1.0.0");
+        assert_eq!(record["no_advisory_reported_by"], json!([]), "{suite}");
+        let markdown = text(&repo.report(&binding, &[]).stdout);
+        assert!(
+            markdown.contains("osv-scanner: not assessed (see Scans)"),
+            "{suite}: {markdown}"
+        );
+    }
 }
 
 #[trace("FR-144-AC-6")]
@@ -526,7 +569,80 @@ fn the_json_has_no_score_rank_class_or_percentage_key() {
     let mut found = Vec::new();
     keys(&report_json(&repo, &binding, &[]), &mut found);
     assert!(!found.is_empty());
+    // The report has a closed set of keys. A new field cannot emit a score,
+    // rank, or class under a less obvious name and slip past fragment checks.
+    const REPORT_KEYS: &[&str] = &[
+        "action_statement",
+        "advisory",
+        "advisories",
+        "approval_ref",
+        "as_of",
+        "assessed_at",
+        "assessed_by",
+        "attested_by",
+        "cargo_deny_policy_findings_read",
+        "components_evaluated",
+        "database",
+        "decision",
+        "diagnostics_not_read",
+        "disagrees_with",
+        "disposition_clause",
+        "disposition_scope",
+        "end_of_support",
+        "evidence_refs",
+        "findings",
+        "id",
+        "impact_statement",
+        "items",
+        "justification",
+        "known_anomalies",
+        "licence_policy_scan",
+        "message",
+        "no_advisory_reported_by",
+        "older_suites_not_read",
+        "origin",
+        "package",
+        "path",
+        "past_end_of_support",
+        "policy_findings",
+        "policy_status",
+        "purl",
+        "rationale",
+        "reason",
+        "resolution",
+        "rule_id",
+        "ruleset",
+        "rows",
+        "scan_timestamp",
+        "scans",
+        "serves",
+        "severity",
+        "source",
+        "source_ref",
+        "state",
+        "status",
+        "statement",
+        "support_disagreement",
+        "support_status",
+        "suite",
+        "suites",
+        "timestamp",
+        "tool",
+        "unmatched",
+        "unmatched_policy_findings",
+        "unreadable_scans",
+        "unresolved_advisory",
+        "unresolved_policy_finding",
+        "value",
+        "version",
+        "vex_statement",
+        "vex_statements",
+    ];
     for key in found {
+        assert!(
+            REPORT_KEYS.contains(&key.as_str()),
+            "unexpected report key: {key}"
+        );
         for banned in ["score", "rank", "class", "percent", "rating", "risk"] {
             assert!(!key.to_lowercase().contains(banned), "{key}");
         }
@@ -859,7 +975,7 @@ fn the_wall_clock_is_not_an_input_only_as_of_is() {
     assert_eq!(later.stdout, repo.report(&binding, &["--json"]).stdout);
 }
 
-#[trace("FR-144-AC-5", "NFR-030-AC-2")]
+#[trace("FR-144-AC-5", "NFR-030-AC-2", "NFR-030-M-3")]
 #[test]
 fn a_cargo_deny_log_refused_at_recording_leaves_the_scan_not_run_and_no_record_free() {
     let refused = std::fs::read_to_string(
@@ -905,28 +1021,31 @@ fn walk(value: &Value, found: &mut Vec<Value>) {
     }
 }
 
-#[trace("NFR-030-AC-1")]
+#[trace("NFR-030-AC-1", "NFR-030-M-1")]
 #[test]
 fn with_every_optional_input_absent_every_value_is_unknown_not_stated_or_an_input() {
     let repo = Repo::new();
     repo.record("a", "pkg:cargo/a@1.0.0", &[]);
     let binding = repo.binding(&[]);
     let report = report_json(&repo, &binding, &[]);
-    let row = row(&report, "pkg:cargo/a@1.0.0");
+    let mut row = row(&report, "pkg:cargo/a@1.0.0").clone();
+    for status in ["support_status", "end_of_support"] {
+        assert_eq!(row[status]["origin"], "none");
+        row[status].as_object_mut().unwrap().remove("origin");
+    }
     let inputs = [
         row["purl"].as_str().unwrap(),
         row["id"].as_str().unwrap(),
         row["path"].as_str().unwrap(),
     ];
     let mut leaves = Vec::new();
-    walk(row, &mut leaves);
+    walk(&row, &mut leaves);
     for leaf in leaves {
         match leaf {
             Value::String(word) => assert!(
                 [
                     "unknown",
                     "not stated",
-                    "none",
                     // No licence-policy scan is retained: the one status a row
                     // states, rather than an invented verdict.
                     "policy findings not assessed: licence-policy not run",

@@ -337,16 +337,32 @@ pub fn build_approved_claim_selection(
     }))
 }
 
+#[implements("FR-151-AC-10")]
 fn parse_differential_report_inner(
     raw: &str,
     run_context: Option<(&str, Option<&Value>)>,
 ) -> Result<AdapterResult, EvidenceError> {
+    parse_before_report_limit(raw, || parse_differential_report_contents(raw, run_context))
+}
+
+#[implements("FR-151-AC-10")]
+fn parse_before_report_limit<T>(
+    raw: &str,
+    parse: impl FnOnce() -> Result<T, EvidenceError>,
+) -> Result<T, EvidenceError> {
     if raw.len() > MAX_REPORT_BYTES {
         return Err(refuse(format!(
             "report is {} bytes, over the {MAX_REPORT_BYTES}-byte limit",
             raw.len()
         )));
     }
+    parse()
+}
+
+fn parse_differential_report_contents(
+    raw: &str,
+    run_context: Option<(&str, Option<&Value>)>,
+) -> Result<AdapterResult, EvidenceError> {
     validate_report_document(raw.as_bytes()).map_err(|error| refusal(raw, &error))?;
     require_canonical(raw)?;
     let report: Value = serde_json::from_str(raw)
@@ -594,4 +610,25 @@ fn valid_source(source: Option<&Value>) -> bool {
                 .iter()
                 .all(|member| point.get(*member).and_then(Value::as_u64).is_some())
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{MAX_REPORT_BYTES, parse_before_report_limit};
+    use ix_trace_rs::trace;
+    use std::cell::Cell;
+
+    #[trace("NFR-032-M-1")]
+    #[test]
+    fn oversized_report_is_refused_before_the_parser_receives_it() {
+        let input = " ".repeat(MAX_REPORT_BYTES + 1);
+        let parser_calls = Cell::new(0);
+        let result = parse_before_report_limit(&input, || {
+            parser_calls.set(parser_calls.get() + 1);
+            Ok::<(), super::EvidenceError>(())
+        });
+
+        assert!(result.is_err());
+        assert_eq!(parser_calls.get(), 0, "oversized bytes reached the parser");
+    }
 }
