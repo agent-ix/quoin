@@ -49,10 +49,25 @@ const AUTHORED: &str =
 
 fn verifier() -> PathBuf {
     let path = std::env::var_os("QUOIN_E2E_EA")
+        .filter(|path| !path.is_empty())
         .map(PathBuf::from)
-        .expect("QUOIN_E2E_EA must name the built Engineering Assurance executable");
+        .or_else(|| executable_on_path("engineering-assurance"))
+        .expect(
+            "QUOIN_E2E_EA is unset and engineering-assurance was not found on PATH; install it or set QUOIN_E2E_EA",
+        );
     assert!(path.is_absolute() && path.is_file(), "{}", path.display());
     path
+}
+
+fn executable_on_path(name: &str) -> Option<PathBuf> {
+    std::env::split_paths(&std::env::var_os("PATH")?)
+        .map(|directory| directory.join(name))
+        .find(|path| {
+            fs::metadata(path).is_ok_and(|metadata| {
+                metadata.is_file() && metadata.permissions().mode() & 0o111 != 0
+            })
+        })
+        .and_then(|path| fs::canonicalize(path).ok())
 }
 
 #[derive(Clone, Copy)]
