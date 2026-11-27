@@ -123,6 +123,21 @@ jobs:
           CLEAN_HOME="$(mktemp -d)"
           HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" module ensure-defaults > /dev/null
           HOME="$CLEAN_HOME" USERPROFILE="$CLEAN_HOME" IX_HOME="$CLEAN_HOME/.ix" "./release-smoke/$BINARY" catalog validate
+      - name: Run the Linux self-test or record not run
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          BINARY: release-smoke/${{ matrix.binary }}
+        run: |
+          set -euo pipefail
+          case "$TARGET" in
+            x86_64-unknown-linux-gnu|aarch64-unknown-linux-gnu)
+              "$BINARY" selftest --run --out "$RUNNER_TEMP/quoin-selftest-$TARGET.json"
+              ;;
+            *)
+              printf 'Quoin self-test: not run on %s (native self-tests are Linux-only).\n' "$TARGET" | tee -a "$GITHUB_STEP_SUMMARY"
+              ;;
+          esac
       - name: Prepare Quoin workflow smoke checker
         shell: bash
         run: |
