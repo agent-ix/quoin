@@ -388,6 +388,7 @@ fn trust(arguments: &ArgMatches) -> Result<Response, String> {
     })
 }
 
+#[implements("FR-048-AC-7")]
 fn record(arguments: &ArgMatches, operation: &str) -> Result<Response, String> {
     let document = json_input(&required(arguments, "input")?)?;
     let response = invoke(
@@ -403,7 +404,7 @@ fn record(arguments: &ArgMatches, operation: &str) -> Result<Response, String> {
             .and_then(serde_json::Value::as_object)
             .ok_or_else(|| format!("{operation} did not return record"))?;
         let id = record
-            .get("id")
+            .get("recordId")
             .and_then(serde_json::Value::as_str)
             .unwrap_or("");
         let path = payload
