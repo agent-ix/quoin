@@ -156,6 +156,17 @@ fn tc_1788_statement_reader_refuses_duplicate_and_unknown_members() {
     let mut unknown = statement.as_bytes().strip_suffix(b"}").unwrap().to_vec();
     unknown.extend_from_slice(b",\"unexpected\":true}");
     assert!(ProofIntegrityStatement::from_canonical_bytes(&unknown).is_err());
+
+    let canonical = String::from_utf8(statement.as_bytes().to_vec()).unwrap();
+    let multiple_proofs = canonical.replace(
+        "\"proof_id\":\"proof-1\"",
+        "\"proof_id\":\"proof-1\",\"proof_ids\":[\"proof-1\",\"proof-2\"]",
+    );
+    assert_ne!(multiple_proofs, canonical, "proof_id field is present");
+    assert!(
+        ProofIntegrityStatement::from_canonical_bytes(multiple_proofs.as_bytes()).is_err(),
+        "the statement wire format accepts exactly one proof id"
+    );
 }
 
 /// Provenance: PLAT-1801

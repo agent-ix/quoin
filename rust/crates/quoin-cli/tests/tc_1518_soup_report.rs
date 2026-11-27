@@ -569,7 +569,67 @@ fn the_json_has_no_score_rank_class_or_percentage_key() {
     let mut found = Vec::new();
     keys(&report_json(&repo, &binding, &[]), &mut found);
     assert!(!found.is_empty());
+    // The report has a closed set of keys. A new field cannot emit a score,
+    // rank, or class under a less obvious name and slip past fragment checks.
+    const REPORT_KEYS: &[&str] = &[
+        "advisories",
+        "approval_ref",
+        "as_of",
+        "attested_by",
+        "cargo_deny_policy_findings_read",
+        "database",
+        "decision",
+        "diagnostics_not_read",
+        "disagrees_with",
+        "disposition_clause",
+        "disposition_scope",
+        "end_of_support",
+        "findings",
+        "id",
+        "items",
+        "known_anomalies",
+        "licence_policy_scan",
+        "message",
+        "no_advisory_reported_by",
+        "older_suites_not_read",
+        "origin",
+        "package",
+        "path",
+        "past_end_of_support",
+        "policy_findings",
+        "policy_status",
+        "purl",
+        "reason",
+        "resolution",
+        "rule_id",
+        "rows",
+        "scan_timestamp",
+        "scans",
+        "severity",
+        "source",
+        "source_ref",
+        "state",
+        "statement",
+        "support_disagreement",
+        "support_status",
+        "suite",
+        "timestamp",
+        "tool",
+        "unmatched",
+        "unmatched_policy_findings",
+        "unreadable_scans",
+        "unresolved_advisory",
+        "unresolved_policy_finding",
+        "value",
+        "version",
+        "vex_statement",
+        "vex_statements",
+    ];
     for key in found {
+        assert!(
+            REPORT_KEYS.contains(&key.as_str()),
+            "unexpected report key: {key}"
+        );
         for banned in ["score", "rank", "class", "percent", "rating", "risk"] {
             assert!(!key.to_lowercase().contains(banned), "{key}");
         }
