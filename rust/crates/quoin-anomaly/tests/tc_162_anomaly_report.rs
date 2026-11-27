@@ -1227,20 +1227,63 @@ fn without_fail_on_there_is_no_gate_and_unassessed_anomalies_do_not_fail() {
     assert!(!keys(&json_of(&report)).contains("gate"));
 }
 
-/// The stem "accept" may appear only in cells copied from a record: the
-/// title, the assessment, the affected targets and the release rationale.
-fn assert_accept_only_in_copied_values(markdown: &str) {
+/// The stem "accept" may appear only in exact cells copied from a record:
+/// the title, assessment, affected targets and release rationale.
+fn assert_accept_only_in_copied_values(markdown: &str, report: &Report) {
+    let cell = |value: &str| value.replace('|', "\\|").replace(['\r', '\n'], " ");
+    let joined = |items: Vec<String>| {
+        if items.is_empty() {
+            "none".to_owned()
+        } else {
+            items.join("<br>")
+        }
+    };
+    let mut copied = BTreeSet::new();
+    for row in &report.anomalies {
+        copied.insert(cell(row.title.as_deref().unwrap_or("not stated")));
+        copied.insert(joined(
+            row.assessment
+                .iter()
+                .map(|entry| {
+                    cell(&format!(
+                        "{} {} {}: {}",
+                        entry.kind,
+                        entry.target.as_deref().unwrap_or("not stated"),
+                        entry.impact,
+                        entry.rationale,
+                    ))
+                })
+                .collect(),
+        ));
+        copied.insert(joined(
+            row.affected
+                .iter()
+                .map(|affected| {
+                    cell(&format!(
+                        "{} {} ({})",
+                        affected.kind, affected.target, affected.impact
+                    ))
+                })
+                .collect(),
+        ));
+        copied.insert(joined(
+            row.release_rationale
+                .iter()
+                .map(|entry| cell(&format!("{}: {}", entry.author, entry.rationale)))
+                .collect(),
+        ));
+    }
+
     for line in markdown.lines() {
-        let lower = line.to_lowercase();
-        if !lower.contains("accept") {
+        if !line.to_lowercase().contains("accept") {
             continue;
         }
         assert!(line.starts_with("| AN-"), "tool prose says accept: {line}");
-        for (index, cell) in line.trim_matches('|').split(" | ").enumerate() {
-            if !matches!(index, 1 | 8 | 9 | 10) {
+        for (index, output_cell) in line.trim_matches('|').split(" | ").enumerate() {
+            if output_cell.to_lowercase().contains("accept") {
                 assert!(
-                    !cell.to_lowercase().contains("accept"),
-                    "cell {index} is not copied from a record: {cell}"
+                    copied.contains(output_cell),
+                    "cell {index} is not an exact value copied from a record: {output_cell}"
                 );
             }
         }
@@ -1274,7 +1317,7 @@ fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
             markdown.to_lowercase().contains("accept"),
             "values are copied"
         );
-        assert_accept_only_in_copied_values(&markdown);
+        assert_accept_only_in_copied_values(&markdown, &report);
         let json = report.to_json().unwrap().to_lowercase();
         for key in ["score", "rank", "verdict", "grade", "recommend", "priority"] {
             assert!(!json.contains(&format!("\"{key}")), "{key}");
@@ -1286,7 +1329,7 @@ fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
     );
     let markdown = clean.to_markdown();
     assert!(markdown.contains("No anomaly fails the evaluated modes"));
-    assert_accept_only_in_copied_values(&markdown);
+    assert_accept_only_in_copied_values(&markdown, &clean);
 }
 
 #[trace("NFR-035-M-4")]
