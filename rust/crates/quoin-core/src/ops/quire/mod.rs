@@ -137,7 +137,7 @@ pub fn coverage(
 /// # Errors
 /// The same request and host errors as [`coverage`], plus an undeclared design
 /// relation, which is identified by the `design-matrix-failed` reason.
-#[implements("FR-165-AC-21")]
+#[implements("FR-165-AC-21", "FR-165-AC-22")]
 pub fn design_matrix(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,
@@ -177,11 +177,19 @@ pub fn design_matrix(
         .map(serde_json::to_value)
         .collect::<Result<Vec<_>, _>>()
         .map_err(|error| CoreError::new(CoreErrorCode::Io, error.to_string()))?;
+    let parented_target_groups = outcome
+        .report
+        .parented_target_groups
+        .iter()
+        .map(serde_json::to_value)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| CoreError::new(CoreErrorCode::Io, error.to_string()))?;
     ok(&DesignMatrixPayload {
         obligations: outcome.report.obligations.iter().map(obligation).collect(),
         diagnostics: outcome.report.diagnostics.iter().map(diagnostic).collect(),
         coverage_matrix,
         design_matrix_errors,
+        parented_target_groups,
         carried_vocabulary: outcome.report.carried_vocabulary,
     })
 }

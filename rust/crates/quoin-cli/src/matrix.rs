@@ -120,7 +120,7 @@ pub(crate) enum Built {
 /// Assemble the audit over `repo` and join it into the evidence-backed matrix.
 ///
 /// The one path `quoin matrix` and `quoin release snapshot` share (FR-115).
-#[implements("FR-027-AC-10", "FR-165-AC-21")]
+#[implements("FR-027-AC-10", "FR-165-AC-21", "FR-165-AC-22")]
 pub(crate) fn build(
     options: &AuditOptions,
     repo: &str,
@@ -137,7 +137,7 @@ pub(crate) fn build(
     )
 }
 
-#[implements("FR-027-AC-10", "FR-165-AC-21", "FR-115-AC-27")]
+#[implements("FR-027-AC-10", "FR-165-AC-21", "FR-165-AC-22", "FR-115-AC-27")]
 fn build_with_limit(
     options: &AuditOptions,
     repo: &str,
@@ -193,6 +193,14 @@ fn build_with_limit(
     }
     // Display the design rows from the same Quire result as the analysis items.
     request.insert("design_coverage".to_owned(), design_coverage);
+    request.insert(
+        "parented_target_groups".to_owned(),
+        audited
+            .coverage
+            .get("parented_target_groups")
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!([])),
+    );
     request.insert(
         "analysis_evidence".to_owned(),
         serde_json::json!({

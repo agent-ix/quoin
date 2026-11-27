@@ -3094,6 +3094,14 @@ dependencies = [
 [[package]]
 name = "quire-code-extraction"
 version = "0.1.0"
+source = "git+https://github.com/agent-ix/quire-rs?rev=12bacfb04838cd335f756f41a218862a0844c567#12bacfb04838cd335f756f41a218862a0844c567"
+dependencies = [
+ "quire-code-parse",
+]
+
+[[package]]
+name = "quire-code-extraction"
+version = "0.1.0"
 source = "git+https://github.com/agent-ix/quire-rs?rev=a31c3629276dba1966f88e698323d22038cdc551#a31c3629276dba1966f88e698323d22038cdc551"
 dependencies = [
  "quire-code-parse",
@@ -3124,6 +3132,29 @@ dependencies = [
 [[package]]
 name = "quire-rs"
 version = "0.63.5"
+source = "git+https://github.com/agent-ix/quire-rs?rev=12bacfb04838cd335f756f41a218862a0844c567#12bacfb04838cd335f756f41a218862a0844c567"
+dependencies = [
+ "agent-ix-semantic-schema",
+ "globset",
+ "ignore",
+ "indexmap",
+ "ix-trace-rs",
+ "jsonschema 0.56.0",
+ "loom",
+ "num-bigint",
+ "quire-code-extraction 0.1.0 (git+https://github.com/agent-ix/quire-rs?rev=12bacfb04838cd335f756f41a218862a0844c567)",
+ "rayon",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "uuid",
+ "yaml_serde",
+]
+
+[[package]]
+name = "quire-rs"
+version = "0.63.5"
 source = "git+https://github.com/agent-ix/quire-rs?rev=a31c3629276dba1966f88e698323d22038cdc551#a31c3629276dba1966f88e698323d22038cdc551"
 dependencies = [
  "agent-ix-semantic-schema",
@@ -3134,7 +3165,7 @@ dependencies = [
  "jsonschema 0.56.0",
  "loom",
  "num-bigint",
- "quire-code-extraction",
+ "quire-code-extraction 0.1.0 (git+https://github.com/agent-ix/quire-rs?rev=a31c3629276dba1966f88e698323d22038cdc551)",
  "rayon",
  "regex",
  "serde",
@@ -3365,7 +3396,7 @@ version = "0.31.1"
 dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
- "quire-rs",
+ "quire-rs 0.63.5 (git+https://github.com/agent-ix/quire-rs?rev=a31c3629276dba1966f88e698323d22038cdc551)",
  "quoin-anomaly",
  "quoin-assurance",
  "quoin-core",
@@ -3530,7 +3561,7 @@ version = "0.31.1"
 dependencies = [
  "ix-trace-rs",
  "quire-fixtures",
- "quire-rs",
+ "quire-rs 0.63.5 (git+https://github.com/agent-ix/quire-rs?rev=12bacfb04838cd335f756f41a218862a0844c567)",
  "quoin-auditor",
  "quoin-evidence",
  "quoin-finding-types",

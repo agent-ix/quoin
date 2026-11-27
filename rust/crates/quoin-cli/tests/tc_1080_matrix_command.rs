@@ -93,6 +93,45 @@ traceability:
         template: "#[trace({ids})]"
 "##;
 
+const PARENT_GROUP_MODULE: &str = r##"name: quoin-cli-parent-group-matrix-fixture
+version: 0.1.0
+description: Fixture module for parent-group matrix projection
+artifact_types:
+  - name: RoleSpec
+traceability:
+  trace_targets:
+    - name: role-rule
+      archetype: RoleSpec
+      section: Rules
+      id_column: ID
+    - name: role-evaluation
+      archetype: RoleSpec
+      section: Evaluations
+      id_column: ID
+      parent_target: role-rule
+      parent_id_column: Rule
+"##;
+
+const PARENT_GROUP_SPEC: &str = r"---
+id: RS
+type: RoleSpec
+---
+
+## Rules
+
+| ID | Rule |
+|---|---|
+| RS-R01 | Rule with evaluations |
+| RS-R02 | Rule without evaluations |
+
+## Evaluations
+
+| ID | Rule |
+|---|---|
+| RS-R01-E1 | RS-R01 |
+| RS-R01-E2 | RS-R01 |
+";
+
 const RECORD_KEYS_MODULE: &str = r##"name: quoin-cli-record-keys-fixture
 version: 0.1.0
 description: Fixture module for required-relation record keys
@@ -701,6 +740,32 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
             .any(|(id, summary)| id == "FR-001-AC-2" && summary.contains("no recorded run")),
         "the stale status must come from the auditor's missing-run check: {from_audit:?}"
     );
+}
+
+/// The public matrix preserves engine parent groups, including empty groups.
+#[trace("FR-165-AC-22")]
+#[test]
+fn tc_1080_214_matrix_json_exposes_parent_groups_and_empty_children() {
+    let fixture = repository(PARENT_GROUP_MODULE);
+    std::fs::remove_file(fixture.repo().join("spec/FR-001-example.md")).unwrap();
+    fixture.write("spec/roles.md", PARENT_GROUP_SPEC);
+
+    let matrix: Value =
+        serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    let groups = matrix["parented_target_groups"].as_array().unwrap();
+    let group = |parent_id: &str| {
+        groups
+            .iter()
+            .find(|group| group["parent_id"] == parent_id)
+            .unwrap()
+    };
+
+    assert_eq!(
+        group("RS-R01")["child_ids"],
+        serde_json::json!(["RS-R01-E1", "RS-R01-E2"])
+    );
+    assert_eq!(group("RS-R02")["child_ids"], serde_json::json!([]));
+    assert!(matrix["requirements"].is_array());
 }
 
 /// The retained runs reach `matrix.build` through the host: the run identity of

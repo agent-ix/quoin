@@ -18,9 +18,9 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# Use the merged quire-rs revision with partial design-matrix coverage for
-# dropped required relations (PLAT-1904). The version tracks the 0.63.2
-# package release; the commit pin selects the exact merged engine change.
+# Use the merged quire-rs revision with partial design-matrix coverage and
+# parent-target groups in the coverage report. The package version is unchanged;
+# the commit pin selects the exact engine API.
 #
 # Declared here rather than in `[workspace.dependencies]` because this crate is
 # the only consumer of the quire engine and the pin is the crate's own subject
@@ -38,7 +38,7 @@ ix-trace-rs = { workspace = true }
 quoin-jsonschema = { workspace = true }
 quoin-yaml = { workspace = true }
 rayon = { workspace = true }
-quire-rs = { version = "=0.63.5", git = "https://github.com/agent-ix/quire-rs", rev = "a31c3629276dba1966f88e698323d22038cdc551" }
+quire-rs = { version = "=0.63.5", git = "https://github.com/agent-ix/quire-rs", rev = "12bacfb04838cd335f756f41a218862a0844c567" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
