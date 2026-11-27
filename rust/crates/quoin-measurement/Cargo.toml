@@ -29,6 +29,7 @@ campaign = ["engineering-assurance/campaign"]
 # operational-evidence records each carry one EA `ClaimStrength` (PLAT-971)
 # rather than a local mirror enum.
 engineering-assurance = { workspace = true, features = ["measurement", "claim-strength"] }
+ix-trace-rs = { workspace = true }
 # The ONLY place canonical JSON, strict JSON parsing and durable store writes
 # come from. FR-100-CON-4 forbids a second implementation and `tc_468_boundary`
 # asserts over this crate's own sources that there is not one here.
@@ -57,7 +58,6 @@ thiserror = { workspace = true }
 tempfile = { workspace = true }
 
 [dev-dependencies]
-ix-trace-rs = { workspace = true }
 # Property tests over the verdict checker's estimator recomputation
 # (PLAT-961); the workspace pin.
 proptest = { workspace = true }
