@@ -673,7 +673,7 @@ fn tc_455_impact_gaps_and_open_unknowns_are_named_and_force_incomplete() {
 /// beside the reason they map to - including a kind this crate has never
 /// heard of, which maps to `audit_finding` and is still reported under its
 /// own spelling. The source report is not changed.
-#[trace("FR-065-AC-9")]
+#[trace("FR-065-AC-9", "FR-065-CON-2")]
 #[test]
 fn tc_455_audit_findings_are_retained_verbatim_beside_their_mapped_reason() {
     let mut input = base_input();
@@ -699,7 +699,12 @@ fn tc_455_audit_findings_are_retained_verbatim_beside_their_mapped_reason() {
         proof.audit_findings[0].obligation_id.as_str(),
         "FR-063-AC-1"
     );
-    assert!(proof.reasons.contains(&Reason::AuditFinding));
+    assert_eq!(
+        proof.reasons,
+        [Reason::AuditFinding],
+        "the mapped auditor finding is not replaced or suppressed by the healthy entry"
+    );
+    assert_eq!(proof.outcome, Outcome::Invalid);
 }
 
 /// Input and selection permutations emit byte-identical canonical receipts.
