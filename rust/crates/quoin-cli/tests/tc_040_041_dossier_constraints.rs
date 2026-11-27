@@ -91,6 +91,76 @@ fn safety_module() -> String {
         .to_owned()
 }
 
+fn policy_record(region: &str) -> String {
+    format!(
+        r#"---
+id: POL-1
+title: Policy
+type: acceptability_policy
+object: acceptability_policy
+---
+# Policy
+
+## Severity levels
+
+| Severity level |
+| --- |
+| serious |
+
+## Probability levels
+
+| Probability level |
+| --- |
+| likely |
+
+## Regions
+
+| Region | Outside acceptable |
+| --- | --- |
+| {region} | true |
+
+## Cells
+
+| Severity | Probability | Region |
+| --- | --- | --- |
+| serious | likely | {region} |
+
+## Properties
+
+| Field | Type | Multiplicity | Constraints |
+| --- | --- | --- | --- |
+| record_id | UUID | 1..1 | identity |
+"#
+    )
+}
+
+fn generated_risk_management_plan(region: &str) -> String {
+    let work = tempfile::tempdir().unwrap();
+    write_fixture(work.path(), &["FR-001"]);
+    fs::write(work.path().join("spec/POL-1.md"), policy_record(region)).unwrap();
+    let scope = repo(work.path());
+    let safety = safety_module();
+    let output = quoin(
+        work.path(),
+        &[
+            "dossier",
+            "generate",
+            "--version",
+            "1",
+            "--doc",
+            "risk-management-plan",
+            "--scope",
+            &scope,
+            "--module",
+            &scope,
+            "--module",
+            &safety,
+        ],
+    );
+    assert!(matches!(output.status.code(), Some(0 | 1)), "{output:?}");
+    fs::read_to_string(work.path().join("dossier/DOS-RMP.md")).unwrap()
+}
+
 fn values_after_field<'a>(document: &'a str, field: &str) -> impl Iterator<Item = &'a str> {
     document
         .lines()
@@ -156,42 +226,117 @@ fn selected_docs(root: &Path) -> [String; 3] {
         .map(|name| fs::read_to_string(root.join("dossier").join(format!("{name}.md"))).unwrap())
 }
 
-#[test]
-fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
-    let work = tempfile::tempdir().unwrap();
-    write_fixture(work.path(), &["FR-002", "FR-001"]);
-    let docs = selected_docs(work.path());
-    for (name, document) in ["SRS", "architecture", "trace matrix"]
-        .into_iter()
-        .zip(docs)
-    {
-        assert!(
-            values_after_field(&document, "Criticality: ").all(|value| value == "unassigned"),
-            "{name} rendered an unrecorded criticality: {document}"
-        );
-        assert!(
-            values_after_field(&document, "Software safety class: ")
-                .all(|value| value == "unassigned"),
-            "{name} rendered an unrecorded software safety class: {document}"
-        );
-        let cells: Vec<_> = table_cells(&document).collect();
+fn all_generated_docs(root: &Path) -> BTreeMap<String, String> {
+    let path = repo(root);
+    let output = quoin(
+        root,
+        &[
+            "dossier",
+            "generate",
+            "--version",
+            "1",
+            "--as-of",
+            "2026-11-27T00:00:00Z",
+            "--doc",
+            "srs",
+            "--doc",
+            "architecture",
+            "--doc",
+            "trace-matrix",
+            "--doc",
+            "rmm",
+            "--doc",
+            "verification-report",
+            "--doc",
+            "soup",
+            "--doc",
+            "anomalies",
+            "--doc",
+            "risk-management",
+            "--doc",
+            "risk-management-plan",
+            "--doc",
+            "release-record",
+            "--doc",
+            "threat-model",
+            "--doc",
+            "software-description",
+            "--doc",
+            "documentation-level-decision",
+            "--doc",
+            "software-design-specification",
+            "--doc",
+            "device-description",
+            "--doc",
+            "records-of-processing",
+            "--doc",
+            "vulnerability-management-plan",
+            "--scope",
+            &path,
+            "--module",
+            &path,
+        ],
+    );
+    assert!(matches!(output.status.code(), Some(0 | 1)), "{output:?}");
+    fs::read_dir(root.join("dossier"))
+        .unwrap()
+        .map(|entry| {
+            let path = entry.unwrap().path();
+            let id = path.file_stem().unwrap().to_string_lossy().into_owned();
+            (id, fs::read_to_string(path).unwrap())
+        })
+        .collect()
+}
+
+fn assert_no_unrecorded_dossier_values(documents: &BTreeMap<String, String>) {
+    assert!(!documents.is_empty(), "no dossier documents were generated");
+    for (name, document) in documents {
+        for (field, allowed) in [
+            (
+                "Criticality: ",
+                ["unassigned", "not stated", "unknown"].as_slice(),
+            ),
+            (
+                "Software safety class: ",
+                ["unassigned", "not stated", "unknown"].as_slice(),
+            ),
+            ("Risk: ", ["not stated", "unknown", "none"].as_slice()),
+            ("Compliance: ", ["not stated", "unknown", "none"].as_slice()),
+            (
+                "Acceptability: ",
+                ["not stated", "unknown", "none"].as_slice(),
+            ),
+        ] {
+            for value in values_after_field(document, field) {
+                assert!(
+                    allowed.contains(&value),
+                    "{name} rendered an unrecorded {field}{value}: {document}"
+                );
+            }
+        }
+        let cells: Vec<_> = table_cells(document).collect();
         for unsupported in ["high", "critical", "compliant", "acceptable"] {
             assert!(
                 !cells.contains(&unsupported),
-                "{name} rendered unsourced value {unsupported:?}: {document}"
+                "{name} rendered an unrecorded table value {unsupported:?}: {document}"
             );
         }
         assert!(
             !cells.iter().any(|cell| cell.starts_with("class-")),
-            "{name} rendered an unrecorded class: {document}"
+            "{name} rendered an unrecorded class in a table: {document}"
         );
-        if name == "SRS" || name == "trace matrix" {
-            assert!(
-                document.contains("Authored statement"),
-                "{name} omitted authored requirement text: {document}"
-            );
-        }
     }
+}
+
+#[trace("NFR-040-AC-3", "NFR-040-M-3")]
+#[test]
+fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
+    let work = tempfile::tempdir().unwrap();
+    write_fixture(work.path(), &["FR-002", "FR-001"]);
+    let documents = all_generated_docs(work.path());
+    assert_no_unrecorded_dossier_values(&documents);
+    assert!(documents["DOS-SRS"].contains("Authored statement"));
+    assert!(documents["DOS-TRACE"].contains("Authored statement"));
 }
 
 #[trace("NFR-040-AC-4")]
@@ -217,6 +362,7 @@ fn untimed_document_selection_writes_no_evaluation_time() {
     }
 }
 
+#[trace("NFR-041-AC-3", "NFR-041-M-3")]
 #[test]
 fn authored_requirement_bytes_are_preserved_and_change_only_the_srs_content() {
     let before = tempfile::tempdir().unwrap();
@@ -248,6 +394,15 @@ fn authored_requirement_bytes_are_preserved_and_change_only_the_srs_content() {
     assert!(after_docs[2].contains(changed_text));
     assert!(after_docs[0].contains("Authored statement for FR-002."));
     assert!(after_docs[2].contains("Authored statement for FR-002."));
+
+    let first_region = generated_risk_management_plan("unacceptable");
+    let changed_region = generated_risk_management_plan("review_required");
+    assert!(first_region.contains("unacceptable"), "{first_region}");
+    assert_eq!(
+        first_region.replace("unacceptable", "review_required"),
+        changed_region,
+        "changing the policy region must change only that source-authored region"
+    );
 }
 
 fn clause_binding(path: &Path, id: &str, clause: &str) {
@@ -260,6 +415,7 @@ fn clause_binding(path: &Path, id: &str, clause: &str) {
     .unwrap();
 }
 
+#[trace("NFR-041-AC-1", "NFR-041-M-1")]
 #[test]
 fn missing_values_remain_explicit_gaps_in_the_selected_m2_documents() {
     let work = tempfile::tempdir().unwrap();
@@ -279,6 +435,8 @@ fn missing_values_remain_explicit_gaps_in_the_selected_m2_documents() {
             "--doc",
             "soup",
             "--doc",
+            "anomalies",
+            "--doc",
             "risk-management",
             "--doc",
             "risk-management-plan",
@@ -296,6 +454,7 @@ fn missing_values_remain_explicit_gaps_in_the_selected_m2_documents() {
     let expected = [
         "DOS-VR",
         "DOS-SOUP",
+        "DOS-ANOM",
         "DOS-RISK",
         "DOS-RMP",
         "DOS-REL",
@@ -304,32 +463,75 @@ fn missing_values_remain_explicit_gaps_in_the_selected_m2_documents() {
     for id in expected {
         let markdown = fs::read_to_string(work.path().join("dossier").join(format!("{id}.md")))
             .unwrap_or_else(|error| panic!("{id} was not written: {error}"));
+        let relevant_fields: &[(&str, &[&str])] = match id {
+            "DOS-VR" => &[("Method: ", &["not stated", "unknown"])],
+            "DOS-SOUP" => &[
+                ("Support status: ", &["not stated", "unknown"]),
+                ("Safety impact: ", &["not stated", "unknown"]),
+            ],
+            "DOS-RISK" => &[
+                ("Policy region: ", &["not stated", "unknown"]),
+                ("Decision: ", &["not stated", "unknown", "undecided"]),
+            ],
+            "DOS-RMP" => &[("Policy region: ", &["not stated", "unknown"])],
+            "DOS-REL" => &[
+                ("Release verdict: ", &["not stated", "unknown"]),
+                ("Status: ", &["not_released", "not stated", "unknown"]),
+            ],
+            "DOS-ANOM" => &[],
+            "DOS-TRACE" => &[("Method: ", &["not stated", "unknown"])],
+            _ => unreachable!("unexpected M2 dossier {id}"),
+        };
+        for (field, allowed) in relevant_fields {
+            let values = values_after_field(&markdown, field).collect::<Vec<_>>();
+            assert!(
+                values.iter().all(|value| allowed.contains(value)),
+                "{id} rendered an unsupported {field} value: {values:?}\n{markdown}"
+            );
+        }
+        match id {
+            "DOS-VR" => assert!(
+                markdown.contains(
+                    "| FR-001-AC-1 | not stated | none | undischarged | not recorded | no run evidence |"
+                ),
+                "DOS-VR must bind the absent test method and evidence cells: {markdown}"
+            ),
+            "DOS-SOUP" => assert!(
+                markdown.contains("no --soup-binding was supplied"),
+                "DOS-SOUP must name the absent binding instead of supplying status values: {markdown}"
+            ),
+            "DOS-ANOM" => assert!(
+                markdown.contains("## Anomalies") && markdown.contains("## Gaps"),
+                "DOS-ANOM must retain its empty anomaly and gap sections: {markdown}"
+            ),
+            "DOS-RISK" => assert!(
+                markdown.contains("## Overall residual risk evaluation\n\nnone")
+                    && markdown.contains("no overall residual risk evaluation record"),
+                "DOS-RISK must show the absent decision source and named gap: {markdown}"
+            ),
+            "DOS-RMP" => assert!(
+                markdown.contains("## Acceptability policy\n\n## Gaps")
+                    && markdown.contains("no authored risk management plan record exists"),
+                "DOS-RMP must show the absent policy/plan and named gaps: {markdown}"
+            ),
+            "DOS-REL" => assert!(
+                markdown.contains("Status: not stated")
+                    && markdown.contains("no --release-verify result was supplied"),
+                "DOS-REL must retain the missing release status and named gap: {markdown}"
+            ),
+            "DOS-TRACE" => assert!(
+                markdown.contains("| FR-001-AC-1 | Authored statement for FR-001. | n/a | — | untagged | no run evidence | unassigned |"),
+                "DOS-TRACE must show no test method and no software safety class: {markdown}"
+            ),
+            _ => unreachable!("unexpected dossier id {id}"),
+        }
+        let cells: Vec<_> = table_cells(&markdown).collect();
         assert!(
-            markdown.contains("not stated")
-                || markdown.contains("unknown")
-                || markdown.contains("unassigned")
-                || markdown.contains("No authored")
-                || markdown.contains("no_")
-                || markdown.contains("no ")
-                || markdown.contains("## Gaps")
-                || markdown.contains("none"),
-            "{id} has no explicit missing-value representation: {markdown}"
+            !cells
+                .iter()
+                .any(|cell| ["supported", "acceptable", "accepted", "released"].contains(cell)),
+            "{id} rendered an unsupported decision or status cell: {markdown}"
         );
-        if id == "DOS-TRACE" {
-            assert!(!markdown.contains("| Test |"), "{markdown}");
-        }
-        for fabricated in [
-            "Method: Test",
-            "Support status: supported",
-            "Safety impact: acceptable",
-            "Policy region: acceptable",
-            "Decision: accepted",
-            "Risk acceptability: acceptable",
-            "Release verdict: accepted",
-            "Status: released",
-        ] {
-            assert!(!markdown.contains(fabricated), "{id}: {markdown}");
-        }
     }
     for id in expected {
         assert!(
@@ -341,6 +543,7 @@ fn missing_values_remain_explicit_gaps_in_the_selected_m2_documents() {
     }
 }
 
+#[trace("NFR-041-AC-4")]
 #[test]
 fn not_released_stays_not_released_and_undecided_risk_is_not_accepted() {
     let work = tempfile::tempdir().unwrap();
@@ -378,8 +581,47 @@ fn not_released_stays_not_released_and_undecided_risk_is_not_accepted() {
         ],
     );
     assert!(matches!(output.status.code(), Some(0 | 1)), "{output:?}");
-    let json_output = String::from_utf8_lossy(&output.stdout);
-    assert!(json_output.contains("incomplete"), "{json_output}");
+    let json_output: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let release_report = json_output["documents"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|document| document["id"] == "DOS-REL")
+        .unwrap();
+    assert_eq!(release_report["status"], "incomplete", "{json_output}");
+    let mut release_fields: Vec<_> = release_report
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    release_fields.sort_unstable();
+    assert_eq!(release_fields, ["gaps", "id", "kind", "path", "status"]);
+    assert!(
+        release_report["gaps"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|gap| {
+                gap["gap_kind"] == "release_not_verified"
+                    && gap["detail"].as_str().unwrap().contains("not_released")
+            })
+    );
+    let risk_report = json_output["documents"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|document| document["id"] == "DOS-RISK")
+        .unwrap();
+    assert_eq!(risk_report["status"], "incomplete", "{json_output}");
+    assert!(
+        !risk_report.to_string().contains("accepted"),
+        "{risk_report}"
+    );
+    assert!(
+        !risk_report.to_string().contains("acceptable"),
+        "{risk_report}"
+    );
     let release = fs::read_to_string(work.path().join("dossier/DOS-REL.md")).unwrap();
     assert!(release.contains("Status: not_released"), "{release}");
     assert!(!release.contains("Status: accepted"), "{release}");
