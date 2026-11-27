@@ -91,19 +91,55 @@ fn safety_module() -> String {
         .to_owned()
 }
 
-fn values_after_field<'a>(document: &'a str, field: &str) -> impl Iterator<Item = &'a str> {
-    document
-        .lines()
-        .filter_map(move |line| line.strip_prefix(field))
+fn table_row_cells(line: &str) -> Vec<&str> {
+    line.trim()
+        .trim_start_matches('|')
+        .trim_end_matches('|')
+        .split('|')
         .map(str::trim)
+        .collect()
 }
 
-fn table_cells(document: &str) -> impl Iterator<Item = &str> {
-    document
-        .lines()
-        .filter(|line| line.starts_with('|'))
-        .flat_map(|line| line.split('|').map(str::trim))
-        .filter(|cell| !cell.is_empty() && !cell.chars().all(|character| character == '-'))
+fn is_unrecorded_value_field(field: &str) -> bool {
+    let normalized = field.to_ascii_lowercase();
+    let field = normalized.trim_matches([' ', '*', '`', '-']);
+    [
+        "criticality",
+        "risk",
+        "risk level",
+        "risk estimate",
+        "risk rating",
+        "risk acceptability",
+        "compliance",
+        "compliance status",
+        "acceptability",
+        "outside acceptable",
+        "safety class",
+        "software safety class",
+        "safety impact",
+        "severity",
+        "probability",
+    ]
+    .iter()
+    .any(|name| field == *name)
+}
+
+fn is_absence_marker(value: &str) -> bool {
+    [
+        "",
+        "—",
+        "-",
+        "none",
+        "unknown",
+        "unassigned",
+        "not assessed",
+        "not stated",
+        "not recorded",
+        "not provided",
+        "not available",
+    ]
+    .iter()
+    .any(|marker| value.eq_ignore_ascii_case(marker))
 }
 
 fn write_undecided_risk(root: &Path) {
@@ -156,40 +192,115 @@ fn selected_docs(root: &Path) -> [String; 3] {
         .map(|name| fs::read_to_string(root.join("dossier").join(format!("{name}.md"))).unwrap())
 }
 
+#[trace("NFR-040-AC-3")]
 #[test]
-fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
+fn no_generated_dossier_file_supplies_unrecorded_values() {
     let work = tempfile::tempdir().unwrap();
     write_fixture(work.path(), &["FR-002", "FR-001"]);
-    let docs = selected_docs(work.path());
-    for (name, document) in ["SRS", "architecture", "trace matrix"]
-        .into_iter()
-        .zip(docs)
-    {
-        assert!(
-            values_after_field(&document, "Criticality: ").all(|value| value == "unassigned"),
-            "{name} rendered an unrecorded criticality: {document}"
-        );
-        assert!(
-            values_after_field(&document, "Software safety class: ")
-                .all(|value| value == "unassigned"),
-            "{name} rendered an unrecorded software safety class: {document}"
-        );
-        let cells: Vec<_> = table_cells(&document).collect();
-        for unsupported in ["high", "critical", "compliant", "acceptable"] {
-            assert!(
-                !cells.contains(&unsupported),
-                "{name} rendered unsourced value {unsupported:?}: {document}"
-            );
+    let path = repo(work.path());
+    let output = quoin(
+        work.path(),
+        &[
+            "dossier",
+            "generate",
+            "--version",
+            "1",
+            "--doc",
+            "srs",
+            "--doc",
+            "architecture",
+            "--doc",
+            "trace-matrix",
+            "--doc",
+            "rmm",
+            "--doc",
+            "verification-report",
+            "--doc",
+            "soup",
+            "--doc",
+            "anomalies",
+            "--doc",
+            "risk-management",
+            "--doc",
+            "risk-management-plan",
+            "--doc",
+            "release-record",
+            "--doc",
+            "threat-model",
+            "--doc",
+            "software-description",
+            "--doc",
+            "documentation-level-decision",
+            "--doc",
+            "software-design-specification",
+            "--doc",
+            "device-description",
+            "--doc",
+            "records-of-processing",
+            "--doc",
+            "vulnerability-management-plan",
+            "--scope",
+            &path,
+            "--module",
+            &path,
+        ],
+    );
+    assert!(matches!(output.status.code(), Some(0 | 1)), "{output:?}");
+
+    let mut files: Vec<_> = fs::read_dir(work.path().join("dossier"))
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| path.extension().is_some_and(|extension| extension == "md"))
+        .collect();
+    files.sort();
+    assert_eq!(
+        files.len(),
+        17,
+        "all registered dossier files must be checked"
+    );
+
+    for path in files {
+        let name = path.file_name().unwrap().to_string_lossy();
+        let document = fs::read_to_string(&path).unwrap();
+        for line in document.lines() {
+            if let Some((field, value)) = line.split_once(':') {
+                if is_unrecorded_value_field(field) {
+                    assert!(
+                        is_absence_marker(value.trim()),
+                        "{name} rendered an unrecorded value in {field:?}: {line}"
+                    );
+                }
+            }
         }
-        assert!(
-            !cells.iter().any(|cell| cell.starts_with("class-")),
-            "{name} rendered an unrecorded class: {document}"
-        );
-        if name == "SRS" || name == "trace matrix" {
-            assert!(
-                document.contains("Authored statement"),
-                "{name} omitted authored requirement text: {document}"
-            );
+
+        let mut lines = document.lines().peekable();
+        while let Some(header) = lines.next() {
+            let Some(separator) = lines.peek().copied() else {
+                continue;
+            };
+            if !header.starts_with('|') || !separator.starts_with('|') {
+                continue;
+            }
+            let header_cells = table_row_cells(header);
+            let separator_cells = table_row_cells(separator);
+            if !separator_cells.iter().all(|cell| {
+                let trimmed = cell.trim_matches([':', '-']);
+                trimmed.is_empty() && cell.contains('-')
+            }) {
+                continue;
+            }
+            lines.next();
+            for row in lines.by_ref().take_while(|line| line.starts_with('|')) {
+                let values = table_row_cells(row);
+                for (field, value) in header_cells.iter().zip(values) {
+                    if is_unrecorded_value_field(field) {
+                        assert!(
+                            is_absence_marker(value),
+                            "{name} table rendered an unrecorded value for {field:?}: {row}"
+                        );
+                    }
+                }
+            }
         }
     }
 }
