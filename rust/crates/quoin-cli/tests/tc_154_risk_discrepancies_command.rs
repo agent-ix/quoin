@@ -16,6 +16,8 @@
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+#[cfg(feature = "nfr-100-performance-test")]
+use std::time::{Duration, Instant};
 
 use ix_trace_rs::trace;
 
@@ -36,7 +38,9 @@ fn module_root() -> PathBuf {
 }
 
 fn discrepancies(scope: &Path, extra: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_quoin"))
+    let executable =
+        std::env::var_os("QUOIN_BIN").unwrap_or_else(|| env!("CARGO_BIN_EXE_quoin").into());
+    Command::new(executable)
         .args(["risk", "discrepancies"])
         .arg(scope)
         .arg("--module")
@@ -82,6 +86,38 @@ fn with_a_finding(dir: &Path) {
         "relationships:\n  - target: EST-1\n    type: estimate\n  - target: POL-1\n    type: references\n",
         "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| accepted | r | Pat |\n",
     );
+}
+
+/// One accepted risk per file, all outside the policy's acceptable region.
+#[cfg(feature = "nfr-100-performance-test")]
+fn with_5000_residual_risks(dir: &Path) {
+    put(
+        dir,
+        "POL-1",
+        "acceptability_policy",
+        "",
+        "## Severity levels\n\n| Severity level |\n| --- |\n| Serious |\n\n\
+         ## Probability levels\n\n| Probability level |\n| --- |\n| Likely |\n\n\
+         ## Regions\n\n| Region | Outside acceptable |\n| --- | --- |\n| High | true |\n\n\
+         ## Cells\n\n| Severity | Probability | Region |\n| --- | --- | --- |\n| Serious | Likely | High |\n",
+    );
+    put(
+        dir,
+        "EST-1",
+        "risk_estimate",
+        "phase: post_control\n",
+        "## Judgement\n\n| Severity | Probability | Rationale |\n| --- | --- | --- |\n| Serious | Likely | why |\n\n\
+         ## Provenance\n\n| Asserted by | Asserted at |\n| --- | --- |\n| Pat | 2026-01-01 |\n",
+    );
+    for index in 0..5_000 {
+        put(
+            dir,
+            &format!("RR-{index:05}"),
+            "residual_risk",
+            "relationships:\n  - target: EST-1\n    type: estimate\n  - target: POL-1\n    type: references\n",
+            "## Determination\n\n| Decision | Rationale | Decided by |\n| --- | --- | --- |\n| accepted | r | Pat |\n",
+        );
+    }
 }
 
 fn tree(dir: &Path) -> Vec<(PathBuf, Vec<u8>)> {
@@ -163,4 +199,38 @@ fn a_missing_scope_and_a_malformed_record_exit_2_with_and_without_strict() {
         assert!(out.stdout.is_empty());
         assert!(String::from_utf8_lossy(&out.stderr).contains("RR-2.md"));
     }
+}
+
+#[trace("NFR-100-AC-3", "NFR-100-M-3")]
+#[cfg(feature = "nfr-100-performance-test")]
+#[test]
+fn one_discrepancy_run_over_5000_residual_risks_finishes_within_10_seconds() {
+    let dir = tempfile::tempdir().unwrap();
+    with_5000_residual_risks(dir.path());
+
+    let started = Instant::now();
+    let out = discrepancies(dir.path(), &["--no-project-config", "--format", "json"]);
+    let elapsed = started.elapsed();
+    eprintln!("one 5,000-record discrepancy run took {elapsed:?}");
+
+    assert_eq!(out.status.code(), Some(0));
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let findings = report["findings"].as_array().unwrap();
+    assert_eq!(
+        findings.len(),
+        5_000,
+        "the measured report includes every record"
+    );
+    assert_eq!(
+        findings.first().unwrap()["refs"]["residual_risk"],
+        "RR-00000"
+    );
+    assert_eq!(
+        findings.last().unwrap()["refs"]["residual_risk"],
+        "RR-04999"
+    );
+    assert!(
+        elapsed <= Duration::from_secs(10),
+        "one run over 5,000 residual-risk records took {elapsed:?}, above 10 seconds"
+    );
 }

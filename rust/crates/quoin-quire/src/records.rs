@@ -14,16 +14,23 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
+use ix_trace_rs::implements;
 use quire_rs::{
     Diagnostic, Registry, WalkOptions, load_repo_with, parse_table, sections,
     validate_document_in_registry,
 };
+use rayon::prelude::*;
+use rayon::{ThreadPool, ThreadPoolBuilder};
 use serde_json::{Map, Value};
 
 use crate::error::{Error, Result};
 use crate::ids::ScopeRoot;
 use crate::modules::ModuleSelection;
+
+const PARALLEL_READ_THRESHOLD: usize = 64;
+const MAX_READ_WORKERS: usize = 4;
 
 /// Whether a document passes the engine's validation for its type.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -119,6 +126,7 @@ pub struct Corpus {
 /// [`Error::ModuleLoad`] or [`Error::ModuleSetEmpty`] when the modules do not
 /// load, and [`Error::ArchetypeUnknown`] when a checked type has no registered
 /// archetype.
+#[implements("NFR-100-AC-3")]
 pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -> Result<Corpus> {
     let root = ScopeRoot::open(scope)?;
     let registry = selection.resolve(&root, &mut Vec::new())?;
@@ -152,59 +160,97 @@ pub fn read(scope: &Path, selection: &ModuleSelection, checked_types: &[&str]) -
     )?);
     malformed.sort();
     malformed.dedup();
-    let mut documents = Vec::new();
-    for found in &loaded.documents {
-        let Some(frontmatter) = found.frontmatter() else {
-            continue;
-        };
-        let Some(kind) = frontmatter.get("type").and_then(Value::as_str) else {
-            continue;
-        };
-        if found.id.is_empty() {
-            continue;
-        }
-        let contract = if checked_types.contains(&kind) {
-            check(&registry, found, kind)?
+    let read_document =
+        |found: &quire_rs::LoadedDocument| read_document(found, &registry, checked_types);
+    let results: Vec<Result<Option<Document>>> =
+        if loaded.documents.len() >= PARALLEL_READ_THRESHOLD {
+            if let Some(pool) = validation_pool() {
+                pool.install(|| loaded.documents.par_iter().map(read_document).collect())
+            } else {
+                loaded.documents.iter().map(read_document).collect()
+            }
         } else {
-            Contract::NotChecked
+            loaded.documents.iter().map(read_document).collect()
         };
-        let body = found.body();
-        let parsed = sections(body, Some(2));
-        let section_text = parsed
-            .iter()
-            .map(|section| (section.heading.clone(), section.content.clone()))
-            .collect();
-        let tables = parsed
-            .into_iter()
-            .filter_map(|section| {
-                let table = parse_table(&section.content)?;
-                Some((
-                    section.heading.clone(),
-                    Table {
-                        headers: table.headers,
-                        rows: table.rows,
-                    },
-                ))
-            })
-            .collect();
-        documents.push(Document {
-            path: found.path.clone(),
-            id: found.id.clone(),
-            kind: kind.to_owned(),
-            frontmatter: frontmatter.clone(),
-            edges: relationships(frontmatter),
-            tables,
-            sections: section_text,
-            raw: found.raw().to_owned(),
-            contract,
-        });
-    }
+    let mut documents: Vec<Document> = results
+        .into_iter()
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect();
     documents.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(Corpus {
         documents,
         unreadable,
         malformed,
     })
+}
+
+/// A small, process-local pool bounds CPU use and avoids creating workers for
+/// the many small scopes. If the host cannot create the pool, the caller keeps
+/// the same deterministic serial path.
+fn validation_pool() -> Option<&'static ThreadPool> {
+    static POOL: OnceLock<Option<ThreadPool>> = OnceLock::new();
+    POOL.get_or_init(|| {
+        let workers = std::thread::available_parallelism()
+            .map_or(1, std::num::NonZeroUsize::get)
+            .min(MAX_READ_WORKERS);
+        (workers > 1)
+            .then(|| ThreadPoolBuilder::new().num_threads(workers).build().ok())
+            .flatten()
+    })
+    .as_ref()
+}
+
+/// Validate and materialize one engine-loaded document.
+fn read_document(
+    found: &quire_rs::LoadedDocument,
+    registry: &Registry,
+    checked_types: &[&str],
+) -> Result<Option<Document>> {
+    let Some(frontmatter) = found.frontmatter() else {
+        return Ok(None);
+    };
+    let Some(kind) = frontmatter.get("type").and_then(Value::as_str) else {
+        return Ok(None);
+    };
+    if found.id.is_empty() {
+        return Ok(None);
+    }
+    let contract = if checked_types.contains(&kind) {
+        check(registry, found, kind)?
+    } else {
+        Contract::NotChecked
+    };
+    let parsed = sections(found.body(), Some(2));
+    let section_text = parsed
+        .iter()
+        .map(|section| (section.heading.clone(), section.content.clone()))
+        .collect();
+    let tables = parsed
+        .into_iter()
+        .filter_map(|section| {
+            let table = parse_table(&section.content)?;
+            Some((
+                section.heading.clone(),
+                Table {
+                    headers: table.headers,
+                    rows: table.rows,
+                },
+            ))
+        })
+        .collect();
+    Ok(Some(Document {
+        path: found.path.clone(),
+        id: found.id.clone(),
+        kind: kind.to_owned(),
+        frontmatter: frontmatter.clone(),
+        edges: relationships(frontmatter),
+        tables,
+        sections: section_text,
+        raw: found.raw().to_owned(),
+        contract,
+    }))
 }
 
 /// Find parsed records with no usable type, or whose checked type's contract
