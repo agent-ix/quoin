@@ -139,6 +139,30 @@ struct RunRecord {
     #[serde(default)]
     external_tools: Vec<ExternalToolEvidence>,
     retained_location: Option<String>,
+    #[serde(default)]
+    run_environment: Option<RunEnvironment>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct RunEnvironment {
+    checkouts: Vec<CheckoutObservation>,
+    temporary_directory: TemporaryDirectoryObservation,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct CheckoutObservation {
+    identity: String,
+    revision: Option<String>,
+    resolved_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+struct TemporaryDirectoryObservation {
+    resolved_path: Option<String>,
+    writable: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -230,6 +254,7 @@ struct ToolRun {
     suite: String,
     timestamp: String,
     retained_location: String,
+    run_environment: Option<RunEnvironment>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -682,6 +707,8 @@ fn read_run_records(paths: &[PathBuf]) -> Result<Vec<RunRecord>, String> {
 }
 
 #[implements("FR-217-AC-1")]
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 #[implements("FR-218-AC-1")]
 #[implements("FR-218-AC-3")]
 fn summarize_runs(
@@ -696,6 +723,39 @@ fn summarize_runs(
         .map(|item| item.tool.clone())
         .collect::<BTreeSet<_>>();
     for record in records {
+        match record.run_environment.as_ref() {
+            None => reasons.push(format!("run environment not provided for {}", record.tool)),
+            Some(environment) => {
+                for identity in [
+                    "agent-ix/spec-objects-safety",
+                    "agent-ix/spec-objects-security",
+                ] {
+                    let checkout = environment
+                        .checkouts
+                        .iter()
+                        .find(|checkout| checkout.identity == identity);
+                    if checkout.is_none() {
+                        reasons.push(format!(
+                            "run environment missing checkout {identity} for {}",
+                            record.tool
+                        ));
+                    } else if checkout.is_some_and(|checkout| {
+                        checkout.revision.is_none() || checkout.resolved_path.is_none()
+                    }) {
+                        reasons.push(format!(
+                            "run environment checkout {identity} unavailable for {}",
+                            record.tool
+                        ));
+                    }
+                }
+                if environment.temporary_directory.resolved_path.is_none() {
+                    reasons.push(format!(
+                        "temporary directory path not provided for {}",
+                        record.tool
+                    ));
+                }
+            }
+        }
         let version = record.tool_version.clone().unwrap_or_else(|| {
             reasons.push(format!("missing tool version for {}", record.tool));
             "not provided".to_owned()
@@ -723,6 +783,7 @@ fn summarize_runs(
                 .retained_location
                 .clone()
                 .unwrap_or_else(|| "not stated".to_owned()),
+            run_environment: record.run_environment.clone(),
         });
         required_tools.remove(&record.tool);
         for case in &record.results {
@@ -1158,6 +1219,7 @@ fn external_tool_report(
 #[implements("FR-217-AC-12")]
 fn render_markdown(report: &ValidationReport) -> String {
     let mut lines = render_tool_section(report);
+    append_run_environments(report, &mut lines);
     append_intended_use(report, &mut lines);
     append_results(report, &mut lines);
     append_coverage(report, &mut lines);
@@ -1166,6 +1228,55 @@ fn render_markdown(report: &ValidationReport) -> String {
     append_incomplete_reasons(report, &mut lines);
     append_signoff(&mut lines);
     lines.join("\n")
+}
+
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
+fn append_run_environments(report: &ValidationReport, lines: &mut Vec<String>) {
+    lines.extend([
+        String::new(),
+        "## Run environments".to_owned(),
+        String::new(),
+    ]);
+    for tool in &report.tools {
+        lines.push(format!("### {}", cell(&tool.name)));
+        let Some(environment) = &tool.run_environment else {
+            lines.push("not provided".to_owned());
+            continue;
+        };
+        lines.extend([
+            String::new(),
+            "| Checkout | Revision | Resolved path |".to_owned(),
+            "| --- | --- | --- |".to_owned(),
+        ]);
+        for checkout in &environment.checkouts {
+            lines.push(format!(
+                "| {} | {} | {} |",
+                cell(&checkout.identity),
+                checkout
+                    .revision
+                    .as_deref()
+                    .map(cell)
+                    .unwrap_or_else(|| "unavailable".to_owned()),
+                checkout
+                    .resolved_path
+                    .as_deref()
+                    .map(cell)
+                    .unwrap_or_else(|| "unavailable".to_owned())
+            ));
+        }
+        lines.push(format!(
+            "Temporary directory: {}; writable when suite began: `{}`",
+            environment
+                .temporary_directory
+                .resolved_path
+                .as_deref()
+                .map(cell)
+                .unwrap_or_else(|| "unavailable".to_owned()),
+            environment.temporary_directory.writable
+        ));
+        lines.push(String::new());
+    }
 }
 
 #[implements("FR-217-AC-1")]
@@ -1662,6 +1773,24 @@ mod tests {
             },
             "externalTools": [],
             "retainedLocation": format!("spec/evidence/runs/{tool}/run.json"),
+            "runEnvironment": {
+                "checkouts": [
+                    {
+                        "identity": "agent-ix/spec-objects-safety",
+                        "revision": "safety-revision",
+                        "resolvedPath": "/workspace/spec-objects-safety"
+                    },
+                    {
+                        "identity": "agent-ix/spec-objects-security",
+                        "revision": "security-revision",
+                        "resolvedPath": "/workspace/spec-objects-security"
+                    }
+                ],
+                "temporaryDirectory": {
+                    "resolvedPath": "/tmp/quoin-suite",
+                    "writable": true
+                }
+            },
         })
     }
 
