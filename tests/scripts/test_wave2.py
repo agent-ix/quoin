@@ -86,7 +86,6 @@ fn another_ignored_test() {}
         self.assertEqual(trace_ids["sacm-published-metamodel"], ["FR-226-AC-11"])
         self.assertEqual(trace_ids["sacm-assurance-forge-interop"], ["FR-226-AC-12"])
 
-    @pytest.mark.trace("NFR-042-M-1")
     def test_unknown_mutation_outcomes_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "outcomes.json"
@@ -98,7 +97,6 @@ fn another_ignored_test() {}
             with self.assertRaisesRegex(ValueError, "unrecognized summary"):
                 behavioral_mutation_test.raw_counts(path)
 
-    @pytest.mark.trace("NFR-042-M-1")
     def test_empty_mutation_outcomes_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "outcomes.json"
@@ -106,7 +104,6 @@ fn another_ignored_test() {}
             with self.assertRaisesRegex(ValueError, "no outcome rows"):
                 behavioral_mutation_test.raw_counts(path)
 
-    @pytest.mark.trace("NFR-042-M-1")
     def test_operator_mutant_with_null_function_and_span_is_retained(self) -> None:
         outcome = {
             "scenario": {
@@ -134,6 +131,25 @@ fn another_ignored_test() {}
             behavioral_mutation_test.mutant_details(outcome),
             {"file": "src/kernel.rs", "function": None, "line": None, "mutation": "operator_mutant"},
         )
+
+    def test_non_object_mutation_document_fails_closed(self) -> None:
+        for document in ("null", "[]"):
+            with self.subTest(document=document), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "outcomes.json"
+                path.write_text(document, encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "root is not an object"):
+                    behavioral_mutation_test.raw_counts(path)
+
+    def test_non_string_mutant_summary_fails_closed(self) -> None:
+        for summary in ([], {}):
+            with self.subTest(summary=summary), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "outcomes.json"
+                path.write_text(
+                    json.dumps({"outcomes": [{"scenario": {"Mutant": {}}, "summary": summary}]}),
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(ValueError, "summary is not a string"):
+                    behavioral_mutation_test.raw_counts(path)
 
     def test_record_failure_keeps_the_real_tool_lane_failed(self) -> None:
         captured: list[list[dict]] = []

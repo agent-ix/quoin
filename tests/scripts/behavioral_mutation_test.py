@@ -34,16 +34,26 @@ def adjacent_checkout(env: dict[str, str], variable: str, checkout: str, marker:
             return
 
 
-def raw_counts(path: Path) -> tuple[dict[str, int], bool]:
+def raw_outcomes(path: Path) -> list[dict]:
     document = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(document, dict):
+        raise ValueError("cargo-mutants outcomes.json root is not an object")
     outcomes = document.get("outcomes")
     if not isinstance(outcomes, list) or not outcomes:
         raise ValueError("cargo-mutants outcomes.json has no outcome rows")
-    counts = {"killed": 0, "survived": 0, "unviable": 0}
-    baseline_failed = False
     for index, outcome in enumerate(outcomes):
         if not isinstance(outcome, dict):
             raise ValueError(f"cargo-mutants outcome row {index} is not an object")
+        if not isinstance(outcome.get("summary"), str):
+            raise ValueError(f"cargo-mutants outcome row {index} summary is not a string")
+    return outcomes
+
+
+def raw_counts(path: Path) -> tuple[dict[str, int], bool]:
+    outcomes = raw_outcomes(path)
+    counts = {"killed": 0, "survived": 0, "unviable": 0}
+    baseline_failed = False
+    for index, outcome in enumerate(outcomes):
         summary = outcome.get("summary")
         if outcome.get("scenario") == "Baseline":
             if summary != "Success":
@@ -63,11 +73,8 @@ def raw_counts(path: Path) -> tuple[dict[str, int], bool]:
 
 
 def raw_survivors(path: Path) -> list[dict]:
-    document = json.loads(path.read_text(encoding="utf-8"))
     survivors = []
-    for outcome in document.get("outcomes", []):
-        if not isinstance(outcome, dict):
-            continue
+    for outcome in raw_outcomes(path):
         if outcome.get("summary") not in {"MissedMutant", "Timeout"}:
             continue
         details = mutant_details(outcome)
@@ -165,10 +172,7 @@ def main() -> int:
             record_entry["survivors"] = survivors[:25]
         entries.append(record_entry)
         failed |= run_failed
-        raw = json.loads(outcomes.read_text(encoding="utf-8"))
-        for item in raw.get("outcomes", []):
-            if not isinstance(item, dict):
-                continue
+        for item in raw_outcomes(outcomes):
             if item.get("summary") not in {"MissedMutant", "Timeout"}:
                 continue
             details = mutant_details(item)
