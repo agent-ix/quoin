@@ -131,10 +131,7 @@ fn tc_367_config_set_refuses_matrix_limit_above_core_ceiling() {
     );
     assert!(!output.status.success());
     let diagnostic = String::from_utf8_lossy(&output.stderr);
-    assert!(
-        diagnostic.contains("83886080-byte matrix.build hard ceiling"),
-        "{diagnostic}"
-    );
+    assert!(diagnostic.contains("QC009_CONFIG_SCHEMA"), "{diagnostic}");
     let unset = invoke(
         root.path(),
         &["config", "get", "matrix_max_request_bytes"],

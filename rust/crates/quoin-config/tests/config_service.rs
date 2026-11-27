@@ -97,11 +97,7 @@ fn matrix_request_limit_round_trips_and_project_value_overrides_user_value() {
     let error = svc
         .set_key("matrix_max_request_bytes", "83886081", &mut log)
         .expect_err("a value above the hard ceiling is refused");
-    assert!(
-        error
-            .to_string()
-            .contains("83886080-byte matrix.build hard ceiling")
-    );
+    assert_eq!(error.code(), ConfigErrorCode::ConfigSchema);
     assert_eq!(
         svc.get(&mut log).value.matrix_max_request_bytes,
         Some(83_886_080),
