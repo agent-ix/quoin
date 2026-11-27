@@ -18,8 +18,6 @@
 
 use std::collections::BTreeSet;
 
-use ix_trace_rs::trace;
-
 use super::context::Context;
 use super::help_tree::CommandHelp;
 use super::{Probed, text};
@@ -259,7 +257,6 @@ fn surfaced(cx: &Context, command: &CommandHelp, mode: &Mode) -> bool {
 /// A successful response with empty stdout is still an invalid ix-flow result.
 /// This single-command probe keeps that empty-success assertion deterministic;
 /// the population test below exercises the full command-by-mode product.
-#[trace("FR-131-AC-10", "NFR-007-M-1")]
 #[test]
 fn tc_3004_empty_success_is_refused_with_no_stdout() {
     let cx = Context::new();
