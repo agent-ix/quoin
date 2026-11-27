@@ -303,7 +303,7 @@ mod tests {
 
     use super::{command, org_environment, quote, types};
 
-    #[trace("FR-025", "FR-062")]
+    #[trace("FR-025", "FR-062", "FR-001-AC-2")]
     #[test]
     fn tc_373_743_write_preserves_positional_and_repeatable_type_grammar() {
         let matches = command()
@@ -329,6 +329,35 @@ mod tests {
             Some("acme")
         );
         assert!(matches.get_flag("json"));
+    }
+
+    #[trace("FR-001-AC-1", "FR-001-AC-4")]
+    #[test]
+    fn tc_1915_value_flags_accept_both_forms_and_repeated_targets_keep_order() {
+        let equals = command()
+            .try_get_matches_from(["write", "--org=agent-ix"])
+            .expect("equals-form value parses");
+        let spaced = command()
+            .try_get_matches_from(["write", "--org", "agent-ix"])
+            .expect("separate-token value parses");
+        assert_eq!(
+            equals.get_one::<String>("org").map(String::as_str),
+            Some("agent-ix")
+        );
+        assert_eq!(
+            spaced.get_one::<String>("org").map(String::as_str),
+            Some("agent-ix")
+        );
+
+        let flow = crate::flow::command("review")
+            .try_get_matches_from(["review", "--target", "first.md", "--target", "second.md"])
+            .expect("repeated workflow targets parse");
+        let targets: Vec<&str> = flow
+            .get_many::<String>("target")
+            .expect("the target flag accumulates")
+            .map(String::as_str)
+            .collect();
+        assert_eq!(targets, ["first.md", "second.md"]);
     }
 
     #[trace("FR-025", "FR-015-AC-2", "FR-015-AC-3")]

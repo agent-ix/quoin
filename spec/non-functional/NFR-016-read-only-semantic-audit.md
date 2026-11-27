@@ -22,8 +22,8 @@ relationships:
 > output is deleted by quoin#654, so the thing it constrained no longer exists
 > and nothing surviving inherits the obligation.
 >
-> The text below is retained unchanged. It describes what was required, not what
-> is required.
+> The metric definitions below are retained for provenance. Their methods are marked
+> `Withdrawn` so the computed matrix matches this disposition.
 
 ## Statement
 
@@ -41,9 +41,9 @@ registries, schemas, skeletons, generated packages, runtime behavior, persistenc
 
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Writes outside the configured audit output directory | 0 | 0 | Test |
-| Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Test |
-| Major-interference recommendation advanced without its named gate | 0 | 0 | Inspection |
+| Writes outside the configured audit output directory | 0 | 0 | Withdrawn |
+| Production source, module manifest, schema, skeleton, registry, generated package, migration, or consumer contract files changed | 0 | 0 | Withdrawn |
+| Major-interference recommendation advanced without its named gate | 0 | 0 | Withdrawn |
 
 ## Verification
 

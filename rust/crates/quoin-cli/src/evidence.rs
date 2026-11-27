@@ -8,6 +8,7 @@ use std::io::Read as _;
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
+use semver::Version;
 use time::OffsetDateTime;
 
 use crate::core_runtime::invoke;
@@ -133,8 +134,11 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     }
 }
 
+#[implements("FR-030-AC-17")]
 #[implements("FR-030-AC-28")]
 fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
+    let tool = required(arguments, "tool")?;
+    validate_tool_identity(&tool)?;
     let repo = required(arguments, "repo")?;
     let modules = arguments
         .get_one::<String>("module")
@@ -174,7 +178,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
     let response = invoke(
         "evidence.record",
         &serde_json::json!({
-            "repo": repo, "suite": required(arguments, "suite")?, "tool": required(arguments, "tool")?,
+            "repo": repo, "suite": required(arguments, "suite")?, "tool": tool,
             "kind": arguments.get_one::<String>("kind"), "lineage": lineage, "timestamp": timestamp, "adapter": arguments.get_one::<String>("adapter"), "policy": policy,
             "results": results, "discharges": discharges, "obligations": coverage.payload.get("obligations").cloned().unwrap_or_else(|| serde_json::json!([])),
             "run_kind": arguments.get_one::<String>("run-kind"), "formal_rule_selection": formal_rule_selection,
@@ -224,6 +228,22 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
             _ => Err("evidence.record returned an unknown payload kind".to_owned()),
         }
     })
+}
+
+#[implements("FR-030-AC-17")]
+fn validate_tool_identity(value: &str) -> Result<(), String> {
+    let Some((name, version)) = value.rsplit_once(' ') else {
+        return Err("--tool must name a tool followed by an exact semantic version".to_owned());
+    };
+    if name.trim().is_empty() || name.trim() != name {
+        return Err("--tool must name a tool followed by an exact semantic version".to_owned());
+    }
+    let parsed = Version::parse(version)
+        .map_err(|_| "--tool must name a tool followed by an exact semantic version".to_owned())?;
+    if parsed.to_string() != version {
+        return Err("--tool must name a tool followed by an exact semantic version".to_owned());
+    }
+    Ok(())
 }
 
 fn read_formal_rule_selection(arguments: &ArgMatches) -> Result<Option<serde_json::Value>, String> {

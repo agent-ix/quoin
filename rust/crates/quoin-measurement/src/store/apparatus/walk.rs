@@ -295,6 +295,7 @@ mod tests {
     use std::path::Path;
 
     use engineering_assurance::measurement::ApparatusPath;
+    use ix_trace_rs::trace;
 
     use super::super::{
         LIMITS, Limits, MAX_PROTECTED_FILES, MAX_TOTAL_PROTECTED_FILES, MAX_WALKED_DIRECTORIES,
@@ -350,6 +351,7 @@ mod tests {
         }
     }
 
+    #[trace("FR-110-AC-9")]
     #[test]
     fn descend_matches_each_name_exactly() {
         let entry = ApparatusPath::new("harness/answers.json").unwrap();
@@ -377,6 +379,7 @@ mod tests {
         assert_eq!(kind, Kind::File);
     }
 
+    #[trace("FR-110-AC-9")]
     #[test]
     fn a_set_past_the_limit_is_too_large() {
         assert_eq!(MAX_PROTECTED_FILES, 50_000);
