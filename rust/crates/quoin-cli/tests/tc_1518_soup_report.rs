@@ -1553,7 +1553,6 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
 }
 
 #[test]
-#[trace("NFR-030-M-4")]
 fn authored_vex_statuses_are_copied_without_derivation_from_resolution() {
     let repo = Repo::new();
     let authored = [

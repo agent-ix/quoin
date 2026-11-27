@@ -243,7 +243,7 @@ fn purl_components_follow_type_definitions_and_bom_matches_schema() {
     assert_matches_cyclonedx_17_schema(&result);
 }
 
-#[trace("FR-156-AC-2")]
+#[trace("FR-156-AC-2", "NFR-030-M-4")]
 #[test]
 fn four_statuses_map_to_cyclonedx_analysis_and_version_status() {
     let fixture = Fixture::new();
