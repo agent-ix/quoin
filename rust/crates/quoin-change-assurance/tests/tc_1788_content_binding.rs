@@ -67,7 +67,7 @@ fn corrupted() -> Vec<u8> {
 }
 
 /// The statement binds exact canonical attestation bytes and exact output bytes.
-#[trace("FR-210-AC-1", "FR-210-CON-3")]
+#[trace("FR-210-AC-1")]
 #[test]
 fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
     let attestation = ProofAttestation::from_json(&json(&attestation_text())).unwrap();
@@ -132,7 +132,7 @@ fn tc_1788_proof_integrity_statement_binds_the_selected_exact_bytes() {
 }
 
 /// Provenance: PLAT-1801
-#[trace("FR-210-AC-1")]
+#[trace("FR-210-AC-1", "FR-210-CON-3")]
 #[test]
 fn tc_1788_statement_reader_refuses_duplicate_and_unknown_members() {
     let attestation = ProofAttestation::from_json(&json(&attestation_text())).unwrap();
