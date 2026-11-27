@@ -7,9 +7,11 @@ To export a signed GSN case, run these commands from its project repository root
 
 ## Before you start
 
-Run these commands from the project repository root. Install Quoin 0.37.0,
-Engineering Assurance 0.10.1, Git with SSH signing support, Python 3, and
-`rfc8785` 0.1.4. The project must already produce a valid GSN case with
+Run these commands from the project repository root. Use a Quoin build whose
+`quoin assurance --help` lists `--case-approval-tag`,
+`--case-approval-verifier`, and `--case-approval-allowed-signers`. Install
+Engineering Assurance, Git with SSH signing support, Python 3, and `rfc8785`
+0.1.4. The project must already produce a valid GSN case with
 `quoin assurance --gsn`. Use one terminal so the digest variable remains set.
 
 ## Procedure
