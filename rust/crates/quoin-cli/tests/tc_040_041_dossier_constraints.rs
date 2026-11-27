@@ -589,7 +589,19 @@ fn not_released_stays_not_released_and_undecided_risk_is_not_accepted() {
         .find(|document| document["id"] == "DOS-REL")
         .unwrap();
     assert_eq!(release_report["status"], "incomplete", "{json_output}");
-    assert!(!release_report["gaps"].as_array().unwrap().is_empty());
+    assert!(release_report["gaps"].as_array().unwrap().iter().any(|gap| {
+        gap["gap_kind"] == "release_not_verified"
+            && gap["detail"].as_str().unwrap().contains("not_released")
+    }));
+    let risk_report = json_output["documents"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|document| document["id"] == "DOS-RISK")
+        .unwrap();
+    assert_eq!(risk_report["status"], "incomplete", "{json_output}");
+    assert!(!risk_report.to_string().contains("accepted"), "{risk_report}");
+    assert!(!risk_report.to_string().contains("acceptable"), "{risk_report}");
     let release = fs::read_to_string(work.path().join("dossier/DOS-REL.md")).unwrap();
     assert!(release.contains("Status: not_released"), "{release}");
     assert!(!release.contains("Status: accepted"), "{release}");
