@@ -12,12 +12,9 @@ relationships:
 ## Description
 
 The CLI SHALL print its own version in response to the `version` command, the
-`--version` flag, or the `-v` flag. The version SHALL be the value baked at build
-time from `git describe` — a bare tag for a clean release (e.g. `0.5.2`), a
-commits-ahead suffix otherwise (e.g. `0.5.1-3-gabc123`) — and SHALL fall
-back to the package's `package.json` `version` field when no build-time value is
-present (dev, test, or no-git builds), raising an error when that fallback version
-is missing or not a string.
+`--version` flag, or the `-v` flag. A native build SHALL bake a usable version
+from `git describe --tags`, removing its leading `v`; when Git metadata is
+unavailable or has no usable tag, the build SHALL use Cargo's package version.
 
 ## Inputs
 
@@ -30,15 +27,11 @@ is missing or not a string.
 
 ## Behavior
 
-- The CLI SHALL prefer the build-time baked version (`git describe --tags`, leading
-  `v` stripped) when it is a non-empty string. It SHALL NOT use `--dirty`, since the
-  release pipeline stamps `package.json` before building and would otherwise mislabel
-  a clean release as `-dirty`.
-- The CLI SHALL otherwise resolve its `package.json` relative to the installed
-  package and read the `version` field.
+- The native build SHALL prefer a non-empty `git describe --tags` result, with a
+  leading `v` removed and no dirty marker.
+- The native build SHALL use Cargo's package version when Git metadata is
+  unavailable or the Git result is empty.
 - The CLI SHALL print the resolved version and return before any other dispatch.
-- The CLI SHALL raise an explicit error when, on the fallback path, the `version`
-  field is absent or is not a string.
 
 ## Acceptance Criteria
 
@@ -46,8 +39,8 @@ is missing or not a string.
 | ----------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | FR-002-AC-1 | `version`, `--version`, and `-v` each print the package version                                       | Test (`quoin-cli` `src/main.rs` :: `tc_373_version_requests_keep_the_bare_native_version_surface`) |
 | FR-002-AC-2 | The reported value is a non-empty string                                                              | Test (`quoin-cli` `src/main.rs` :: `tc_373_version_requests_keep_the_bare_native_version_surface`) |
-| FR-002-AC-3 | A missing or non-string version field raises an error                                                 | No native test cited (PLAT-1275)  |
-| FR-002-AC-4 | A non-empty baked version is reported verbatim; an empty one falls back to the `package.json` version | No native test cited (PLAT-1275)              |
+| FR-002-AC-3 | When Git metadata is unavailable or has no usable tag, the native build uses Cargo's package version. | Inspection |
+| FR-002-AC-4 | A non-empty `git describe --tags` version is baked without a leading `v` or dirty marker, and the CLI prints that value verbatim. | Test |
 
 ## Dependencies
 
