@@ -356,6 +356,7 @@ mod tests {
         let generated = render(
             &MatrixOutput {
                 requirements: vec![],
+                parented_target_groups: vec![],
                 reason: Some("no selected criteria".to_owned()),
                 unclassified: None,
             },
