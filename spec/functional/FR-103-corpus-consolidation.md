@@ -11,11 +11,12 @@ relationships:
 
 ## Description
 
-Withdrawn: Quoin no longer owns a corpus-accounting or source-selection
-subsystem. The one-shot corpus-measurement subsystem was disposed of under
-[#388](https://github.com/agent-ix/quoin/issues/388), and the accepted corpus
-is owned by `agent-ix/qa-corpus`; this repository has no `corpus/` submodule or
-gitlink. The retained read-only boundary is specified by FR-100-CON-3.
+The corpus-accounting and source-selection consolidation is withdrawn: Quoin
+no longer owns that subsystem. The one-shot corpus-measurement subsystem was
+disposed of under [#388](https://github.com/agent-ix/quoin/issues/388), and the
+accepted corpus is owned by `agent-ix/qa-corpus`; this repository has no
+`corpus/` submodule or gitlink. The retained read-only boundary is specified by
+FR-100-CON-3.
 
 ## Inputs
 
@@ -40,9 +41,7 @@ None: no corpus measurement or consolidation runs in this repository.
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-Historical disposition: FR-103-CON-1 constrained the one-shot consolidation,
-which was disposed of before any accepted-corpus tree was changed. The active
-read-only requirement is FR-100-CON-3. The retired identifier is not reused.
+| FR-103-CON-1 | Quoin SHALL NOT implement corpus accounting or select a corpus source; any future capability requires a new requirement and ownership ruling. | Responsibility | Inspection |
 
 ## Acceptance Criteria
 
