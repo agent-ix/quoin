@@ -1201,6 +1201,45 @@ fn listing(dir: &Path) -> Vec<String> {
     found
 }
 
+struct ReadOnlyTrees(Vec<(PathBuf, std::fs::Permissions)>);
+
+impl ReadOnlyTrees {
+    fn new(roots: &[&Path]) -> Self {
+        let mut paths = Vec::new();
+        let mut pending = roots
+            .iter()
+            .map(|root| root.to_path_buf())
+            .collect::<Vec<_>>();
+        while let Some(path) = pending.pop() {
+            paths.push(path.clone());
+            if path.is_dir() {
+                for entry in std::fs::read_dir(&path).unwrap() {
+                    let entry = entry.unwrap();
+                    pending.push(entry.path());
+                }
+            }
+        }
+        let originals = paths
+            .iter()
+            .map(|path| (path.clone(), std::fs::metadata(path).unwrap().permissions()))
+            .collect::<Vec<_>>();
+        for path in paths.iter().rev() {
+            let mut permissions = std::fs::metadata(path).unwrap().permissions();
+            permissions.set_readonly(true);
+            std::fs::set_permissions(path, permissions).unwrap();
+        }
+        Self(originals)
+    }
+}
+
+impl Drop for ReadOnlyTrees {
+    fn drop(&mut self) {
+        for (path, permissions) in &self.0 {
+            let _ = std::fs::set_permissions(path, permissions.clone());
+        }
+    }
+}
+
 #[trace("FR-173-AC-8", "NFR-038-AC-4", "NFR-038-M-4")]
 #[test]
 fn tc_173_a_run_writes_no_file() {
@@ -1208,10 +1247,14 @@ fn tc_173_a_run_writes_no_file() {
         &two_clauses(),
         &[("A.md", control("CTRL-A", Some("effective"), &[(SET, "C1")]))],
     );
-    let before = listing(world.dir.path());
+    let before_repo = listing(world.dir.path());
+    let before_home = listing(world.home.path());
+    let _read_only = ReadOnlyTrees::new(&[world.dir.path(), world.home.path()]);
     let output = world.facts_with(&["--repo", world.dir.path().to_str().unwrap()]);
     assert!(output.status.success(), "{output:?}");
-    assert_eq!(before, listing(world.dir.path()));
+    drop(_read_only);
+    assert_eq!(before_repo, listing(world.dir.path()));
+    assert_eq!(before_home, listing(world.home.path()));
 }
 
 #[trace("FR-173-AC-5")]
