@@ -337,6 +337,7 @@ pub fn build_approved_claim_selection(
     }))
 }
 
+#[implements("FR-151-AC-10")]
 fn parse_differential_report_inner(
     raw: &str,
     run_context: Option<(&str, Option<&Value>)>,
@@ -344,6 +345,7 @@ fn parse_differential_report_inner(
     parse_before_report_limit(raw, || parse_differential_report_contents(raw, run_context))
 }
 
+#[implements("FR-151-AC-10")]
 fn parse_before_report_limit<T>(
     raw: &str,
     parse: impl FnOnce() -> Result<T, EvidenceError>,
