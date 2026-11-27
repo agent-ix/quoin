@@ -498,7 +498,7 @@ mod tests {
                 .contains("| Review field reports | Quarterly review |")
         );
         assert!(!output.body.contains("No authored plan record exists."));
-        assert!(output.gaps.is_empty());
+        assert_eq!(output.gaps, [] as [crate::gap::Gap; 0]);
     }
 
     #[trace("FR-200-AC-8")]

@@ -654,7 +654,10 @@ mod tests {
     fn tc_1492_002_a_module_without_licensed_text_has_no_restricted_set() {
         let scratch = Scratch::new("tc-1492-002");
         let root = write_module(&scratch, &[("a", "none"), ("b", "original")]);
-        assert!(restricted_clause_sets(&root).expect("loads").is_empty());
+        assert_eq!(
+            restricted_clause_sets(&root).expect("loads"),
+            [] as [quire_rs::RestrictedClauseSet; 0]
+        );
     }
 
     #[trace("FR-137-AC-8")]
@@ -689,10 +692,9 @@ mod tests {
         )
         .expect("manifest");
         let root = ModuleRoot::open(scratch.path()).expect("root");
-        assert!(
-            restricted_clause_sets(&root)
-                .expect("no clause sets declared")
-                .is_empty()
+        assert_eq!(
+            restricted_clause_sets(&root).expect("no clause sets declared"),
+            [] as [quire_rs::RestrictedClauseSet; 0]
         );
     }
 

@@ -762,7 +762,7 @@ fn tc_plat_1794_record_intake_refuses_dirty_ids_and_writes_healthy_run_scan_and_
     };
     let mut store = MemoryEvidence::new();
     assert!(write_scan(&mut store, &invalid_scan).is_err());
-    assert!(store.paths().is_empty());
+    assert_eq!(store.paths(), [] as [&str; 0]);
 
     let invalid_mock = MockInspectionRecord {
         schema_version: STORE_SCHEMA_VERSION,
@@ -778,7 +778,7 @@ fn tc_plat_1794_record_intake_refuses_dirty_ids_and_writes_healthy_run_scan_and_
         }],
     };
     assert!(write_mock_inspection(&mut store, &invalid_mock).is_err());
-    assert!(store.paths().is_empty());
+    assert_eq!(store.paths(), [] as [&str; 0]);
 
     let valid_run = run(
         "SUITE-1794",
@@ -882,17 +882,15 @@ fn tc_plat_1794_scan_and_mock_readers_refuse_extra_fields_and_wrong_types() {
         .unwrap();
 
     let mut skipped = Vec::new();
-    assert!(
-        read_scans(&store, &suite("SUITE-1794"), &mut skipped)
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        read_scans(&store, &suite("SUITE-1794"), &mut skipped).unwrap(),
+        [] as [quoin_evidence::types::FindingRecord; 0]
     );
     assert_eq!(skipped.len(), 1);
     skipped.clear();
-    assert!(
-        read_mock_inspections(&store, &suite("SUITE-1794"), &mut skipped)
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        read_mock_inspections(&store, &suite("SUITE-1794"), &mut skipped).unwrap(),
+        [] as [quoin_evidence::types::MockInspectionRecord; 0]
     );
     assert_eq!(skipped.len(), 1);
 }
@@ -928,7 +926,7 @@ fn tc_plat_1794_mixed_precision_latest_and_gc_follow_the_parsed_instant() {
             .timestamp,
         later.timestamp
     );
-    assert!(skipped.is_empty());
+    assert_eq!(skipped, [] as [std::string::String; 0]);
 
     let deleted = gc(&mut store, false, &mut skipped).unwrap();
     assert_eq!(deleted, [earlier_path]);
@@ -1001,7 +999,10 @@ fn tc_plat_1794_disappeared_newest_record_is_reported_and_blocks_fallback_and_gc
     assert_eq!(skipped, std::slice::from_ref(&missing_path));
 
     skipped.clear();
-    assert!(gc(&mut store, false, &mut skipped).unwrap().is_empty());
+    assert_eq!(
+        gc(&mut store, false, &mut skipped).unwrap(),
+        [] as [std::string::String; 0]
+    );
     assert_eq!(skipped, [missing_path]);
     assert!(
         store
@@ -1039,7 +1040,10 @@ fn tc_plat_1794_invalid_utf8_records_are_reported_and_do_not_abort_read_gc_or_tr
     );
     assert_eq!(skipped, [corrupt_path]);
     skipped.clear();
-    assert!(gc(&mut store, false, &mut skipped).unwrap().is_empty());
+    assert_eq!(
+        gc(&mut store, false, &mut skipped).unwrap(),
+        [] as [std::string::String; 0]
+    );
     assert_eq!(skipped, [corrupt_path]);
     assert!(store.inner.read(&valid_path).unwrap().is_some());
 

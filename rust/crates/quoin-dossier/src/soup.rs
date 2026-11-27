@@ -53,7 +53,7 @@ impl Generator for SoupGenerator {
                     .collect::<Vec<_>>()
                     .join(" | ")
             );
-            let component = row.cells.first().map(String::as_str).unwrap_or_default();
+            let component = row.cells.first().map_or_default(String::as_str);
             for finding in row.unresolved_findings {
                 gaps.push(Gap::new(
                     GapKind::SoupUnresolvedAdvisory,

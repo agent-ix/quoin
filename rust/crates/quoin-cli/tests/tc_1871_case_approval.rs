@@ -451,7 +451,7 @@ fn sacm_case_approval_uses_dedicated_inputs_and_preserves_missing_claimed_time()
         serde_json::from_str::<Value>(&success(&no_tag)).unwrap(),
         unsigned
     );
-    assert!(no_tag.stderr.is_empty());
+    assert_eq!(no_tag.stderr, [] as [u8; 0]);
     assert!(!calls.exists());
     without_approval(
         &fixture.output(

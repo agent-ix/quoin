@@ -424,7 +424,7 @@ mod tests {
         )];
         let generated = render(&documents);
         assert!(generated.body.contains("| StR-1-VC-1 | validated |"));
-        assert!(generated.gaps.is_empty());
+        assert_eq!(generated.gaps, [] as [crate::gap::Gap; 0]);
     }
 
     #[test]
@@ -475,7 +475,7 @@ mod tests {
         let lines: Vec<_> = generated.body.lines().collect();
         assert!(lines.contains(&"Criticality: high"));
         assert!(lines.contains(&"Software safety class: class-2"));
-        assert!(generated.gaps.is_empty());
+        assert_eq!(generated.gaps, [] as [crate::gap::Gap; 0]);
     }
 
     #[trace("FR-192-AC-8", "FR-192-AC-9")]

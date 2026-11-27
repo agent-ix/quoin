@@ -1111,7 +1111,7 @@ fn tc_211_the_approval_subject_operation_names_the_record_and_its_digest() {
         &json!({"binding": discharge_binding(), "fact": absent}),
     );
     assert_eq!(refused.status, 3, "{}", refused.stderr);
-    assert!(refused.stdout.is_empty());
+    assert_eq!(refused.stdout, "");
 }
 
 fn customer_artifact(id: &str) -> Value {

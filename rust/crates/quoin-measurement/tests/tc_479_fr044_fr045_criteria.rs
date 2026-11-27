@@ -1302,7 +1302,10 @@ fn tc_164_002_cross_profile_comparison_needs_the_plans_permission() {
 
     // Same profile on both sides raises nothing.
     let same = compare_measurement_collections(&before, &before, &[]).expect("compares");
-    assert!(same[0].reasons.is_empty());
+    assert_eq!(
+        same[0].reasons,
+        [] as [quoin_measurement::types::comparison::ComparisonReason; 0]
+    );
 }
 
 /// The portfolio comparison applies the same rule, reading the repository's

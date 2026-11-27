@@ -293,7 +293,7 @@ fn tc_001_agreement_refuted_is_one_fail_entry() {
 #[test]
 fn tc_001_disagreement_is_no_entry_and_one_named_unrepresented_result() {
     let result = accepted(DISAGREEMENT);
-    assert!(result.entries.is_empty());
+    assert_eq!(result.entries, [] as [quoin_evidence::RunEntry; 0]);
     let unrepresented = result.unrepresented.unwrap();
     assert_eq!(unrepresented.len(), 1);
     assert_eq!(unrepresented[0].symbol, "consistency");

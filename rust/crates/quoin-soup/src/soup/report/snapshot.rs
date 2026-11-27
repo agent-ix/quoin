@@ -162,8 +162,7 @@ fn refused(input: &'static str, stop: Stop) -> SoupFailure {
                 .diagnostics
                 .into_iter()
                 .next()
-                .map(|diagnostic| (diagnostic.code, diagnostic.message))
-                .unwrap_or_default();
+                .map_or_default(|diagnostic| (diagnostic.code, diagnostic.message));
             SoupFailure::Refused {
                 input,
                 code,
@@ -239,7 +238,7 @@ fn section(report: &Report) -> Result<SoupSection, SoupFailure> {
 
 /// A member of the report's row JSON, read as the closed type.
 fn member(full: &mut Value, name: &str) -> Result<Resolved, SoupFailure> {
-    let value = full.get_mut(name).map(Value::take).unwrap_or_default();
+    let value = full.get_mut(name).map_or_default(Value::take);
     serde_json::from_value(value)
         .map_err(|error| SoupFailure::Failed(format!("the SOUP row's {name} is {error}")))
 }

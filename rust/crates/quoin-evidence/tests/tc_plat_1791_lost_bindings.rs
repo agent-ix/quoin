@@ -290,7 +290,7 @@ fn a_retry_after_an_interrupted_recording_binds_once_and_leaves_one_run() {
 
     // Replaying a completed recording changes nothing.
     let again = record_run(&mut restarted, &req, &obligations).unwrap();
-    assert!(again.bound.is_empty());
+    assert_eq!(again.bound, [] as [quoin_evidence::ObligationId; 0]);
     assert_eq!(read_bindings(&restarted).unwrap().bindings.len(), 1);
     assert_eq!(restarted.list_files("runs/SUITE-A").unwrap().len(), 1);
 }
@@ -356,7 +356,10 @@ fn gc_leaves_a_retirement_record_naming_what_it_deleted() {
         gc(&mut store, true, &mut Vec::new()).unwrap(),
         std::slice::from_ref(&old_path)
     );
-    assert!(store.list_files("retired").unwrap().is_empty());
+    assert_eq!(
+        store.list_files("retired").unwrap(),
+        [] as [std::string::String; 0]
+    );
     assert!(store.read(&old_path).unwrap().is_some());
 
     let deleted = gc(&mut store, false, &mut Vec::new()).unwrap();
@@ -379,7 +382,10 @@ fn gc_leaves_a_retirement_record_naming_what_it_deleted() {
     assert_eq!(retired["passed"], 0);
 
     // Nothing left to collect: no second log, and the first is untouched.
-    assert!(gc(&mut store, false, &mut Vec::new()).unwrap().is_empty());
+    assert_eq!(
+        gc(&mut store, false, &mut Vec::new()).unwrap(),
+        [] as [std::string::String; 0]
+    );
     assert_eq!(store.list_files("retired").unwrap().len(), 1);
 }
 
@@ -411,7 +417,10 @@ fn gc_keeps_a_record_it_cannot_read() {
         .write("runs/SUITE-A/corrupt.json", b"{ not json")
         .unwrap();
 
-    assert!(gc(&mut store, false, &mut Vec::new()).unwrap().is_empty());
+    assert_eq!(
+        gc(&mut store, false, &mut Vec::new()).unwrap(),
+        [] as [std::string::String; 0]
+    );
     assert!(
         store.read("runs/SUITE-A/corrupt.json").unwrap().is_some(),
         "gc deleted a record it could not read"

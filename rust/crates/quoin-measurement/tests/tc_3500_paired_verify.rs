@@ -131,7 +131,7 @@ fn tc_3500_equal_runs_accept_and_differing_runs_reject() {
     let same = run("b", &[("r1", 3.0), ("r2", 4.0)]);
     let clean = decide(&plans, &[&first, &same]);
     assert_eq!(clean.verdict, Verdict::Accept);
-    assert!(clean.reasons.is_empty());
+    assert_eq!(clean.reasons, [] as [quoin_measurement::Reason; 0]);
     assert_eq!(clean.decisions.len(), 1);
     assert!((clean.decisions[0].estimate.value - 0.0).abs() < f64::EPSILON);
     assert_eq!(clean.decisions[0].holds, Some(true));
@@ -187,7 +187,10 @@ fn tc_3503_a_plan_without_paired_run_still_has_no_decision_rule() {
     let verdict = decide(&plans(""), &[&first, &second]);
     assert_eq!(verdict.verdict, Verdict::Inconclusive);
     assert_eq!(codes(&verdict), ["no_decision_rule"]);
-    assert!(verdict.decisions.is_empty());
+    assert_eq!(
+        verdict.decisions,
+        [] as [quoin_measurement::verify::SliceDecision; 0]
+    );
 }
 
 /// Fewer than two collections is unpaired and states no count.
@@ -200,7 +203,10 @@ fn tc_3504_fewer_than_two_collections_are_unpaired() {
         let verdict = decide(&plans, &runs);
         assert_eq!(verdict.verdict, Verdict::Inconclusive);
         assert_eq!(codes(&verdict), ["paired_run_unpaired"]);
-        assert!(verdict.decisions.is_empty());
+        assert_eq!(
+            verdict.decisions,
+            [] as [quoin_measurement::verify::SliceDecision; 0]
+        );
     }
 }
 
@@ -236,7 +242,10 @@ fn tc_3506_a_changed_build_profile_is_incomparable() {
     let verdict = decide(&plans, &[&first, &second]);
     assert_eq!(verdict.verdict, Verdict::Inconclusive);
     assert_eq!(codes(&verdict), ["paired_run_incomparable"]);
-    assert!(verdict.decisions.is_empty());
+    assert_eq!(
+        verdict.decisions,
+        [] as [quoin_measurement::verify::SliceDecision; 0]
+    );
 }
 
 /// Too few comparable slices, or a slice without a value, is inconclusive.
@@ -248,7 +257,10 @@ fn tc_3507_too_few_comparisons_are_inconclusive() {
     let second = run("b", &[("r1", 3.0)]);
     let verdict = decide(&few, &[&first, &second]);
     assert_eq!(codes(&verdict), ["paired_run_inconclusive"]);
-    assert!(verdict.decisions.is_empty());
+    assert_eq!(
+        verdict.decisions,
+        [] as [quoin_measurement::verify::SliceDecision; 0]
+    );
 
     let plans = plans(EQUAL);
     let mut valueless = run("c", &[("r1", 3.0), ("r2", 4.0)]);

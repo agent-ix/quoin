@@ -124,8 +124,7 @@ fn cyclone_dx_components(root: &Value) -> Option<Vec<SbomComponent>> {
     let components = root.get("components").and_then(Value::as_array);
     Some(
         components
-            .map(Vec::as_slice)
-            .unwrap_or_default()
+            .map_or_default(Vec::as_slice)
             .iter()
             .filter_map(|component| {
                 // `purl` is the stable identity when present; `name@version`
@@ -162,8 +161,7 @@ fn cyclone_dx_licences(component: &Value) -> Vec<DeclaredLicence> {
     component
         .get("licenses")
         .and_then(Value::as_array)
-        .map(Vec::as_slice)
-        .unwrap_or_default()
+        .map_or_default(Vec::as_slice)
         .iter()
         .map(|entry| {
             let declared = if let Some(license) = entry.get("license") {
@@ -189,15 +187,13 @@ fn spdx_components(root: &Value) -> Option<Vec<SbomComponent>> {
     let packages = root.get("packages").and_then(Value::as_array);
     Some(
         packages
-            .map(Vec::as_slice)
-            .unwrap_or_default()
+            .map_or_default(Vec::as_slice)
             .iter()
             .filter_map(|package| {
                 let locator = package
                     .get("externalRefs")
                     .and_then(Value::as_array)
-                    .map(Vec::as_slice)
-                    .unwrap_or_default()
+                    .map_or_default(Vec::as_slice)
                     .iter()
                     .find(|reference| string_member(reference, "referenceType") == Some("purl"))
                     .and_then(|reference| string_member(reference, "referenceLocator"));

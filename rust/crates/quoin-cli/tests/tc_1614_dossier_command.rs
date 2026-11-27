@@ -159,7 +159,7 @@ fn generated_documents_carry_the_running_quoin_version() {
         .unwrap()
         .trim_end()
         .to_owned();
-    assert!(!version.is_empty());
+    assert_ne!(version, "");
 
     let work = tempfile::tempdir().unwrap();
     generate_stubs(work.path(), &["stub-a", "stub-b"]);

@@ -38,14 +38,12 @@ fn scratch(name: &str) -> PathBuf {
 }
 
 fn temporaries_in(directory: &Path) -> Vec<String> {
-    std::fs::read_dir(directory)
-        .map(|read| {
-            read.flatten()
-                .map(|entry| entry.file_name().to_string_lossy().into_owned())
-                .filter(|name| name.starts_with('.') && name.contains(".tmp-"))
-                .collect()
-        })
-        .unwrap_or_default()
+    std::fs::read_dir(directory).map_or_default(|read| {
+        read.flatten()
+            .map(|entry| entry.file_name().to_string_lossy().into_owned())
+            .filter(|name| name.starts_with('.') && name.contains(".tmp-"))
+            .collect()
+    })
 }
 
 /// A write interrupted before its rename publishes nothing, and the temporary

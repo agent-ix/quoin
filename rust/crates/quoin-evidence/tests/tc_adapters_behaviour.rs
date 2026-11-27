@@ -44,7 +44,7 @@ fn tc_1915_each_run_adapter_is_registered_with_its_summary_and_parser() {
             .iter()
             .find(|adapter| adapter.name == *name)
             .expect("the declared adapter is registered");
-        assert!(!adapter.name.trim().is_empty());
+        assert_ne!(adapter.name.trim(), "");
         assert!(!adapter.summary.trim().is_empty(), "{name}");
         assert!(std::ptr::fn_addr_eq(adapter.parse, *parser), "{name}");
     }

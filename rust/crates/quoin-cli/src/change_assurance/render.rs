@@ -48,13 +48,12 @@ pub(super) fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Resul
             let reasons = proof
                 .get("reasons")
                 .and_then(serde_json::Value::as_array)
-                .map(|items| {
+                .map_or_default(|items| {
                     items
                         .iter()
                         .filter_map(serde_json::Value::as_str)
                         .collect::<Vec<_>>()
-                })
-                .unwrap_or_default();
+                });
             lines.push(if reasons.is_empty() {
                 format!("  {id}: {result}")
             } else {
@@ -76,14 +75,13 @@ pub(super) fn receipt_text(receipt: &serde_json::Value, verified: bool) -> Resul
         let meaning = claim
             .get("meaning")
             .and_then(serde_json::Value::as_array)
-            .map(|items| {
+            .map_or_default(|items| {
                 items
                     .iter()
                     .filter_map(serde_json::Value::as_str)
                     .collect::<Vec<_>>()
                     .join("; ")
-            })
-            .unwrap_or_default();
+            });
         lines.push(
             "  claimed approval, the event writer's claim and not verified by Quoin:".to_owned(),
         );

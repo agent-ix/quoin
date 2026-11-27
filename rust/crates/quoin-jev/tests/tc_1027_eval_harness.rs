@@ -953,8 +953,7 @@ fn unit_asks(row: &eval_v2_support::corpus::Row) -> Vec<variant::Ask> {
 
 fn unit_derive(_row: &eval_v2_support::corpus::Row, answered: &[Answered]) -> Predictions {
     rollup_any_yes(answered, "unit_exceeds")
-        .map(|prediction| Predictions::from([("code_exceeds_requirement", prediction)]))
-        .unwrap_or_default()
+        .map_or_default(|prediction| Predictions::from([("code_exceeds_requirement", prediction)]))
 }
 
 /// Provenance: PLAT-1027. Per-unit fan-out: a variant defined in five lines

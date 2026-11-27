@@ -292,17 +292,18 @@ fn tc_1516_001_a_cargo_audit_advisory_attaches_to_its_crate_only() {
     assert_eq!(hit.advisories[0].package, "anyhow@1.0.102");
     // The scanner's own word, not a class of ours.
     assert_eq!(hit.advisories[0].severity.as_deref(), Some("unsound"));
-    assert!(
-        only_record(&joined, "pkg:cargo/anyhow@1.0.101")
-            .advisories
-            .is_empty()
+    assert_eq!(
+        only_record(&joined, "pkg:cargo/anyhow@1.0.101").advisories,
+        [] as [crate::soup::advisory::Attached; 0]
     );
-    assert!(
-        only_record(&joined, "pkg:cargo/serde@1.0.228")
-            .advisories
-            .is_empty()
+    assert_eq!(
+        only_record(&joined, "pkg:cargo/serde@1.0.228").advisories,
+        [] as [crate::soup::advisory::Attached; 0]
     );
-    assert!(joined.unmatched.is_empty());
+    assert_eq!(
+        joined.unmatched,
+        [] as [crate::soup::advisory::Unmatched; 0]
+    );
 }
 
 #[trace("FR-142-AC-2")]
@@ -400,16 +401,14 @@ fn tc_1516_003_unmatched_findings_are_listed_once_and_all_are_counted() {
     assert_eq!(attached + joined.unmatched.len(), advisories);
     assert_eq!(advisories, 4);
     // An ambiguous finding could be either record, so neither is free of it.
-    assert!(
-        only_record(&joined, "pkg:cargo/twice@1.0.0")
-            .free_of
-            .is_empty()
+    assert_eq!(
+        only_record(&joined, "pkg:cargo/twice@1.0.0").free_of,
+        [] as [crate::soup::advisory::Tool; 0]
     );
     // A finding naming its crate without a version could be that crate's record.
-    assert!(
-        only_record(&joined, "pkg:cargo/unversioned@1.0.0")
-            .free_of
-            .is_empty()
+    assert_eq!(
+        only_record(&joined, "pkg:cargo/unversioned@1.0.0").free_of,
+        [] as [crate::soup::advisory::Tool; 0]
     );
     // And no other record.
     assert_eq!(
@@ -455,7 +454,10 @@ fn tc_1516_004_not_run_is_not_clean() {
             .any(|s| s.tool == Tool::CargoAudit && s.outcome.is_clean())
     );
     assert!(!state(&none, Tool::CargoAudit).is_clean());
-    assert!(none.records[0].free_of.is_empty());
+    assert_eq!(
+        none.records[0].free_of,
+        [] as [crate::soup::advisory::Tool; 0]
+    );
     assert_eq!(clean.records[0].free_of, [Tool::CargoAudit]);
     assert_ne!(none, clean);
 
@@ -507,7 +509,10 @@ fn tc_1516_005_a_scan_that_evaluated_no_rules_proves_nothing() {
         ScanOutcome::Vacuous { .. }
     ));
     assert!(!state(&joined, Tool::CargoAudit).is_clean());
-    assert!(joined.records[0].free_of.is_empty());
+    assert_eq!(
+        joined.records[0].free_of,
+        [] as [crate::soup::advisory::Tool; 0]
+    );
 }
 
 fn resolved_for(clause: &str, scan_at: &str) -> Resolution {
@@ -702,7 +707,10 @@ fn tc_1516_009_deny_diagnostics_that_are_not_advisories_are_set_aside() {
     // the `rejected` and `banned` ones are in neither count.
     assert_eq!(read_counts(state(&joined, Tool::CargoDeny)), Some((2, 2)));
     assert_eq!(joined.records[0].advisories.len(), 2);
-    assert!(joined.unmatched.is_empty());
+    assert_eq!(
+        joined.unmatched,
+        [] as [crate::soup::advisory::Unmatched; 0]
+    );
     let policies = crate::soup::policy::join(&records, &[deny], &discharge());
     let attached: Vec<&str> = policies.records[&records[0].path]
         .findings
@@ -764,12 +772,14 @@ fn tc_1516_010_only_the_crate_selects_and_no_record_file_changes() {
             .len(),
         1
     );
-    assert!(
-        only_record(&joined, "pkg:cargo/serde@1.0.228")
-            .advisories
-            .is_empty()
+    assert_eq!(
+        only_record(&joined, "pkg:cargo/serde@1.0.228").advisories,
+        [] as [crate::soup::advisory::Attached; 0]
     );
-    assert!(joined.unmatched.is_empty());
+    assert_eq!(
+        joined.unmatched,
+        [] as [crate::soup::advisory::Unmatched; 0]
+    );
     assert_eq!(
         joined.records.len(),
         2,
@@ -876,9 +886,18 @@ fn tc_1516_015_a_timestamp_that_is_not_an_instant_reads_no_scan_of_the_tool() {
         }
     );
     assert!(!state(&joined, Tool::CargoAudit).is_clean());
-    assert!(joined.records[0].free_of.is_empty());
-    assert!(joined.records[0].advisories.is_empty());
-    assert!(joined.unmatched.is_empty());
+    assert_eq!(
+        joined.records[0].free_of,
+        [] as [crate::soup::advisory::Tool; 0]
+    );
+    assert_eq!(
+        joined.records[0].advisories,
+        [] as [crate::soup::advisory::Attached; 0]
+    );
+    assert_eq!(
+        joined.unmatched,
+        [] as [crate::soup::advisory::Unmatched; 0]
+    );
 }
 
 #[trace("FR-142-AC-18")]

@@ -305,11 +305,12 @@ fn an_estimate_that_breaks_its_contract_is_skipped() {
     let json = c.json();
     assert_eq!(ids(&json["policy_cells"], "estimate"), ["EST-A", "EST-B"]);
     assert_eq!(ids(&json["evidence_gaps"], "estimate"), ["EST-B"]);
-    assert!(
+    assert_eq!(
         json["decision_queue"]["no_record"]
             .as_array()
             .unwrap()
-            .is_empty()
+            .as_slice(),
+        [] as [serde_json::Value; 0]
     );
 }
 
@@ -930,11 +931,12 @@ fn an_estimate_with_no_residual_risk_is_listed_apart() {
     assert_eq!(tokens(&none[0]), ["post-control-estimate-without-decision"]);
     residual(&c, "RR-5", "EST-C", "POL-1", "undecided");
     let json = c.json();
-    assert!(
+    assert_eq!(
         json["decision_queue"]["no_record"]
             .as_array()
             .unwrap()
-            .is_empty()
+            .as_slice(),
+        [] as [serde_json::Value; 0]
     );
     assert_eq!(queue(&json).len(), 2);
 }

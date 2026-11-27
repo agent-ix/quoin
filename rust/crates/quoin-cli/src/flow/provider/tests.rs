@@ -269,7 +269,7 @@ fn design_gate_binds_to_explicit_quire_flow_json_and_denials_override_exit_statu
     let mut output = Vec::new();
     let mut errors = Vec::new();
     assert_eq!(super::serve(input.as_slice(), &mut output, &mut errors), 0);
-    assert!(errors.is_empty());
+    assert_eq!(errors, [] as [u8; 0]);
     let result: Value = serde_json::from_slice(&output).expect("provider result");
     assert_eq!(result["outcomes"][0]["status"], "failed");
     assert_eq!(result["outcomes"][0]["code"], "dataflow_denied");
@@ -829,7 +829,7 @@ fn design_gate_engine_run_identity_selects_only_its_trusted_evaluator_history() 
         let input = serde_json::to_vec(request).expect("provider request");
         let (mut output, mut errors) = (Vec::new(), Vec::new());
         assert_eq!(serve(input.as_slice(), &mut output, &mut errors), 0);
-        assert!(errors.is_empty());
+        assert_eq!(errors, [] as [u8; 0]);
         serde_json::from_slice::<Value>(&output).expect("provider result")
     };
 

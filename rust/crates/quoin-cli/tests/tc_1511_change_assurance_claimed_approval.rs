@@ -142,7 +142,7 @@ fn tc_1511_write_record_and_record_digest_report_one_digest() {
         "{}",
         text(&unstored.stderr)
     );
-    assert!(unstored.stdout.is_empty());
+    assert_eq!(unstored.stdout, [] as [u8; 0]);
     assert_eq!(stored_files(root.path()), before);
 }
 

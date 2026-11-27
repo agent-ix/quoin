@@ -242,7 +242,7 @@ fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
     conflicting.extend(["--gsn", "--json"]);
     let refused = quoin(&conflicting);
     assert_ne!(refused.status.code(), Some(0));
-    assert!(refused.stdout.is_empty());
+    assert_eq!(refused.stdout, [] as [u8; 0]);
 }
 
 #[trace("FR-047-AC-9")]
@@ -307,7 +307,7 @@ fn sacm_output_flags_are_exclusive() {
         ] {
             let output = quoin(&flags);
             assert_eq!(output.status.code(), Some(3), "{}", text(&output.stderr));
-            assert!(output.stdout.is_empty());
+            assert_eq!(output.stdout, [] as [u8; 0]);
             assert!(text(&output.stderr).contains(incompatible));
             assert!(!path.exists());
         }
@@ -375,7 +375,7 @@ fn sacm_authored_command_retains_report_and_refuses_failed_publication() {
     failed.extend(["--sacm-report", repo.path().to_str().expect("UTF-8 path")]);
     let output = quoin(&failed);
     assert!(!output.status.success());
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(text(&output.stderr).contains("could not write SACM report"));
 }
 

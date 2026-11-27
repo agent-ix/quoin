@@ -97,7 +97,7 @@ fn description_of<'a>(name: &'a str, file: &str) -> &'a str {
 
 /// The line and description of a mutant the tests did not kill.
 fn survivor_of(mutant: &MutantScenario, summary: &str) -> Survivor {
-    let name = mutant.name.as_deref().map(str::trim).unwrap_or_default();
+    let name = mutant.name.as_deref().map_or_default(str::trim);
     let file = mutant.file.as_deref().unwrap_or_default().trim();
     let described = description_of(name, file);
     Survivor::new(

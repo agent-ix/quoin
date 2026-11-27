@@ -153,27 +153,23 @@ fn entry_of(id: &str, raw: &Value, module_name: &str) -> VerificationMethod {
         applicability: normalize_rules(field("applicability")),
         tooling: field("tooling")
             .and_then(Value::as_array)
-            .map(|items| items.iter().map(string_of).collect())
-            .unwrap_or_default(),
+            .map_or_default(|items| items.iter().map(string_of).collect()),
         module_name: module_name.to_owned(),
     }
 }
 
 /// `normalizeRules`: rule name → values, keeping only list-valued rules.
 fn normalize_rules(value: Option<&Value>) -> BTreeMap<String, Vec<String>> {
-    value
-        .and_then(Value::as_object)
-        .map(|rules| {
-            rules
-                .iter()
-                .filter_map(|(rule, values)| {
-                    values
-                        .as_array()
-                        .map(|items| (rule.clone(), items.iter().map(string_of).collect()))
-                })
-                .collect()
-        })
-        .unwrap_or_default()
+    value.and_then(Value::as_object).map_or_default(|rules| {
+        rules
+            .iter()
+            .filter_map(|(rule, values)| {
+                values
+                    .as_array()
+                    .map(|items| (rule.clone(), items.iter().map(string_of).collect()))
+            })
+            .collect()
+    })
 }
 
 #[cfg(test)]

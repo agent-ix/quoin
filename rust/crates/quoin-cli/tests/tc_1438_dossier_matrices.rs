@@ -102,7 +102,7 @@ fn a_binding_or_pack_requires_as_of_before_reading_or_writing() {
                 .unwrap()
                 .contains("--as-of")
         );
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(!work.path().join("dossier").exists());
     }
 }
@@ -191,7 +191,7 @@ fn dossier_rows_equal_the_evidence_backed_matrix_command() {
         .iter()
         .flat_map(|requirement| requirement["criteria"].as_array().unwrap())
         .collect();
-    assert!(!criteria.is_empty());
+    assert_ne!(criteria, [] as [&serde_json::Value; 0]);
     assert_eq!(rows.len(), criteria.len());
     for criterion in criteria {
         let id = criterion["id"].as_str().unwrap();

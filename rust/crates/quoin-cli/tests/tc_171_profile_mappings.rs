@@ -348,7 +348,10 @@ fn fixture_b_owasp_only_profile_has_no_nist_mapping() {
     assert_eq!(keys(&report), ["owasp/asvs@5.0.0"]);
     let mappings = emitted_mapping_rows("b");
     assert_emitted_mappings_are_binding(&report, "b");
-    assert!(!mappings.is_empty());
+    assert_ne!(
+        mappings,
+        [] as [(std::string::String, std::string::String); 0]
+    );
     assert!(mappings.iter().all(|(key, _)| key == "owasp/asvs@5.0.0"));
     assert!(!mappings.iter().any(|(key, _)| key.starts_with("nist/")));
 }

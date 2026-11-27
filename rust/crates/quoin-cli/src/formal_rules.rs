@@ -167,8 +167,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, crate::ShellError> {
             let reason = rule
                 .get("reason")
                 .and_then(Value::as_str)
-                .map(|reason| format!(" ({reason})"))
-                .unwrap_or_default();
+                .map_or_default(|reason| format!(" ({reason})"));
             lines.push(format!("{state} {symbol}{reason}"));
         }
         lines.join("\n")

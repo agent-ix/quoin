@@ -139,10 +139,7 @@ fn unit_answer(unit: usize, relation: [f64; 4], kind: &[(&str, f64)]) -> Answere
     answers.insert(
         KIND_KEY.to_owned(),
         RawAnswer::Choice {
-            label: kind
-                .first()
-                .map(|(l, _)| (*l).to_owned())
-                .unwrap_or_default(),
+            label: kind.first().map_or_default(|(l, _)| (*l).to_owned()),
             confidence: 0.5,
             probabilities: kind.iter().map(|(l, p)| ((*l).to_owned(), *p)).collect(),
         },
@@ -925,18 +922,16 @@ fn output_on(
             .map(|(row, ordinal)| variant::RowResult {
                 row_id: (*row).to_owned(),
                 variant: variant.to_owned(),
-                predictions: ordinal
-                    .map(|o| {
-                        variant::Predictions::from([(
-                            key,
-                            Prediction {
-                                answer: if o >= 0.5 { "yes" } else { "no" }.to_owned(),
-                                confidence: Some(o.max(1.0 - o)),
-                                ordinal: Some(o),
-                            },
-                        )])
-                    })
-                    .unwrap_or_default(),
+                predictions: ordinal.map_or_default(|o| {
+                    variant::Predictions::from([(
+                        key,
+                        Prediction {
+                            answer: if o >= 0.5 { "yes" } else { "no" }.to_owned(),
+                            confidence: Some(o.max(1.0 - o)),
+                            ordinal: Some(o),
+                        },
+                    )])
+                }),
                 answered: Vec::new(),
             })
             .collect(),

@@ -289,7 +289,7 @@ fn a_file_outside_git_has_no_history_and_no_transition_diagnostic() {
     std::fs::write(&path, &text).unwrap();
     assert_eq!(read_history(&path).unwrap(), History::NotApplicable);
     let checked = check_document(&path, &text, INSTALLED).unwrap();
-    assert!(checked.diagnostics.is_empty());
+    assert_eq!(checked.diagnostics, [] as [quoin_anomaly::Diagnostic; 0]);
     assert!(!checked.history_applicable, "not applicable is reported");
 }
 
@@ -330,7 +330,10 @@ fn reverse_references_list_each_anomaly_that_names_an_id() {
 #[test]
 fn a_dangling_target_is_in_no_listing_and_is_not_reported_by_check() {
     let scope = scope_with(&[("AN-001", "invalid", "dangling-requirement")]);
-    assert!(references_to(scope.path(), "FR-999").unwrap().is_empty());
+    assert_eq!(
+        references_to(scope.path(), "FR-999").unwrap(),
+        [] as [quoin_anomaly::RefEntry; 0]
+    );
     assert!(
         references_to(scope.path(), "FR-001").unwrap().is_empty(),
         "no row of this anomaly names FR-001"
@@ -340,11 +343,9 @@ fn a_dangling_target_is_in_no_listing_and_is_not_reported_by_check() {
     assert_eq!(hazard[0].kind, "Hazard");
     let text = fixture("invalid", "dangling-requirement");
     let path = scope.path().join("spec/anomalies/AN-001.md");
-    assert!(
-        check_document(&path, &text, INSTALLED)
-            .unwrap()
-            .diagnostics
-            .is_empty()
+    assert_eq!(
+        check_document(&path, &text, INSTALLED).unwrap().diagnostics,
+        [] as [quoin_anomaly::Diagnostic; 0]
     );
 }
 
@@ -361,11 +362,9 @@ fn two_hazard_rows_with_the_module_missing_yield_exactly_one_diagnostic() {
     let found = check_document(&path, &text, missing).unwrap().diagnostics;
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0].code, DiagnosticCode::MissingModule);
-    assert!(
-        check_document(&path, &text, INSTALLED)
-            .unwrap()
-            .diagnostics
-            .is_empty()
+    assert_eq!(
+        check_document(&path, &text, INSTALLED).unwrap().diagnostics,
+        [] as [quoin_anomaly::Diagnostic; 0]
     );
 }
 

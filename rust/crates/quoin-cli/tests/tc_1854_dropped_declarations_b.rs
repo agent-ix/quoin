@@ -615,7 +615,7 @@ fn formal_rules_coverage_without_a_dropped_declaration_reports() {
         "{}",
         text(&coverage.stderr)
     );
-    assert!(!coverage.stdout.is_empty());
+    assert_ne!(coverage.stdout, [] as [u8; 0]);
     let report: Value = serde_json::from_slice(&coverage.stdout).unwrap();
     assert!(report.is_object(), "{report}");
 }

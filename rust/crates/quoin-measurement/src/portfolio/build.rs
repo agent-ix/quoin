@@ -217,8 +217,7 @@ fn collection_ref(
         unverified_artifacts: collection
             .verification_stack
             .as_ref()
-            .map(|stack| stack.unverified_artifacts.clone())
-            .unwrap_or_default(),
+            .map_or_default(|stack| stack.unverified_artifacts.clone()),
     })
 }
 

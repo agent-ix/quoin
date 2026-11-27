@@ -370,7 +370,10 @@ fn tc_1080_016_criticality_bearing_coverage_is_accepted() {
     let criterion = &output.requirements[0].criteria[0];
     assert_eq!(criterion.id, "FR-001-AC-1");
     assert_eq!(criterion.static_status, "untagged");
-    assert!(criterion.binders.is_empty());
+    assert_eq!(
+        criterion.binders,
+        [] as [quoin_quire_types::CoverageMatrixBinder; 0]
+    );
 }
 
 /// Each finding kind lands in the bucket the requirement assigns it, alone.
@@ -843,7 +846,10 @@ fn tc_1080_014_criteria_less_design_entry_is_rendered_without_a_table() {
     .unwrap();
     assert_eq!(output.reason, Some(EMPTY_REASON.to_owned()));
     assert_eq!(output.requirements.len(), 1);
-    assert!(output.requirements[0].criteria.is_empty());
+    assert_eq!(
+        output.requirements[0].criteria,
+        [] as [quoin_assurance::matrix::MatrixCriterion; 0]
+    );
     let rendered = render_markdown(&output);
     assert!(
         rendered.contains("## FR-009\n\nDesign gap: no design element (specified)"),

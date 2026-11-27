@@ -113,8 +113,14 @@ mod tests {
     #[trace("FR-212-AC-2")]
     fn an_installed_release_at_or_above_the_pin_is_not_reported() {
         let manifest = manifest("v0.27.0");
-        assert!(lagging_modules(&manifest, &registry(Some("v0.27.0"))).is_empty());
-        assert!(lagging_modules(&manifest, &registry(Some("v0.28.0"))).is_empty());
+        assert_eq!(
+            lagging_modules(&manifest, &registry(Some("v0.27.0"))),
+            [] as [crate::lag::ModuleLag; 0]
+        );
+        assert_eq!(
+            lagging_modules(&manifest, &registry(Some("v0.28.0"))),
+            [] as [crate::lag::ModuleLag; 0]
+        );
     }
 
     #[test]
@@ -135,8 +141,17 @@ mod tests {
     #[test]
     #[trace("FR-212-AC-4")]
     fn a_missing_module_or_a_non_version_pin_is_not_reported() {
-        assert!(lagging_modules(&manifest("v0.27.0"), &ModuleRegistry::new()).is_empty());
-        assert!(lagging_modules(&manifest("main"), &registry(Some("v0.1.0"))).is_empty());
-        assert!(lagging_modules(&manifest("main"), &registry(None)).is_empty());
+        assert_eq!(
+            lagging_modules(&manifest("v0.27.0"), &ModuleRegistry::new()),
+            [] as [crate::lag::ModuleLag; 0]
+        );
+        assert_eq!(
+            lagging_modules(&manifest("main"), &registry(Some("v0.1.0"))),
+            [] as [crate::lag::ModuleLag; 0]
+        );
+        assert_eq!(
+            lagging_modules(&manifest("main"), &registry(None)),
+            [] as [crate::lag::ModuleLag; 0]
+        );
     }
 }

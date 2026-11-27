@@ -157,6 +157,12 @@ without checking out the source repository.
 | FR-235-AC-11 | Given a not-high-process-risk or unrated FR and any contents of a self-test asset tree, `quoin validation ratings --coverage` reports rating state and authored values, leaves the unrated FR as `unrated`, and does not inspect or report test trace markers; unreadable spec documents remain partial results. | Test |
 | FR-235-AC-12 | Given a published self-test runner, its executable and declared runtime files contain no private library linkage or private data beyond content already present in the installed command; the normal-suite library test harness is not published as a customer self-test runner. | Inspection |
 | FR-235-AC-13 | Given the matching runner release asset is available but no sibling source or specification repositories are checked out, `quoin selftest --run` invokes the installed command and records its result without attempting to access those repositories. | Test |
+| FR-235-AC-14 | Given a supplier `FeatureRiskRating` whose `rates_feature` relationship targets an existing repository object that is not an FR, `quoin validation ratings` emits `target-kind-mismatch` with the source path, target URI, and actual kind; the mismatched edge does not count as a feature rating and the command returns a partial result. | Test |
+| FR-235-AC-15 | Given malformed frontmatter in a document beneath the repository's `spec/` directory, `quoin validation ratings` reports its unreadable path relative to the repository with the `spec/` prefix, preserves the parse reason, and returns a partial result in normal and coverage output. The command continues to read only the spec bundle. | Test |
+
+## Provenance
+
+FR-235-AC-14 and FR-235-AC-15 provide Quoin-local criteria for [SWM-373](https://linear.app/agent-ix/issue/SWM-373), linked to spec-artifacts-process FR-026-AC-3, and [SWM-393](https://linear.app/agent-ix/issue/SWM-393), linked to spec-artifacts-process FR-026-AC-11. Local trace tags use these criteria because Quoin has a separate FR-026 for CLI dispatch.
 
 ## Dependencies
 

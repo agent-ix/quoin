@@ -136,7 +136,10 @@ fn tc_1671_002_the_reader_exposes_declared_licences_by_kind() {
     );
     let vale = by_purl("pkg:npm/fx-vale@3.1.0");
     assert!(matches!(vale.licences[0], DeclaredLicence::Expression(_)));
-    assert!(by_purl("pkg:npm/fx-moss@0.9.0").licences.is_empty());
+    assert_eq!(
+        by_purl("pkg:npm/fx-moss@0.9.0").licences,
+        [] as [quoin_evidence::adapters::DeclaredLicence; 0]
+    );
 
     let name = read_components(&cdx(
         r#"{"name":"n","version":"1","licenses":[{"license":{"name":"Custom Terms"}}]}"#,
@@ -284,7 +287,7 @@ fn tc_1671_007_clean_and_vacuous_scans_are_distinct() {
     let sbom = cdx(r#"{"name":"a","version":"1","licenses":[{"license":{"id":"MIT"}}]}"#);
     let policy = "format: licence-policy-v1\nallow: [MIT]\ndeny: [GPL-3.0-only]\n";
     let clean = parse_licence_policy(&sbom, policy).unwrap();
-    assert!(clean.findings.is_empty());
+    assert_eq!(clean.findings, [] as [quoin_evidence::Finding; 0]);
     assert_eq!(clean.rules_evaluated, Some(1));
     assert_eq!(clean.evaluated, Some(vec!["a@1".to_owned()]));
     assert_eq!(clean.tool.as_deref(), Some("licence-policy"));
@@ -294,7 +297,7 @@ fn tc_1671_007_clean_and_vacuous_scans_are_distinct() {
     assert_eq!(ruleset["deny"], serde_json::json!(["GPL-3.0-only"]));
 
     let vacuous = parse_licence_policy(&cdx(""), policy).unwrap();
-    assert!(vacuous.findings.is_empty());
+    assert_eq!(vacuous.findings, [] as [quoin_evidence::Finding; 0]);
     assert_eq!(vacuous.rules_evaluated, Some(0));
 
     // The real capture: every component is listed.
@@ -351,7 +354,15 @@ fn tc_1671_009_a_component_without_a_purl_is_pathed_by_name_and_never_banned() {
     let sbom =
         cdx(r#"{"name":"left-pad","version":"1.0.0","licenses":[{"license":{"id":"MIT"}}]}"#);
     let policy = "format: licence-policy-v1\nallow: [MIT]\nban:\n  - purl: pkg:npm/left-pad\n";
-    assert!(run(&sbom, policy).is_empty());
+    assert_eq!(
+        run(&sbom, policy),
+        [] as [(
+            std::string::String,
+            std::string::String,
+            std::string::String,
+            std::string::String
+        ); 0]
+    );
     let unlicensed = cdx(r#"{"name":"left-pad","version":"1.0.0"}"#);
     assert_eq!(
         run(&unlicensed, policy),

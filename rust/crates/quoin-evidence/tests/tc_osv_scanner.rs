@@ -80,7 +80,7 @@ fn minimal_debian_contract_fixture_preserves_reported_purl_and_advisory_id() {
 #[test]
 fn synthetic_clean_report_is_recordable_without_database_or_rule_count_claims() {
     let result = parse_osv_scanner(CLEAN).unwrap();
-    assert!(result.findings.is_empty());
+    assert_eq!(result.findings, [] as [quoin_evidence::Finding; 0]);
     assert_eq!(result.ruleset, None);
     assert_eq!(result.rules_evaluated, None);
 }

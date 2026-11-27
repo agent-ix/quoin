@@ -570,8 +570,7 @@ mod tests {
         let kinds: Vec<String> = kinds.iter().map(|kind| (*kind).to_owned()).collect();
         let report = export(&registry, &kinds, &out, &input, &options).unwrap();
         let args = fs::read_to_string(&args_file)
-            .map(|text| text.split_whitespace().map(str::to_owned).collect())
-            .unwrap_or_default();
+            .map_or_default(|text| text.split_whitespace().map(str::to_owned).collect());
         (report, args)
     }
 

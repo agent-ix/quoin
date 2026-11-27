@@ -612,7 +612,7 @@ fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
     assert_eq!(criteria.len(), 2);
     assert_eq!(criteria[0]["id"], "FR-001-AC-1");
     let analysis = criteria[0]["analysis_evidence"].as_array().unwrap();
-    assert!(!analysis.is_empty());
+    assert_ne!(analysis.as_slice(), [] as [serde_json::Value; 0]);
     assert!(
         analysis.iter().all(|item| item["status"] == "unevaluated"),
         "{analysis:?}"
@@ -664,7 +664,7 @@ fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
     std::fs::write(&observation, observation_data.to_string()).unwrap();
     let output = fixture.matrix(&observation);
     assert!(!output.status.success());
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     assert!(
         stderr(&output).contains(
             "run observation names no readable selected record: runs/OTHER-SUITE/other.json"

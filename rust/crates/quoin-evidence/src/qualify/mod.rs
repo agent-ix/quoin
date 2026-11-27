@@ -365,8 +365,7 @@ pub fn qualify(request: &Request<'_>) -> Qualification {
                 .observation
                 .actor
                 .as_ref()
-                .map(|admission| admission.actor.clone())
-                .unwrap_or_default(),
+                .map_or_default(|admission| admission.actor.clone()),
             provenance,
         });
     }

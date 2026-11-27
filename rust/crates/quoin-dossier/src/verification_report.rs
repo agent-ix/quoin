@@ -188,7 +188,7 @@ fn render_requirement(
         );
     }
 
-    let stated = document.map(criteria_of).unwrap_or_default();
+    let stated = document.map_or_default(criteria_of);
     if criteria.is_empty() {
         if stated.is_empty() {
             gaps.push(

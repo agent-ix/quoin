@@ -284,8 +284,7 @@ fn criterion_tests(
         .payload
         .get("obligations")
         .and_then(serde_json::Value::as_array)
-        .map(Vec::as_slice)
-        .unwrap_or_default();
+        .map_or_default(Vec::as_slice);
     let ids = obligations
         .iter()
         .filter_map(|obligation| obligation.get("id")?.as_str())

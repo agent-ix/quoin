@@ -955,8 +955,7 @@ pub(crate) fn e5_units(path: &str, body: &str) -> Vec<Unit> {
 pub(crate) fn row_e5_units(row: &Row) -> Vec<Unit> {
     row.code
         .as_ref()
-        .map(|code| e5_units(&code.path, &code.body))
-        .unwrap_or_default()
+        .map_or_default(|code| e5_units(&code.path, &code.body))
 }
 
 /// E5's per-unit question. The unit is `code_unit_text`; the whole code is
@@ -1395,8 +1394,7 @@ pub(crate) fn assess_selection(
 
 fn e2_derive(row: &Row, answered: &[Answered]) -> Predictions {
     loud(assess_selection(row, answered))
-        .map(|prediction| Predictions::from([(KEY, prediction)]))
-        .unwrap_or_default()
+        .map_or_default(|prediction| Predictions::from([(KEY, prediction)]))
 }
 
 /// E2: per-unit selection, "which clause does this unit serve, or none".
@@ -1432,8 +1430,7 @@ pub(crate) const TRACE_KEY: &str = "trace_correct";
 pub(crate) fn e0_rc_questions() -> Questions {
     battery_questions(BatteryShape::FullBatteryV1)
         .get(KEY)
-        .map(|question| questions([(KEY, question.clone())]))
-        .unwrap_or_default()
+        .map_or_default(|question| questions([(KEY, question.clone())]))
 }
 
 fn e0_rc_asks(row: &Row) -> Vec<Ask> {
@@ -1448,8 +1445,7 @@ fn e0_rc_derive(_row: &Row, answered: &[Answered]) -> Predictions {
         .iter()
         .find(|answer| answer.unit.is_none())
         .and_then(|answer| noul_prediction(&answer.answers, KEY))
-        .map(|prediction| Predictions::from([(KEY, prediction)]))
-        .unwrap_or_default()
+        .map_or_default(|prediction| Predictions::from([(KEY, prediction)]))
 }
 
 /// E0-RC: E0's question alone, on RC rows. MP-241's RC comparator.

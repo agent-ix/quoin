@@ -484,7 +484,7 @@ mod tests {
             )
             .expect_err("override must be refused");
             assert!(matches!(error, ModulesError::NpmRegistryUnsupported));
-            assert!(transport.requests().is_empty());
+            assert_eq!(transport.requests(), [] as [reqwest::Url; 0]);
         }
     }
 
