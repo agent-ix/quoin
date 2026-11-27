@@ -1492,7 +1492,8 @@ mod tests {
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("review smoke harness");
+        let harness = Harness::new_with_plugin_version(&binary, &runner, &plugin, false, true)
+            .expect("review smoke harness");
         let started = review_base_lifecycle(&harness).expect("base review lifecycle");
         review_scenarios(&harness, &started).expect("review contract scenarios");
     }
