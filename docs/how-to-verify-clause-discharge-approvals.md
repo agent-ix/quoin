@@ -7,7 +7,12 @@ Use this procedure when a clause set requires an approval before a direct fact c
 
 ## Before you start
 
-Install Quoin 0.37.0 and the Engineering Assurance verifier. Use a Quoin module that declares the clause set and a binding report for its exact authority, set, and version. The approval-required clauses must declare `approvalRoles`.
+Use a Quoin build whose `quoin evidence record-discharge --help` and
+`quoin discharge --help` both list `--engineering-assurance` and
+`--allowed-signers`. The published Quoin 0.37.0 binary does not expose these
+flags. Install Engineering Assurance 0.11.0 as the verifier. Use a Quoin module that
+declares the clause set and a binding report for its exact authority, set, and
+version. The approval-required clauses must declare `approvalRoles`.
 
 Prepare `discharge-facts.json` with one fact for each clause. A direct fact includes evidence references, an attestation, and an `approvalRef` that identifies the signed approval. Configure the verifier and its allowed-signers file to trust the approval signer.
 

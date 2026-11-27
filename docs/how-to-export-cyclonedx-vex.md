@@ -4,7 +4,11 @@ description: Export reviewed SOUP VEX statements beside a CycloneDX SBOM.
 ---
 # Export CycloneDX VEX statements
 
-Run these steps from the repository that contains the SOUP records:
+Run these steps from the repository that contains the SOUP records. Use a
+Quoin build whose `quoin soup vex export --help` lists `cyclonedx` as a
+supported format. The published Quoin 0.37.0 binary supports OpenVEX only.
+Run `quoin module ensure-defaults` to install the modules used to read SOUP
+records.
 
 1. Generate a CycloneDX SBOM with Syft, if you do not already have one.
 2. Export the reviewed SOUP statements beside that SBOM:
