@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
+//! Isolated acceptance checks for Quoin's workflow launch surface.
+
 #![allow(
     clippy::expect_used,
     reason = "test setup failures should identify the missing fixture"
@@ -62,7 +64,7 @@ impl Fixture {
     fn install_runner(&self, version: &str) {
         write_executable(
             &self.bin.join("ix-flow"),
-            &format!(
+            format!(
                 "printf '%s\\n' \"$1\" >> \"$IX_FLOW_LOG\"\ncase \"$1\" in\n  --version) printf '%s\\n' '{version}' ;;\n  run) printf '%s\\n' \"$@\" >> \"$IX_FLOW_LOG\"; printf '%s\\n' '{{\"ok\":true,\"instance_id\":\"fixture-run\"}}' ;;\n  add-item) printf '%s\\n' \"$@\" >> \"$IX_FLOW_LOG\"; printf '%s\\n' '{{\"ok\":true}}' ;;\nesac"
             ),
         );
@@ -102,11 +104,33 @@ fn text(output: &Output) -> String {
     )
 }
 
+fn matrix_module(fixture: &Fixture) {
+    fs::write(
+        fixture.subject.join("manifest.yaml"),
+        "name: workflow-launch-fixture\nversion: 0.1.0\ndescription: fixture module\nartifact_types:\n  - name: FR\n    grammar_ref: iso-spec-core\n    defaults:\n      id_pattern: FR-{next:03d}\ntraceability:\n  trace_targets:\n    - name: acceptance-criterion\n      archetype: FR\n      section: Acceptance Criteria\n      id_column: ID\n  obligations:\n    - name: acceptance-criterion\n      target: acceptance-criterion\n      statement_column: Criteria\n      method_column: Verification\n",
+    )
+    .expect("write matrix fixture module");
+    let spec_dir = fixture.subject.join("spec");
+    fs::create_dir_all(&spec_dir).expect("matrix fixture spec directory");
+    fs::write(
+        spec_dir.join("FR-001-example.md"),
+        "---\nid: FR-001\ntype: FR\ntitle: Fixture requirement\n---\n\n## Acceptance Criteria\n\n| ID | Criteria | Verification |\n|---|---|---|\n| FR-001-AC-1 | The fixture launches. | Test |\n",
+    )
+    .expect("write matrix fixture requirement");
+}
+
 #[trace("FR-020-AC-1")]
 #[test]
 fn copied_skill_launches_from_relocated_cli_and_matrix_does_not_launch_a_workflow() {
     let fixture = Fixture::new();
     fixture.install_runner("0.3.1");
+    assert!(
+        fs::read_dir(&fixture.home)
+            .expect("empty home is readable")
+            .next()
+            .is_none()
+    );
+    assert!(!fixture.subject.join(".git").exists());
 
     let output = fixture.call(&[
         "review",
@@ -124,7 +148,8 @@ fn copied_skill_launches_from_relocated_cli_and_matrix_does_not_launch_a_workflo
     assert!(calls.contains("fixture-run"));
 
     let before_matrix = calls;
-    let matrix = fixture.call(&["matrix"]);
+    matrix_module(&fixture);
+    let matrix = fixture.call(&["matrix", "--module", "."]);
     assert!(matrix.status.success(), "{}", text(&matrix));
     assert_eq!(
         fixture.log(),
@@ -136,7 +161,7 @@ fn copied_skill_launches_from_relocated_cli_and_matrix_does_not_launch_a_workflo
 #[trace("FR-020-AC-3")]
 #[test]
 fn missing_or_incompatible_ix_flow_reports_the_install_command_before_any_run() {
-    for version in [None, Some("0.3.0")] {
+    for version in [None, Some("0.3.0"), Some("not-semver")] {
         let fixture = Fixture::new();
         if let Some(version) = version {
             fixture.install_runner(version);
@@ -190,11 +215,14 @@ fn relative_targets_with_spaces_are_resolved_under_the_subject_repository() {
 fn design_gate_refuses_a_runner_without_the_host_seeding_api_before_creating_a_run() {
     let fixture = Fixture::new();
     fixture.install_runner("0.3.1");
-    let package = fixture
-        .bin
-        .parent()
-        .expect("runner root")
-        .join("node_modules/@agent-ix/ix-flow");
+    fs::create_dir_all(fixture.skill.join("workflows/design-gate"))
+        .expect("design-gate skill workflow");
+    fs::write(
+        fixture.skill.join("workflows/design-gate/def.yaml"),
+        "name: design-gate\n",
+    )
+    .expect("design-gate definition");
+    let package = fixture.bin.join("node_modules/@agent-ix/ix-flow");
     fs::create_dir_all(package.join("dist")).expect("runner package directory");
     fs::write(package.join("package.json"), "{\"type\":\"module\"}\n")
         .expect("runner package metadata");
