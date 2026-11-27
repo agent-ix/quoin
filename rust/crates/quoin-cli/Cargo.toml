@@ -16,6 +16,7 @@ build = "build.rs"
 
 [features]
 e2e-release-export = []
+e2e-published-binary = []
 # The 10-second NFR is measured against an optimized release CLI.
 nfr-100-performance-test = []
 

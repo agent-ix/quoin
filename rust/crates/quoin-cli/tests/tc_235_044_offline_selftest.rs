@@ -89,7 +89,7 @@ fn selftest_runs_with_empty_home_and_no_network() {
 #[trace("FR-235-AC-13")]
 #[test]
 #[cfg(target_os = "linux")]
-#[ignore = "requires the matching published Quoin release binary in QUOIN_BINARY"]
+#[cfg(feature = "e2e-published-binary")]
 fn release_binary_selftest_runs_without_sibling_checkouts() {
     let binary = std::env::var_os("QUOIN_BINARY")
         .map(std::path::PathBuf::from)
