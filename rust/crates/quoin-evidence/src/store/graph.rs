@@ -8,6 +8,7 @@ use crate::paths::bindings_path;
 use crate::source::EvidenceSource;
 use crate::store::codec::{canonical_bytes_of, decode};
 use crate::types::{Binding, BindingsFile, STORE_SCHEMA_VERSION};
+use ix_trace_rs::implements;
 
 /// The binding graph. An absent file reads as an empty graph, not an error.
 ///
@@ -83,6 +84,7 @@ pub struct BindOutcome {
 /// and `insufficient-multiplicity` counted distinct suites across a set that
 /// could never hold more than one, so the finding could not be cleared by any
 /// amount of evidence (agent-ix/quoin#102).
+#[implements("FR-030-AC-11")]
 #[must_use]
 pub fn bind(existing: &[Binding], next: &Binding) -> BindOutcome {
     let found = existing
@@ -99,7 +101,11 @@ pub fn bind(existing: &[Binding], next: &Binding) -> BindOutcome {
     let Some(prior) = bindings.get_mut(index) else {
         unreachable!("the index came from this same slice")
     };
-    prior.symbols.clone_from(&next.symbols);
+    prior.symbols.extend(next.symbols.iter().cloned());
+    prior
+        .symbols
+        .sort_by(|left, right| left.as_str().cmp(right.as_str()));
+    prior.symbols.dedup();
     // Lineage describes the CURRENT relationship. Omission on a new record
     // clears it rather than silently carrying an old independence claim into
     // evidence that did not state one.

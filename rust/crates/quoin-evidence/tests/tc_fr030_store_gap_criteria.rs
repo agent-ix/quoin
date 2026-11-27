@@ -12,9 +12,7 @@ use ix_trace_rs::trace;
 use quoin_evidence::record::{RecordRequest, record_run};
 use quoin_evidence::store::read_bindings;
 use quoin_evidence::types::{Outcome, RunEntry};
-use quoin_evidence::{
-    EvidenceSource, MemoryEvidence, STORE_SCHEMA_VERSION, SuiteId, SymbolId,
-};
+use quoin_evidence::{EvidenceSource, MemoryEvidence, STORE_SCHEMA_VERSION, SuiteId, SymbolId};
 use quoin_quire_types::Obligation;
 
 fn obligation() -> Obligation {
@@ -121,7 +119,7 @@ fn tc_fr030_binding_store_bytes_use_rust_order_not_locale_collation() {
     assert_eq!(
         stored,
         format!(
-            "{{\"bindings\":[{{\"obligation\":\"FR-030-AC-11\",\"suite\":\"SUITE-ORDER\",\"symbols\":[\"tests::alpha\",\"tests::zeta\"]}}],\"schemaVersion\":{STORE_SCHEMA_VERSION}}}"
+            "{{\n  \"bindings\": [\n    {{\n      \"obligation\": \"FR-030-AC-11\",\n      \"suite\": \"SUITE-ORDER\",\n      \"symbols\": [\n        \"tests::alpha\",\n        \"tests::zeta\"\n      ]\n    }}\n  ],\n  \"schemaVersion\": {STORE_SCHEMA_VERSION}\n}}\n"
         )
     );
 }
