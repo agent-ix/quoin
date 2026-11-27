@@ -4,6 +4,7 @@
 //! Tests for the operation router and its self-census.
 
 use super::*;
+use ix_trace_rs::trace;
 
 /// Every `ops` source file, as `(domain, path, source)`.
 ///
@@ -425,6 +426,7 @@ fn an_unknown_operation_names_the_ones_that_exist() {
 /// deliberately UNPARSEABLE: a `CORE_BAD_JSON` here would mean the parser
 /// ran first, and the bound was a remark about an allocation that had
 /// already happened (quoin#448 FND-003).
+#[trace("FR-096-AC-9")]
 #[test]
 fn a_stream_past_the_ceiling_is_refused_before_it_is_parsed() {
     let unparseable = format!(r#"{{"echo":"{}"#, "x".repeat(MAX_REQUEST_BYTES));
@@ -441,6 +443,7 @@ fn a_stream_past_the_ceiling_is_refused_before_it_is_parsed() {
 /// A counting reader rather than a comment. Without the cap this consumes
 /// every byte offered — four times the ceiling here, unbounded in
 /// production, where the offer is whatever a caller pipes in.
+#[trace("FR-096-AC-9")]
 #[test]
 fn the_stream_is_abandoned_at_the_ceiling_not_drained() {
     struct Counting<R> {
@@ -479,6 +482,7 @@ fn the_stream_is_abandoned_at_the_ceiling_not_drained() {
 /// Exactly at the ceiling is accepted. A bound that refuses its own limit
 /// is a different bound from the one documented, and the boundary between
 /// "accepted" and "refused" is the only part of a ceiling anyone meets.
+#[trace("FR-096-AC-9")]
 #[test]
 fn a_request_of_exactly_the_ceiling_is_accepted() {
     let padding = MAX_REQUEST_BYTES - r#"{"echo":""}"#.len();
@@ -489,6 +493,7 @@ fn a_request_of_exactly_the_ceiling_is_accepted() {
 }
 
 /// One byte more is refused, and the refusal names what it read.
+#[trace("FR-096-AC-9")]
 #[test]
 fn one_byte_past_the_ceiling_is_refused() {
     let padding = MAX_REQUEST_BYTES - r#"{"echo":""}"#.len() + 1;
@@ -782,6 +787,7 @@ fn census_of_the_measurement_domain() -> Vec<(&'static str, usize)> {
 /// it is the largest request the boundary accepts, and the transport
 /// ceiling above it is what stops the read before that bound can be
 /// measured on something unbounded.
+#[trace("FR-096-AC-9")]
 #[test]
 fn tc_412_the_transport_ceiling_stays_above_every_domain_bound() {
     let domain_bounds: Vec<(&str, usize)> = CENSUS_OF_THE_OLDER_DOMAINS

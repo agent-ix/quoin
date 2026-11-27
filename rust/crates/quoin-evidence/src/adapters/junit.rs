@@ -12,6 +12,7 @@
 use std::collections::BTreeMap;
 use std::sync::LazyLock;
 
+use ix_trace_rs::implements;
 use regex::Regex;
 
 use super::AdapterResult;
@@ -193,6 +194,7 @@ pub fn parse_junit(raw: &str) -> Result<AdapterResult, EvidenceError> {
 /// # Errors
 ///
 /// Refuses input holding no `<testcase>` element with a non-empty symbol.
+#[implements("FR-030-AC-18")]
 pub fn parse_junit_for_tool(raw: &str, tool: &str) -> Result<AdapterResult, EvidenceError> {
     let pytest = is_pytest(tool);
     let mut entries: Vec<RunEntry> = Vec::new();
@@ -213,6 +215,7 @@ pub fn parse_junit_for_tool(raw: &str, tool: &str) -> Result<AdapterResult, Evid
             continue;
         }
         let mut entry = RunEntry::new(symbol, outcome(body));
+        entry.path = attrs.get("file").cloned();
         entry.trace_ids = trace_ids(body);
         entries.push(entry);
     }

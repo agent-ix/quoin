@@ -201,6 +201,7 @@ mod tests {
             class: class.to_owned(),
             definition: String::new(),
             evidence_kind: None,
+            unreachable_reason: None,
             applicability: rules
                 .iter()
                 .map(|(rule, values)| {
