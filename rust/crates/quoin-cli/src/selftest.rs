@@ -121,6 +121,8 @@ pub(crate) fn command() -> Command {
 }
 
 /// Execute `quoin selftest`.
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     if arguments.get_flag("list") {
         return Ok(list());
@@ -131,6 +133,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let selected = select_cases(arguments)?;
     let working_directory =
         std::env::current_dir().map_err(|error| format!("resolve current directory: {error}"))?;
+    let run_environment = suite_run_environment(&working_directory, &std::env::temp_dir());
     let evidence_store = find_evidence_store(&working_directory);
     let requested_output = arguments.get_one::<String>("out").map(PathBuf::from);
     require_retained_destination(evidence_store.as_deref(), requested_output.as_deref())?;
@@ -157,7 +160,13 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let retained_location = retained_location
         .to_str()
         .ok_or_else(|| "self-test run record destination is not valid UTF-8".to_owned())?;
-    let record = run_record(&tool_version, &timestamp, &results, retained_location);
+    let record = run_record(
+        &tool_version,
+        &timestamp,
+        &results,
+        retained_location,
+        &run_environment,
+    );
     let mut bytes = serde_json::to_string_pretty(&record)
         .map_err(|error| format!("serialize self-test run record: {error}"))?
         .into_bytes();
@@ -188,26 +197,33 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     }
 }
 
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 fn run_record(
     tool_version: &str,
     timestamp: &str,
     results: &[CaseResult],
     retained_location: &str,
+    run_environment: &serde_json::Value,
 ) -> serde_json::Value {
     run_record_with_anomaly_documents(
         tool_version,
         timestamp,
         results,
         retained_location,
+        run_environment,
         crate::validation::EMBEDDED_ANOMALIES,
     )
 }
 
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 fn run_record_with_anomaly_documents(
     tool_version: &str,
     timestamp: &str,
     results: &[CaseResult],
     retained_location: &str,
+    run_environment: &serde_json::Value,
     anomaly_documents: Option<&[crate::validation::EmbeddedFile]>,
 ) -> serde_json::Value {
     serde_json::json!({
@@ -220,9 +236,123 @@ fn run_record_with_anomaly_documents(
         "timestamp": timestamp,
         "results": results,
         "retainedLocation": retained_location,
+        "runEnvironment": run_environment,
         "validationInputs": crate::validation::embedded_inputs_value(),
         "anomalySet": crate::validation::anomaly_set_value(tool_version, anomaly_documents),
     })
+}
+
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
+fn suite_run_environment(
+    working_directory: &Path,
+    temporary_directory: &Path,
+) -> serde_json::Value {
+    let repo_root = working_directory
+        .ancestors()
+        .find(|ancestor| ancestor.join("rust/Cargo.toml").is_file())
+        .unwrap_or(working_directory);
+    let safety = sibling_checkout(repo_root, "SPEC_OBJECTS_SAFETY_DIR", "spec-objects-safety");
+    let security = sibling_checkout(
+        repo_root,
+        "SPEC_OBJECTS_SECURITY_DIR",
+        "spec-objects-security",
+    );
+    let resolved_temp = temporary_directory
+        .canonicalize()
+        .ok()
+        .or_else(|| Some(absolute_path(working_directory, temporary_directory)));
+    let writable = resolved_temp
+        .as_deref()
+        .is_some_and(|path| tempfile::NamedTempFile::new_in(path).is_ok());
+
+    serde_json::json!({
+        "checkouts": [
+            checkout_observation("agent-ix/spec-objects-safety", safety.as_deref()),
+            checkout_observation("agent-ix/spec-objects-security", security.as_deref()),
+        ],
+        "temporaryDirectory": {
+            "resolvedPath": resolved_temp.map(|path| path.to_string_lossy().into_owned()),
+            "writable": writable,
+        }
+    })
+}
+
+#[implements("FR-217-AC-13")]
+fn sibling_checkout(repo_root: &Path, env_name: &str, directory_name: &str) -> Option<PathBuf> {
+    if let Some(path) = std::env::var_os(env_name).map(PathBuf::from) {
+        return path.is_dir().then_some(path);
+    }
+    let parent = repo_root.parent()?;
+    [
+        repo_root.join(".ci-deps").join(directory_name),
+        parent.join(directory_name),
+        parent.parent().unwrap_or(parent).join(directory_name),
+    ]
+    .into_iter()
+    .find(|path| path.is_dir())
+}
+
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
+fn checkout_observation(identity: &str, checkout: Option<&Path>) -> serde_json::Value {
+    let Some(path) = checkout.and_then(|path| path.canonicalize().ok()) else {
+        return serde_json::json!({
+            "identity": identity,
+            "revision": null,
+            "resolvedPath": null,
+        });
+    };
+    let canonical_identity = git_output(&path, &["remote", "get-url", "origin"])
+        .and_then(|remote| canonical_repository_identity(&remote));
+    let revision = if canonical_identity.as_deref() == Some(identity) {
+        git_output(&path, &["rev-parse", "HEAD"])
+    } else {
+        None
+    };
+    if revision.is_none() {
+        return serde_json::json!({
+            "identity": identity,
+            "revision": null,
+            "resolvedPath": null,
+        });
+    }
+    serde_json::json!({
+        "identity": identity,
+        "revision": revision,
+        "resolvedPath": path.to_string_lossy(),
+    })
+}
+
+fn git_output(path: &Path, arguments: &[&str]) -> Option<String> {
+    let output = ProcessCommand::new("git")
+        .arg("-C")
+        .arg(path)
+        .args(arguments)
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let value = String::from_utf8(output.stdout).ok()?.trim().to_owned();
+    (!value.is_empty()).then_some(value)
+}
+
+#[implements("FR-217-AC-13")]
+fn canonical_repository_identity(remote: &str) -> Option<String> {
+    let remote = remote.trim().trim_end_matches(".git");
+    let path = remote
+        .strip_prefix("https://github.com/")
+        .or_else(|| remote.strip_prefix("http://github.com/"))
+        .or_else(|| remote.strip_prefix("ssh://git@github.com/"))
+        .or_else(|| remote.strip_prefix("git@github.com:"))?;
+    let mut parts = path.split('/');
+    let owner = parts.next()?;
+    let repository = parts.next()?;
+    if owner.is_empty() || repository.is_empty() || parts.next().is_some() {
+        return None;
+    }
+    Some(format!("{owner}/{repository}"))
 }
 
 fn ensure_supported_platform(os: &str) -> Result<(), String> {
@@ -1066,6 +1196,13 @@ mod tests {
     #[trace("FR-217-AC-1")]
     #[test]
     fn tc_230_run_record_serializes_run_context_and_case_outcomes() {
+        let run_environment = serde_json::json!({
+            "checkouts": [
+                {"identity": "agent-ix/spec-objects-safety", "revision": "safety-sha", "resolvedPath": "/repo/.ci-deps/spec-objects-safety"},
+                {"identity": "agent-ix/spec-objects-security", "revision": "security-sha", "resolvedPath": "/repo/.ci-deps/spec-objects-security"}
+            ],
+            "temporaryDirectory": {"resolvedPath": "/tmp/quoin", "writable": true}
+        });
         let results = vec![
             CaseResult {
                 id: "passing-case".to_owned(),
@@ -1087,6 +1224,7 @@ mod tests {
             "2026-11-25T12:00:00Z",
             &results,
             "/repo/spec/evidence/runs/SELFTEST/run.json",
+            &run_environment,
         );
 
         assert_eq!(record["tool"], "quoin");
@@ -1099,6 +1237,7 @@ mod tests {
         assert_eq!(record["results"][0]["status"], "pass");
         assert_eq!(record["results"][1]["status"], "not-executed");
         assert_eq!(record["results"][1]["detail"], "required tool unavailable");
+        assert_eq!(record["runEnvironment"], run_environment);
         assert!(record["validationInputs"].is_object());
         assert_eq!(
             record["anomalySet"]["producerVersion"],
@@ -1109,6 +1248,155 @@ mod tests {
         assert!(!serialized.contains("sourceDigest"));
         assert!(!serialized.contains("sourceRevision"));
         assert!(!serialized.contains("reportContentDigest"));
+    }
+
+    fn initialize_checkout(path: &Path, remote: &str) -> String {
+        std::fs::create_dir_all(path).expect("checkout directory exists");
+        let init = ProcessCommand::new("git")
+            .arg("-C")
+            .arg(path)
+            .args(["init", "-q"])
+            .status()
+            .expect("git initializes checkout");
+        assert!(init.success(), "git init succeeds");
+        for (key, value) in [
+            ("user.name", "Quoin Test"),
+            ("user.email", "quoin-test@example.invalid"),
+        ] {
+            let configured = ProcessCommand::new("git")
+                .arg("-C")
+                .arg(path)
+                .args(["config", key, value])
+                .status()
+                .expect("git identity config runs");
+            assert!(configured.success(), "git identity config succeeds");
+        }
+        std::fs::write(path.join("README.md"), "fixture checkout\n")
+            .expect("checkout has a tracked file");
+        let added = ProcessCommand::new("git")
+            .arg("-C")
+            .arg(path)
+            .args(["add", "README.md"])
+            .status()
+            .expect("git adds fixture file");
+        assert!(added.success(), "git add succeeds");
+        let committed = ProcessCommand::new("git")
+            .arg("-C")
+            .arg(path)
+            .args(["commit", "-q", "-m", "fixture checkout"])
+            .status()
+            .expect("git commits fixture file");
+        assert!(committed.success(), "git commit succeeds");
+        let remote_added = ProcessCommand::new("git")
+            .arg("-C")
+            .arg(path)
+            .args(["remote", "add", "origin", remote])
+            .status()
+            .expect("git adds canonical origin");
+        assert!(remote_added.success(), "git remote add succeeds");
+        git_output(path, &["rev-parse", "HEAD"]).expect("fixture revision is available")
+    }
+
+    #[trace("FR-217-AC-13", "FR-217-AC-14")]
+    #[test]
+    fn suite_run_record_captures_checkouts_and_marks_unavailable_inputs() {
+        let fixture = tempfile::tempdir().expect("environment fixture directory");
+        let repository = fixture.path().join("quoin");
+        std::fs::create_dir_all(repository.join("rust")).expect("quoin rust directory exists");
+        std::fs::write(repository.join("rust/Cargo.toml"), "[workspace]\n")
+            .expect("quoin root marker exists");
+        let safety = repository.join(".ci-deps/spec-objects-safety");
+        let security = repository.join(".ci-deps/spec-objects-security");
+        let safety_revision =
+            initialize_checkout(&safety, "git@github.com:agent-ix/spec-objects-safety.git");
+        let security_revision = initialize_checkout(
+            &security,
+            "https://github.com/agent-ix/spec-objects-security.git",
+        );
+        let temporary_directory = fixture.path().join("temporary");
+        std::fs::create_dir(&temporary_directory).expect("temporary directory exists");
+
+        let captured = suite_run_environment(&repository, &temporary_directory);
+        assert_eq!(
+            captured["checkouts"][0],
+            serde_json::json!({
+                "identity": "agent-ix/spec-objects-safety",
+                "revision": safety_revision,
+                "resolvedPath": safety.canonicalize().expect("safety path resolves").to_string_lossy(),
+            })
+        );
+        assert_eq!(
+            captured["checkouts"][1],
+            serde_json::json!({
+                "identity": "agent-ix/spec-objects-security",
+                "revision": security_revision,
+                "resolvedPath": security.canonicalize().expect("security path resolves").to_string_lossy(),
+            })
+        );
+        assert_eq!(
+            captured["temporaryDirectory"],
+            serde_json::json!({
+                "resolvedPath": temporary_directory.canonicalize().expect("temporary path resolves").to_string_lossy(),
+                "writable": true,
+            })
+        );
+
+        let result = CaseResult {
+            id: "failed-case".to_owned(),
+            status: "fail",
+            criteria: vec!["FR-235-AC-1".to_owned()],
+            detail: "fixture failure remains a result fact".to_owned(),
+            stderr: String::new(),
+        };
+        let record = run_record(
+            "quoin test",
+            "2026-11-27T12:00:00Z",
+            &[result],
+            "/repo/spec/evidence/runs/SELFTEST/run.json",
+            &captured,
+        );
+        assert_eq!(record["runEnvironment"], captured);
+        assert_eq!(record["results"][0]["status"], "fail");
+        assert_eq!(
+            record["results"][0]["criteria"],
+            serde_json::json!(["FR-235-AC-1"])
+        );
+
+        std::fs::remove_dir_all(&security).expect("security checkout becomes unavailable");
+        let original_permissions = std::fs::metadata(&temporary_directory)
+            .expect("temporary directory metadata")
+            .permissions();
+        let mut read_only_permissions = original_permissions.clone();
+        read_only_permissions.set_readonly(true);
+        std::fs::set_permissions(&temporary_directory, read_only_permissions)
+            .expect("temporary directory becomes read-only");
+        let unavailable = suite_run_environment(&repository, &temporary_directory);
+        std::fs::set_permissions(&temporary_directory, original_permissions)
+            .expect("temporary directory permissions are restored");
+
+        assert_eq!(
+            unavailable["checkouts"][1],
+            serde_json::json!({
+                "identity": "agent-ix/spec-objects-security",
+                "revision": null,
+                "resolvedPath": null,
+            })
+        );
+        assert_eq!(
+            unavailable["temporaryDirectory"]["resolvedPath"],
+            serde_json::json!(
+                temporary_directory
+                    .canonicalize()
+                    .expect("temporary path resolves")
+                    .to_string_lossy()
+            )
+        );
+        assert_eq!(unavailable["temporaryDirectory"]["writable"], false);
+        assert_eq!(record["results"][0]["status"], "fail");
+        assert_eq!(
+            record["results"][0]["criteria"],
+            serde_json::json!(["FR-235-AC-1"])
+        );
     }
 
     #[trace("FR-236-AC-8")]
@@ -1130,6 +1418,7 @@ mod tests {
             "2026-11-25T12:00:00Z",
             &[],
             "/repo/spec/evidence/runs/SELFTEST/run.json",
+            &serde_json::json!({"checkouts": [], "temporaryDirectory": {"resolvedPath": "/tmp", "writable": true}}),
             Some(&authored_documents),
         );
         let empty = run_record_with_anomaly_documents(
@@ -1137,6 +1426,7 @@ mod tests {
             "2026-11-25T12:00:00Z",
             &[],
             "/repo/spec/evidence/runs/SELFTEST/empty.json",
+            &serde_json::json!({"checkouts": [], "temporaryDirectory": {"resolvedPath": "/tmp", "writable": true}}),
             Some(&[]),
         );
         let absent = run_record_with_anomaly_documents(
@@ -1144,6 +1434,7 @@ mod tests {
             "2026-11-25T12:00:00Z",
             &[],
             "/repo/spec/evidence/runs/SELFTEST/absent.json",
+            &serde_json::json!({"checkouts": [], "temporaryDirectory": {"resolvedPath": "/tmp", "writable": true}}),
             None,
         );
 
