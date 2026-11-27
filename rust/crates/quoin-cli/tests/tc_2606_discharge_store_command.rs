@@ -349,7 +349,7 @@ fn tc_211_facts_beside_repo_resolve_against_the_store_and_alone_are_no_store() {
     let alone = report(&[]);
     assert_eq!(
         alone["binding"]["direct"].as_array().unwrap().as_slice(),
-        []
+        [] as [serde_json::Value; 0]
     );
     let open = alone["binding"]["open"]
         .as_array()
@@ -394,7 +394,7 @@ fn tc_211_facts_beside_repo_resolve_against_the_store_and_alone_are_no_store() {
     let ignored: serde_json::Value = serde_json::from_str(&text(&output)).unwrap();
     assert_eq!(
         ignored["binding"]["direct"].as_array().unwrap().as_slice(),
-        []
+        [] as [serde_json::Value; 0]
     );
 }
 
@@ -485,7 +485,7 @@ fn tc_211_a_collected_record_reopens_the_clause_and_leaves_the_stored_fact_alone
     let after = report();
     assert_eq!(
         after["binding"]["direct"].as_array().unwrap().as_slice(),
-        []
+        [] as [serde_json::Value; 0]
     );
     let reason = after["binding"]["open"]
         .as_array()

@@ -612,7 +612,7 @@ fn tc_002_matrix_leaves_a_recorded_pass_unevaluated_without_owner_evidence() {
     assert_eq!(criteria.len(), 2);
     assert_eq!(criteria[0]["id"], "FR-001-AC-1");
     let analysis = criteria[0]["analysis_evidence"].as_array().unwrap();
-    assert_ne!(analysis.as_slice(), []);
+    assert_ne!(analysis.as_slice(), [] as [serde_json::Value; 0]);
     assert!(
         analysis.iter().all(|item| item["status"] == "unevaluated"),
         "{analysis:?}"

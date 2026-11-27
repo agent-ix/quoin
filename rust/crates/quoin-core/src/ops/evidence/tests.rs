@@ -833,7 +833,7 @@ fn a_report_from_supplied_facts_resolves_their_refs_against_the_store() {
     let missing = report(json!([run_fact("evidence://runs/SUITE-1/gone")]));
     assert_eq!(
         missing["binding"]["direct"].as_array().unwrap().as_slice(),
-        []
+        [] as [serde_json::Value; 0]
     );
     let reason = missing["binding"]["open"][0]["reason"].as_str().unwrap();
     assert!(
