@@ -65,8 +65,13 @@ workflow SHALL require no archived provider package or private checkout.
 | FR-020-AC-3 | A missing or incompatible ix-flow reports the supported installation command without creating a run. | Test |
 | FR-020-AC-4 | A missing explicit skill directory reports how to provide the installed plugin skill, without extracting workflow assets. | Test |
 | FR-020-AC-5 | Run context resolves relative documents under the subject repository, including paths with spaces. | Test |
-| FR-020-AC-6 | Given a compatible ix-flow host API, `quoin design-gate` creates one system-owned `quoin_context` whose ID equals the engine run ID, whose repository and config roots are canonical launch paths, and whose `targets` exactly equal the canonicalized repeatable `--target` arguments (an empty list when none are supplied); proposer add, replacement, or update attempts fail and leave the seeded item unchanged. | Test |
+| FR-020-AC-6 | Given a compatible ix-flow host API, `quoin design-gate` invokes its system-owned item seeding API once for `quoin_context`; the item ID equals the engine run ID, and its repository root, config root, and targets equal the canonical launch paths (an empty target list when none are supplied). | Test |
 | FR-020-AC-7 | Given an ix-flow package without the host seeding API, `quoin design-gate` returns an actionable error before creating a run. | Test |
+
+The ix-flow engine owns refusal of proposer add, replacement, and update attempts against a
+system-owned item and leaves that item unchanged. Quoin verifies that it declares
+`quoin_context` as system-owned and seeds it only through ix-flow's host API; mutation refusal
+belongs to ix-flow's own conformance tests.
 
 ## Dependencies
 
