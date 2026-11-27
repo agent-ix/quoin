@@ -166,3 +166,70 @@ fn quoin_core_manifest_declares_a_library_and_no_binary_target() {
         "quoin-core has no main.rs"
     );
 }
+
+#[trace("FR-100-CON-3")]
+#[test]
+fn measurement_portfolio_read_leaves_the_governed_corpus_fixture_unchanged() {
+    use quoin_core::protocol::{Diagnostic, Response};
+    use quoin_core::runtime::{RuntimeSettings, dispatch};
+    use serde_json::{Value, json};
+
+    fn snapshot(root: &Path) -> Vec<(PathBuf, Vec<u8>)> {
+        let mut files = Vec::new();
+        let mut pending = vec![root.to_path_buf()];
+        while let Some(directory) = pending.pop() {
+            for entry in std::fs::read_dir(directory).expect("fixture directory is readable") {
+                let path = entry.expect("fixture entry is readable").path();
+                if path.is_dir() {
+                    pending.push(path);
+                } else {
+                    files.push(path);
+                }
+            }
+        }
+        files.sort();
+        files
+            .into_iter()
+            .map(|path| {
+                (
+                    path.clone(),
+                    std::fs::read(path).expect("fixture file is readable"),
+                )
+            })
+            .collect()
+    }
+
+    let fixture = crate_root().join("../quoin-measurement/tests/fixtures/portfolio-tree");
+    let before = snapshot(&fixture);
+    assert!(
+        !before.is_empty(),
+        "the corpus fixture population is non-empty"
+    );
+    let request = json!({
+        "locations": [
+            fixture.join("alpha").to_string_lossy(),
+            fixture.join("bravo").to_string_lossy(),
+        ]
+    });
+    let response = dispatch(
+        "measurement.build_portfolio",
+        &request,
+        &RuntimeSettings::default(),
+    )
+    .unwrap_or_else(|error| Response {
+        payload: Value::Null,
+        diagnostics: vec![Diagnostic::from(&error)],
+        outcome: error.outcome(),
+    });
+    assert_eq!(response.outcome.code(), 0, "{:?}", response.diagnostics);
+    assert!(
+        response.payload["repositories"].as_array().is_some(),
+        "{}",
+        response.payload
+    );
+    assert_eq!(
+        snapshot(&fixture),
+        before,
+        "measurement wrote a corpus byte"
+    );
+}
