@@ -66,7 +66,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let run_observations = crate::run_observation::read_run_observations(&run_observation_paths)?;
     let signature_verifier = crate::analysis_evidence::signature_verifier(arguments)?;
     let repo = required(arguments, "repo")?;
-    let request_limit = selected_request_limit(arguments)?;
+    let request_limit = selected_request_limit(arguments, &repo)?;
     let options = AuditOptions::from_arguments(arguments);
     let built = match build_with_limit(
         &options,
@@ -74,6 +74,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         &run_observations,
         signature_verifier.as_ref(),
         request_limit,
+        true,
     )? {
         Built::Matrix(built) => built,
         Built::Declined(response) => return Ok(response),
@@ -132,7 +133,8 @@ pub(crate) fn build(
         repo,
         run_observations,
         signature_verifier,
-        DEFAULT_MAX_REQUEST_BYTES,
+        configured_request_limit(repo)?.unwrap_or(DEFAULT_MAX_REQUEST_BYTES),
+        false,
     )
 }
 
@@ -143,6 +145,7 @@ fn build_with_limit(
     run_observations: &[crate::run_observation::RunObservationFile],
     signature_verifier: Option<&crate::analysis_evidence::SignatureVerifier>,
     request_limit: usize,
+    has_limit_flag: bool,
 ) -> Result<Built, String> {
     let audited = match assemble_for_matrix_with(options, repo)? {
         Assembly::Audited(audited) => audited,
@@ -207,7 +210,7 @@ fn build_with_limit(
             .map_err(|error| format!("the retained runs are malformed: {error}"))?,
     );
     let request = serde_json::Value::Object(request);
-    ensure_request_size(&request, request_limit)?;
+    ensure_request_size(&request, request_limit, has_limit_flag)?;
     let response = invoke("matrix.build", &request)?;
     let mut diagnostics = audited.response.diagnostics;
     diagnostics.extend(design_errors.into_iter().map(|error| {
@@ -224,15 +227,9 @@ fn build_with_limit(
 }
 
 #[implements("FR-115-AC-27")]
-fn selected_request_limit(arguments: &ArgMatches) -> Result<usize, String> {
+fn selected_request_limit(arguments: &ArgMatches, repo: &str) -> Result<usize, String> {
     let configured = if arguments.get_one::<usize>("max-request-bytes").is_none() {
-        let environment = ProcessEnvironment;
-        let context = crate::config::context()?;
-        let service = ConfigService::<QuoinConfig>::for_plugin(&environment, &context);
-        service
-            .get(&mut IncidentLog::new())
-            .value
-            .matrix_max_request_bytes
+        configured_request_limit(repo)?
     } else {
         None
     };
@@ -240,6 +237,16 @@ fn selected_request_limit(arguments: &ArgMatches) -> Result<usize, String> {
         arguments.get_one::<usize>("max-request-bytes").copied(),
         configured,
     )
+}
+
+fn configured_request_limit(repo: &str) -> Result<Option<usize>, String> {
+    let environment = ProcessEnvironment;
+    let context = crate::config::context_for_repo(std::path::Path::new(repo))?;
+    let service = ConfigService::<QuoinConfig>::for_plugin(&environment, &context);
+    Ok(service
+        .get(&mut IncidentLog::new())
+        .value
+        .matrix_max_request_bytes)
 }
 
 fn select_request_limit(cli: Option<usize>, configured: Option<usize>) -> Result<usize, String> {
@@ -256,25 +263,36 @@ fn select_request_limit(cli: Option<usize>, configured: Option<usize>) -> Result
 }
 
 #[implements("FR-115-AC-27")]
-fn ensure_request_size(request: &serde_json::Value, limit: usize) -> Result<(), String> {
+fn ensure_request_size(
+    request: &serde_json::Value,
+    limit: usize,
+    has_limit_flag: bool,
+) -> Result<(), String> {
     let observed = serde_json::to_vec(request)
         .map_err(|error| format!("cannot measure the matrix request: {error}"))?
         .len();
     if observed <= limit {
         return Ok(());
     }
-    Err(request_size_error(observed, limit))
+    Err(request_size_error(observed, limit, has_limit_flag))
 }
 
 #[implements("FR-115-AC-27")]
-fn request_size_error(observed: usize, limit: usize) -> String {
+fn request_size_error(observed: usize, limit: usize, has_limit_flag: bool) -> String {
+    let raise_limit = if has_limit_flag {
+        format!(
+            "raise it with --max-request-bytes {observed} or `quoin config set matrix_max_request_bytes {observed}`"
+        )
+    } else {
+        format!("raise it with `quoin config set matrix_max_request_bytes {observed}`")
+    };
     if observed <= HARD_MAX_REQUEST_BYTES {
         format!(
-            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit. Raise it with --max-request-bytes {observed}, `quoin config set matrix_max_request_bytes {observed}` for the user setting, or `matrix_max_request_bytes: {observed}` in project .ix/config.d/quoin.yaml (quoin.matrix_max_request_bytes); reduce the request with repeatable --module PATH. The hard maximum is {HARD_MAX_REQUEST_BYTES} bytes"
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit. You can {raise_limit}, or set `matrix_max_request_bytes: {observed}` in the selected repository's .ix/config.d/quoin.yaml (quoin.matrix_max_request_bytes); reduce the request with repeatable --module PATH. The hard maximum is {HARD_MAX_REQUEST_BYTES} bytes"
         )
     } else {
         format!(
-            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {HARD_MAX_REQUEST_BYTES}-byte hard maximum. You can set the selected limit with --max-request-bytes N or `quoin config set matrix_max_request_bytes N` (quoin.matrix_max_request_bytes), but it cannot exceed the hard maximum; reduce the request with repeatable --module PATH"
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {HARD_MAX_REQUEST_BYTES}-byte hard maximum. You can {raise_limit}, but the selected limit cannot exceed the hard maximum; reduce the request with repeatable --module PATH"
         )
     }
 }
@@ -295,15 +313,19 @@ mod tests {
         let observed = serde_json::to_vec(&request)
             .expect("request serializes")
             .len();
-        assert!(ensure_request_size(&request, observed + 1).is_ok());
+        assert!(ensure_request_size(&request, observed + 1, true).is_ok());
 
-        let error = ensure_request_size(&request, observed - 1)
+        let error = ensure_request_size(&request, observed - 1, true)
             .expect_err("request exceeds the hand-written limit");
         assert!(error.contains(&format!("request is {observed} bytes")));
         assert!(error.contains(&format!("selected {}-byte limit", observed - 1)));
         assert!(error.contains("--max-request-bytes"));
         assert!(error.contains("quoin.matrix_max_request_bytes"));
         assert!(error.contains("--module PATH"));
+
+        let dossier_error = request_size_error(observed, observed - 1, false);
+        assert!(!dossier_error.contains("--max-request-bytes"));
+        assert!(dossier_error.contains("quoin config set matrix_max_request_bytes"));
     }
 
     #[trace("FR-115-AC-27")]
@@ -331,13 +353,16 @@ mod tests {
     #[test]
     fn refusal_over_hard_max_names_limit_and_scoped_alternative() {
         let observed = HARD_MAX_REQUEST_BYTES + 1;
-        let error = request_size_error(observed, HARD_MAX_REQUEST_BYTES);
+        let error = request_size_error(observed, HARD_MAX_REQUEST_BYTES, true);
 
         assert!(error.contains(&format!("request is {observed} bytes")));
         assert!(error.contains(&format!("{}-byte hard maximum", HARD_MAX_REQUEST_BYTES)));
-        assert!(error.contains("--max-request-bytes N"));
+        assert!(error.contains("--max-request-bytes"));
         assert!(error.contains("quoin.matrix_max_request_bytes"));
         assert!(error.contains("repeatable --module PATH"));
         assert!(error.contains("cannot exceed the hard maximum"));
+
+        let dossier_error = request_size_error(observed, HARD_MAX_REQUEST_BYTES, false);
+        assert!(!dossier_error.contains("--max-request-bytes"));
     }
 }

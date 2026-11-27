@@ -19,7 +19,9 @@ use ix_trace_rs::implements;
 /// report. The 80 MiB domain ceiling leaves 16 MiB below the 96 MiB transport
 /// ceiling for the operation envelope and keeps transport refusals unreachable
 /// for a request that fits this domain.
-pub const MAX_MATRIX_BUILD_BYTES: usize = 80 * 1024 * 1024;
+pub const MAX_MATRIX_BUILD_BYTES: usize = quoin_config::MAX_MATRIX_REQUEST_BYTES;
+
+const _: () = assert!(MAX_MATRIX_BUILD_BYTES < crate::protocol::MAX_REQUEST_BYTES);
 
 /// The `context.reason` a contradictory audit report is refused with.
 pub const CONTRADICTORY_AUDIT: &str = "contradictory-audit";

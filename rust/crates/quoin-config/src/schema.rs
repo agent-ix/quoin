@@ -21,6 +21,9 @@ use serde_yaml_ng::Value as Yaml;
 use crate::error::ConfigIssue;
 use crate::ids::{OrgName, PluginId};
 
+/// Hard ceiling accepted by `matrix.build`, also enforced for its stored config value.
+pub const MAX_MATRIX_REQUEST_BYTES: usize = 80 * 1024 * 1024;
+
 /// Config/secrets namespace quoin registers under.
 pub const QUOIN_PLUGIN_ID: &str = "quoin";
 
@@ -187,6 +190,18 @@ impl PluginConfigSchema for QuoinConfig {
                 message: "matrix_max_request_bytes must be greater than zero".to_owned(),
             }]);
         }
+        if config
+            .matrix_max_request_bytes
+            .is_some_and(|limit| limit > MAX_MATRIX_REQUEST_BYTES)
+        {
+            return Err(vec![ConfigIssue {
+                key_path: "matrix_max_request_bytes".to_owned(),
+                expected: format!("a byte limit no greater than {MAX_MATRIX_REQUEST_BYTES}"),
+                message: format!(
+                    "matrix_max_request_bytes cannot exceed the {MAX_MATRIX_REQUEST_BYTES}-byte matrix.build hard ceiling"
+                ),
+            }]);
+        }
         Ok(config)
     }
 
@@ -306,7 +321,17 @@ mod tests {
         let cfg = QuoinConfig::validate(&yaml("matrix_max_request_bytes: 12345"))
             .expect("positive byte limit is valid");
         assert_eq!(cfg.matrix_max_request_bytes, Some(12_345));
+        let cfg = QuoinConfig::validate(&yaml("matrix_max_request_bytes: 83886080"))
+            .expect("the 80 MiB hard ceiling is valid");
+        assert_eq!(cfg.matrix_max_request_bytes, Some(MAX_MATRIX_REQUEST_BYTES));
         assert!(QuoinConfig::validate(&yaml("matrix_max_request_bytes: 0")).is_err());
         assert!(QuoinConfig::validate(&yaml("matrix_max_request_bytes: null")).is_err());
+        let error = QuoinConfig::validate(&yaml("matrix_max_request_bytes: 83886081"))
+            .expect_err("a value above the hard ceiling is refused");
+        assert!(
+            error[0]
+                .message
+                .contains("83886080-byte matrix.build hard ceiling")
+        );
     }
 }

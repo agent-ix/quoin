@@ -62,8 +62,8 @@ pub use plugin_registry::{
     PluginSchemaRegistry, RegisteredPluginSchema, RegistrationOutcome, register_quoin_schema,
 };
 pub use schema::{
-    IxSchema, PluginConfigSchema, QUOIN_ENV_BINDINGS, QUOIN_PACKAGE_NAME, QUOIN_PLUGIN_ID,
-    QuoinConfig,
+    IxSchema, MAX_MATRIX_REQUEST_BYTES, PluginConfigSchema, QUOIN_ENV_BINDINGS, QUOIN_PACKAGE_NAME,
+    QUOIN_PLUGIN_ID, QuoinConfig,
 };
 pub use service::{
     ConfigIncident, ConfigService, DoctorEntry, DoctorStatus, IncidentLog, Resolved,

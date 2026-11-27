@@ -9,6 +9,7 @@ use quoin_config::{
     ConfigService, DoctorStatus, IncidentLog, ProcessEnvironment, QuoinConfig, RuntimeContext,
 };
 use quoin_core::protocol::Response;
+use std::path::Path;
 
 use crate::invocation;
 
@@ -150,10 +151,14 @@ fn edit() -> Result<Response, String> {
 }
 
 pub(crate) fn context() -> Result<RuntimeContext, String> {
-    let invocation = invocation::current();
     let cwd = std::env::current_dir()
         .map_err(|error| format!("cannot read current directory: {error}"))?;
-    let context = RuntimeContext::for_cwd(&cwd, invocation.no_project_config());
+    context_for_repo(&cwd)
+}
+
+pub(crate) fn context_for_repo(repo: &Path) -> Result<RuntimeContext, String> {
+    let invocation = invocation::current();
+    let context = RuntimeContext::for_cwd(repo, invocation.no_project_config());
     Ok(invocation
         .config_root()
         .cloned()

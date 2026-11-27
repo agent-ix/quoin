@@ -230,7 +230,12 @@ impl Fixture {
     }
 
     fn quoin(&self, arguments: &[&str]) -> Output {
+        self.quoin_from(self.repo(), arguments)
+    }
+
+    fn quoin_from(&self, cwd: &Path, arguments: &[&str]) -> Output {
         self.command(env!("CARGO_BIN_EXE_quoin"))
+            .current_dir(cwd)
             .args(arguments)
             .output()
             .expect("the native quoin binary runs")
@@ -1108,6 +1113,34 @@ fn tc_1080_212_project_limit_is_actionable_and_cli_override_takes_precedence() {
         serde_json::from_slice::<Value>(&raised.stdout).is_ok(),
         "the matrix JSON remains on stdout"
     );
+}
+
+#[trace("FR-027-AC-10", "FR-115-AC-27")]
+#[test]
+fn tc_367_matrix_project_limit_comes_from_repo_argument_not_process_cwd() {
+    let selected_repo = repository(MODULE);
+    selected_repo.write(".ix/config.d/quoin.yaml", "matrix_max_request_bytes: 1\n");
+    let cwd = repository(MODULE);
+    cwd.write(
+        ".ix/config.d/quoin.yaml",
+        "matrix_max_request_bytes: 83886080\n",
+    );
+    let selected_path = selected_repo.repo().to_str().unwrap();
+
+    let output = cwd.quoin_from(
+        cwd.repo(),
+        &[
+            "matrix",
+            "--repo",
+            selected_path,
+            "--module",
+            selected_path,
+            "--json",
+        ],
+    );
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    let error = String::from_utf8_lossy(&output.stderr);
+    assert!(error.contains("selected 1-byte limit"), "{error}");
 }
 
 /// The matrix loads required-relation record keys through the released Quire

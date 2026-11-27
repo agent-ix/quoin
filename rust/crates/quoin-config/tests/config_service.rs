@@ -88,6 +88,25 @@ fn matrix_request_limit_round_trips_and_project_value_overrides_user_value() {
         svc.get(&mut log).value.matrix_max_request_bytes,
         Some(12_345)
     );
+    svc.set_key("matrix_max_request_bytes", "83886080", &mut log)
+        .expect("the hard ceiling is accepted");
+    assert_eq!(
+        svc.get(&mut log).value.matrix_max_request_bytes,
+        Some(83_886_080)
+    );
+    let error = svc
+        .set_key("matrix_max_request_bytes", "83886081", &mut log)
+        .expect_err("a value above the hard ceiling is refused");
+    assert!(
+        error
+            .to_string()
+            .contains("83886080-byte matrix.build hard ceiling")
+    );
+    assert_eq!(
+        svc.get(&mut log).value.matrix_max_request_bytes,
+        Some(83_886_080),
+        "refused setting leaves the previous value in place"
+    );
 
     let project_root = f.root.path().join(".ix");
     let project_config = project_root.join("config.d/quoin.yaml");
