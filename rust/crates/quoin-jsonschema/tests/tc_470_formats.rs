@@ -140,6 +140,44 @@ fn tc_470_date_time_is_asserted_on_both_schemas_and_annotation_only_without_it()
     }
 }
 
+/// Each current schema replay compares verdicts and normalized diagnostics
+/// against the committed expected cases, and reports its nonempty population.
+#[trace("FR-098-AC-1", "FR-098-AC-8")]
+#[test]
+fn tc_470_each_schema_replay_reports_its_compared_population() {
+    for schema in MeasurementSchema::ALL {
+        let validator = asserted(*schema);
+        let cases = [
+            (retained_base(*schema), true, vec![]),
+            (
+                with_observed_at(*schema, "2026-02-30T00:00:00Z"),
+                false,
+                vec![("/observed_at", SchemaKeyword::Format)],
+            ),
+        ];
+        let mut compared = 0;
+        for (document, expected_verdict, expected_diagnostics) in cases {
+            let errors = validator.errors(&document);
+            assert_eq!(
+                validator.is_valid(&document),
+                expected_verdict,
+                "{schema}: replayed verdict differs from the committed expected case"
+            );
+            let diagnostics: Vec<_> = errors
+                .iter()
+                .map(quoin_jsonschema::SchemaError::identity)
+                .collect();
+            assert_eq!(
+                diagnostics, expected_diagnostics,
+                "{schema}: normalized diagnostic tuples differ from the committed expected case"
+            );
+            compared += 1;
+        }
+        assert!(compared > 0, "{schema}: parity replay must not be empty");
+        println!("{schema}: compared population = {compared}");
+    }
+}
+
 /// The lowercase RFC 3339 form the ruling widened to is accepted end to end.
 ///
 /// The pattern and the registered check must accept the same language: if the

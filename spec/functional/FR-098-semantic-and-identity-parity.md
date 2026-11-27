@@ -65,19 +65,17 @@ it replaces, compared byte for byte. No difference is exempt. No digest is compu
   cutover if the written bytes differ from the stored bytes.
 - Quoin SHALL test JCS canonicalization over adversarial Unicode, number-format
   and key-order inputs.
-- Quoin SHALL port each `fast-check` property suite under `tests/props` to a
-  `proptest` suite asserting the same property.
+- The cutover SHALL account for any retained TypeScript `fast-check` property
+  corpus before removing its oracle; the cutover disposition is recorded in
+  FR-098-AC-6.
 - If Rust disagrees with a retained expected fixture on any golden input, then
   Quoin SHALL refuse the cutover and SHALL name the differing input, the
   operation and both results.
 - Quoin SHALL resolve the JSON Schema validator version used across the
   workspace to one version, in `rust/Cargo.toml`.
-- Quoin SHALL assert no `format` keyword during validation, matching the
-  retained validator, which declares no format package; enabling format
-  assertion is a deliberate semantic change requiring its own requirement.
-- Quoin SHALL exclude the retained validator's schema-authoring strict-mode
-  diagnostics from the compared diagnostic set, because they analyse the schema
-  rather than the instance and have no counterpart in the Rust validator.
+- The Rust validator SHALL apply registered `format` checks for measurement
+  schemas as specified by FR-100-AC-4. Its compared diagnostics are instance
+  validation errors; it has no schema-authoring strict-mode diagnostic channel.
 - After a capability cuts over, the native fixture suite SHALL execute no
   retained implementation and SHALL compare against committed expected
   fixtures only.
@@ -105,9 +103,9 @@ differential run whose compared population is empty each block cutover.
 | FR-098-AC-3 | Withdrawn: the replay of captured records through the retained implementation is gone; records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn |
 | FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property |
 | FR-098-AC-5 | Each ported refusal path returns the same non-success classification from the Rust implementation as from the retained one. | Property |
-| FR-098-AC-6 | Every `tests/props` property has a `proptest` counterpart asserting the same property, and a property holding in TypeScript and violated in Rust fails the run. | Test |
+| FR-098-AC-6 | Withdrawn: the retained TypeScript `tests/props` corpus was absent from the measured tree at native cutover, so no enumerable source set remained to port or compare. | Withdrawn |
 | FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn |
-| FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test |
+| FR-098-AC-8 | The current Rust measurement validator applies registered `format` checks as required by FR-100-AC-4, and its compared diagnostic tuples contain only instance-validation errors, with no schema-authoring strict-mode diagnostics. | Test |
 | FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test |
 | FR-098-AC-10 | Withdrawn: the identifier format is stated once in the Behavior clause, and no legacy identifier form remains (id not reused). | Withdrawn |
 | FR-098-AC-11 | After a capability cuts over, the native fixture suite spawns no retained implementation for that capability and compares against committed fixtures. | Test |
