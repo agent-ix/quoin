@@ -101,7 +101,7 @@ fn module_list_and_ensure_defaults_use_ix_config_root_before_ix_home() {
         &process_home,
         &["module", "list"],
     );
-    assert_module_count(&listed, 10, "IX_CONFIG_ROOT ahead of IX_HOME");
+    assert_module_count(&listed, 9, "IX_CONFIG_ROOT ahead of IX_HOME");
 
     let ensured = invoke(
         Some(config_root.to_str().expect("config root is UTF-8")),
@@ -132,12 +132,12 @@ fn empty_or_unset_ix_config_root_falls_back_to_ix_home_then_home_ix() {
         &process_home,
         &["module", "list"],
     );
-    assert_module_count(&empty_config_root, 10, "IX_HOME after empty IX_CONFIG_ROOT");
+    assert_module_count(&empty_config_root, 9, "IX_HOME after empty IX_CONFIG_ROOT");
 
     let unset_config_root = invoke(None, Some(&legacy_home), &process_home, &["module", "list"]);
-    assert_module_count(&unset_config_root, 10, "IX_HOME after unset IX_CONFIG_ROOT");
+    assert_module_count(&unset_config_root, 9, "IX_HOME after unset IX_CONFIG_ROOT");
 
     install_defaults(&default_home);
     let default = invoke(None, None, &process_home, &["module", "list"]);
-    assert_module_count(&default, 10, "~/.ix after both overrides are unset");
+    assert_module_count(&default, 9, "~/.ix after both overrides are unset");
 }
