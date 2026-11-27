@@ -48,9 +48,9 @@ const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: Advice fixture\n---\n\n\
 ## Acceptance Criteria\n\n\
 | ID | Criteria | Verification |\n\
 |----|----------|--------------|\n\
-| FR-001-AC-1 | The security value is retained. | Test |\n\
+| FR-001-AC-1 | The service authenticates tokens. | Test |\n\
 | FR-001-AC-2 | The value is retained. | Test |\n\
-| FR-001-AC-3 | The security value is retained. | Smoke |\n";
+| FR-001-AC-3 | The service authorizes each request using its credential. | Smoke |\n";
 
 struct Fixture {
     repo: tempfile::TempDir,
