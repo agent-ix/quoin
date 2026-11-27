@@ -280,7 +280,7 @@ fn ordinary_analysis_projection_without_formal_rule_selection_is_eligible() {
     );
 }
 
-#[trace("NFR-033-M-2")]
+#[trace("FR-153-AC-5", "NFR-033-M-2")]
 #[test]
 fn requested_result_order_does_not_change_per_criterion_status() {
     let first = Recorded::new(&[AC1], "analysis-suite-a", "2026-11-13T00:00:00Z");
@@ -305,7 +305,7 @@ fn requested_result_order_does_not_change_per_criterion_status() {
     );
 }
 
-#[trace("NFR-033-M-3")]
+#[trace("FR-153-AC-8", "NFR-033-M-3")]
 #[test]
 fn healthy_audit_alone_does_not_supply_a_positive_analysis_decision() {
     let recorded = Recorded::new(&[AC1], "analysis-suite", "2026-11-13T00:00:00Z");

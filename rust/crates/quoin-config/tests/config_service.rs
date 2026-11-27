@@ -21,7 +21,7 @@ use quoin_config::service::{DoctorStatus, IncidentKind, MAX_CONFIG_FILE_BYTES};
 use quoin_config::{ConfigErrorCode, ConfigService, IncidentLog, QuoinConfig, RuntimeContext};
 
 struct Fixture {
-    _root: tempfile::TempDir,
+    root: tempfile::TempDir,
     env: FixedEnvironment,
     ctx: RuntimeContext,
     user_config: PathBuf,
@@ -33,7 +33,7 @@ fn fixture() -> Fixture {
     let env = FixedEnvironment::new().with_var("XDG_CONFIG_HOME", xdg.to_string_lossy());
     Fixture {
         user_config: xdg.join("ix").join("config.d").join("quoin.yaml"),
-        _root: root,
+        root,
         env,
         ctx: RuntimeContext::new(),
     }
@@ -73,6 +73,48 @@ fn tc_381_120_set_key_writes_only_the_named_key() {
             .as_ref()
             .map(quoin_config::OrgName::as_str),
         Some("acme")
+    );
+}
+
+#[trace("FR-027-AC-10")]
+#[test]
+fn matrix_request_limit_round_trips_and_project_value_overrides_user_value() {
+    let f = fixture();
+    let svc = service(&f);
+    let mut log = IncidentLog::new();
+    svc.set_key("matrix_max_request_bytes", "12345", &mut log)
+        .expect("numeric request limit is accepted");
+    assert_eq!(
+        svc.get(&mut log).value.matrix_max_request_bytes,
+        Some(12_345)
+    );
+    svc.set_key("matrix_max_request_bytes", "83886080", &mut log)
+        .expect("the hard ceiling is accepted");
+    assert_eq!(
+        svc.get(&mut log).value.matrix_max_request_bytes,
+        Some(83_886_080)
+    );
+    let error = svc
+        .set_key("matrix_max_request_bytes", "83886081", &mut log)
+        .expect_err("a value above the hard ceiling is refused");
+    assert_eq!(error.code(), ConfigErrorCode::ConfigSchema);
+    assert_eq!(
+        svc.get(&mut log).value.matrix_max_request_bytes,
+        Some(83_886_080),
+        "refused setting leaves the previous value in place"
+    );
+
+    let project_root = f.root.path().join(".ix");
+    let project_config = project_root.join("config.d/quoin.yaml");
+    fs::create_dir_all(project_config.parent().expect("project config parent"))
+        .expect("project config directory");
+    fs::write(&project_config, "matrix_max_request_bytes: 67890\n")
+        .expect("project value is written");
+    let project_context = RuntimeContext::new().with_project_config_root(project_root);
+    let project_service = ConfigService::<QuoinConfig>::for_plugin(&f.env, &project_context);
+    assert_eq!(
+        project_service.get(&mut log).value.matrix_max_request_bytes,
+        Some(67_890)
     );
 }
 

@@ -327,6 +327,7 @@ const EXPECTED_EXECUTABLES: &[&str] = &[
 /// editor.
 const KNOWN_ARGUMENTS: &[(&str, &str, &str)] = &[
     ("quoin-cli/src/flow.rs", "runner_program()", "ix-flow"),
+    ("quoin-cli/src/flow.rs", "resolved", "ix-flow"),
     ("quoin-cli/src/flow.rs", "node_program()", "node"),
     ("quoin-cli/src/config.rs", "&editor", "$EDITOR"),
     ("quoin-dossier/src/export.rs", "&options.quire", "quire"),

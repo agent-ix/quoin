@@ -11,13 +11,17 @@
 use crate::error::{CoreError, CoreErrorCode};
 use crate::ops::{refusal, request_size};
 use crate::protocol::Response;
+use ix_trace_rs::implements;
 
 /// The largest `matrix.build` request, in bytes.
 ///
-/// The same ceiling as `assurance.build_case`, for the same population: a
-/// whole repository's criteria, its binding graph and its audit report arrive
-/// in one request.
-pub const MAX_MATRIX_BUILD_BYTES: usize = 16 * 1024 * 1024;
+/// Matrix requests carry a whole repository's criteria, binding graph and audit
+/// report. The 80 MiB domain ceiling leaves 16 MiB below the 96 MiB transport
+/// ceiling for the operation envelope and keeps transport refusals unreachable
+/// for a request that fits this domain.
+pub const MAX_MATRIX_BUILD_BYTES: usize = quoin_config::MAX_MATRIX_REQUEST_BYTES;
+
+const _: () = assert!(MAX_MATRIX_BUILD_BYTES < crate::protocol::MAX_REQUEST_BYTES);
 
 /// The `context.reason` a contradictory audit report is refused with.
 pub const CONTRADICTORY_AUDIT: &str = "contradictory-audit";
@@ -39,9 +43,7 @@ pub const INVALID_STALE_CAUSE: &str = "invalid-stale-cause";
 pub fn build(request: &serde_json::Value) -> Result<Response, CoreError> {
     let op = "matrix.build";
     let size = request_size(request)?;
-    if size > MAX_MATRIX_BUILD_BYTES {
-        return Err(refusal(op, MAX_MATRIX_BUILD_BYTES, size));
-    }
+    check_request_size(size)?;
 
     let input: quoin_assurance::matrix::MatrixInput = serde_json::from_value(request.clone())
         .map_err(|e| {
@@ -66,4 +68,41 @@ pub fn build(request: &serde_json::Value) -> Result<Response, CoreError> {
     let payload = serde_json::to_value(matrix)
         .map_err(|e| CoreError::new(CoreErrorCode::Io, e.to_string()))?;
     Ok(Response::ok(payload))
+}
+
+#[implements("FR-115-AC-27")]
+fn check_request_size(size: usize) -> Result<(), CoreError> {
+    if size > MAX_MATRIX_BUILD_BYTES {
+        return Err(refusal("matrix.build", MAX_MATRIX_BUILD_BYTES, size));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        reason = "the boundary test uses failures as its report"
+    )]
+
+    use super::{MAX_MATRIX_BUILD_BYTES, check_request_size};
+    use ix_trace_rs::trace;
+
+    #[trace("FR-115-AC-27")]
+    #[test]
+    fn matrix_request_limit_accepts_just_under_and_refuses_just_over() {
+        assert!(check_request_size(MAX_MATRIX_BUILD_BYTES - 1).is_ok());
+
+        let error = check_request_size(MAX_MATRIX_BUILD_BYTES + 1)
+            .expect_err("a request over the matrix ceiling is refused");
+        assert_eq!(
+            error.context["limit_bytes"],
+            MAX_MATRIX_BUILD_BYTES.to_string()
+        );
+        assert_eq!(
+            error.context["observed_bytes"],
+            (MAX_MATRIX_BUILD_BYTES + 1).to_string()
+        );
+    }
 }

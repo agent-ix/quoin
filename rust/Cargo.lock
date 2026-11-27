@@ -3536,6 +3536,7 @@ dependencies = [
  "quoin-jsonschema",
  "quoin-quire-types",
  "quoin-yaml",
+ "rayon",
  "serde",
  "serde_json",
  "tempfile",

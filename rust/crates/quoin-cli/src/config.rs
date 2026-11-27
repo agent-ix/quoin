@@ -4,10 +4,12 @@
 //! The persisted `quoin config get` and `set` commands.
 
 use clap::{Arg, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_config::{
     ConfigService, DoctorStatus, IncidentLog, ProcessEnvironment, QuoinConfig, RuntimeContext,
 };
 use quoin_core::protocol::Response;
+use std::path::Path;
 
 use crate::invocation;
 
@@ -38,6 +40,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
     }
 }
 
+#[implements("FR-027-AC-10")]
 fn get(key: &str) -> Result<Response, String> {
     let environment = ProcessEnvironment;
     let context = context()?;
@@ -53,7 +56,15 @@ fn get(key: &str) -> Result<Response, String> {
                 service.file_path().display()
             )
         },
-        |value| format!("quoin.{key}: {}", value.as_str().unwrap_or_default()),
+        |value| {
+            let value = value
+                .as_str()
+                .map(str::to_owned)
+                .or_else(|| value.as_u64().map(|number| number.to_string()))
+                .or_else(|| value.as_bool().map(|boolean| boolean.to_string()))
+                .unwrap_or_default();
+            format!("quoin.{key}: {value}")
+        },
     );
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
 }
@@ -139,15 +150,20 @@ fn edit() -> Result<Response, String> {
     ))
 }
 
-fn context() -> Result<RuntimeContext, String> {
-    let invocation = invocation::current();
+pub(crate) fn context() -> Result<RuntimeContext, String> {
     let cwd = std::env::current_dir()
         .map_err(|error| format!("cannot read current directory: {error}"))?;
-    let context = RuntimeContext::for_cwd(&cwd, invocation.no_project_config());
-    Ok(invocation
+    Ok(context_for_repo(&cwd))
+}
+
+#[implements("FR-027-AC-10")]
+pub(crate) fn context_for_repo(repo: &Path) -> RuntimeContext {
+    let invocation = invocation::current();
+    let context = RuntimeContext::for_cwd(repo, invocation.no_project_config());
+    invocation
         .config_root()
         .cloned()
-        .map_or(context.clone(), |root| context.with_config_root(root)))
+        .map_or(context.clone(), |root| context.with_config_root(root))
 }
 fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
     arguments

@@ -95,7 +95,7 @@ fn tc_1080_100_two_runs_over_one_input_emit_identical_canonical_bytes() {
 
 /// A missing required field or an unknown one is a bad request naming the
 /// operation; a request over the ceiling is refused with its size.
-#[trace("FR-115-AC-2")]
+#[trace("FR-115-AC-2", "FR-115-AC-27")]
 #[test]
 fn tc_1080_101_the_request_shape_is_enforced() {
     for broken in [
@@ -128,15 +128,15 @@ fn tc_1080_101_the_request_shape_is_enforced() {
     }
 
     let mut oversized = request();
-    oversized["audit"]["healthy"] = json!(["x".repeat(17 * 1024 * 1024)]);
+    oversized["audit"]["healthy"] = json!(["x".repeat(81 * 1024 * 1024)]);
     let result = run("matrix.build", &oversized.to_string());
     assert_eq!(result.status, 2);
     assert_eq!(result.stdout, "");
     let context = &result.diagnostics[0].context;
     assert_eq!(result.diagnostics[0].code, "CORE_REFUSED");
     assert_eq!(context["op"], "matrix.build");
-    assert_eq!(context["limit_bytes"], (16 * 1024 * 1024).to_string());
-    assert!(context["observed_bytes"].parse::<usize>().unwrap() > 16 * 1024 * 1024);
+    assert_eq!(context["limit_bytes"], (80 * 1024 * 1024).to_string());
+    assert!(context["observed_bytes"].parse::<usize>().unwrap() > 80 * 1024 * 1024);
 }
 
 /// An unknown cause on a `stale-evidence` finding, and any cause on another

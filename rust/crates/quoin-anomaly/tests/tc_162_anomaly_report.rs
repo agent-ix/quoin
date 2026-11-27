@@ -133,7 +133,7 @@ fn file_snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     files
 }
 
-#[trace("NFR-035-M-1")]
+#[trace("NFR-035-AC-1", "NFR-035-M-1")]
 #[test]
 fn reporting_every_shipped_anomaly_fixture_leaves_all_files_unchanged() {
     let mut repo = corpus();
@@ -1332,7 +1332,7 @@ fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
     assert_accept_only_in_copied_values(&markdown, &clean);
 }
 
-#[trace("NFR-035-M-4")]
+#[trace("NFR-035-AC-5", "NFR-035-M-4")]
 #[test]
 fn output_bytes_repeat_for_each_fail_on_configuration() {
     let repo = corpus_with(&[
