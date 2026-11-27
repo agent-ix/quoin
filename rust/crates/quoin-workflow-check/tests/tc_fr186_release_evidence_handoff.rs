@@ -100,9 +100,7 @@ fn binding_validator_accepts(
         .success()
 }
 
-#[trace("FR-186-AC-1")]
-#[test]
-fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
+fn assert_required_suite_bindings_are_declared() {
     let suites_path = repository_file("spec/evidence/suites.md");
     let suites = fs::read_to_string(&suites_path).unwrap_or_else(|error| {
         panic!("read suite declaration {}: {error}", suites_path.display())
@@ -114,7 +112,9 @@ fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
             "SUITE-001 must declare {obligation} as a required release binding"
         );
     }
+}
 
+fn release_evidence_script() -> String {
     let native_release = workflow("native-release-build.yml");
     let steps = native_release["jobs"]["evidence"]["steps"]
         .as_sequence()
@@ -141,12 +141,13 @@ fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
 
     let run = steps[run_position]["run"]
         .as_str()
-        .expect("release evidence attempt is a shell script");
+        .expect("release evidence attempt is a shell script")
+        .to_owned();
     assert!(run.contains("make evidence"));
     let syntax = Command::new("bash")
         .arg("-n")
         .arg("-c")
-        .arg(run)
+        .arg(&run)
         .output()
         .expect("bash parses the release evidence script");
     assert!(
@@ -161,6 +162,10 @@ fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
         );
     }
     assert!(run.contains("release-evidence-status.json"));
+    run
+}
+
+fn assert_binding_validator_rejects_incomplete_evidence(run: &str) {
     let validator_start = run
         .find("validate_binding_traces() {")
         .expect("binding validator has a stable extraction boundary");
@@ -244,7 +249,9 @@ fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
         &runs_path,
         &required_json
     ));
+}
 
+fn assert_status_helper_marks_empty_success_incomplete(run: &str) {
     let start = run
         .find("# BEGIN release-evidence status helper")
         .expect("status helper has a stable extraction boundary");
@@ -253,6 +260,15 @@ fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
         .expect("status helper has a stable extraction boundary");
     assert!(start < end, "status helper markers are ordered");
     run_status_cases(&run[start..end]);
+}
+
+#[trace("FR-186-AC-1")]
+#[test]
+fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
+    assert_required_suite_bindings_are_declared();
+    let run = release_evidence_script();
+    assert_binding_validator_rejects_incomplete_evidence(&run);
+    assert_status_helper_marks_empty_success_incomplete(&run);
 }
 
 #[trace("FR-186-AC-2")]

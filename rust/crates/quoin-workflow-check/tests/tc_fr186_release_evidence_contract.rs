@@ -172,7 +172,7 @@ fn release_provenance_binds_the_exact_v2_payload_and_complete_tagged_matrix() {
         ),
         "the DSSE payload has exactly the five FR-186 fields"
     );
-    assert!(run.contains("version") && run.contains("2"));
+    assert!(run.contains("version") && run.contains('2'));
     assert!(run.contains("suiteDeclarationsSha256"));
     assert!(run.contains("testMatrix"));
     assert!(run.contains("quire matrix"));
