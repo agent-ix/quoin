@@ -126,6 +126,11 @@ fn nonpassing_tagged_cases_and_cases_without_trace_never_bind() {
     assert_eq!(parsed.entries[0].outcome, Outcome::Fail);
     assert_eq!(parsed.entries[0].trace_ids, None);
     does_not_bind(parsed.entries.into_iter().next().unwrap());
+
+    let parsed = parse_junit(r#"<testcase classname="tests" name="tc001"/>"#).unwrap();
+    assert_eq!(parsed.entries[0].outcome, Outcome::Pass);
+    assert_eq!(parsed.entries[0].trace_ids, None);
+    does_not_bind(parsed.entries.into_iter().next().unwrap());
 }
 
 #[trace("FR-120-AC-6")]
