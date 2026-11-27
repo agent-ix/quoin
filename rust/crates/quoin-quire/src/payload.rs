@@ -61,6 +61,7 @@
 use std::io::Read;
 use std::path::Path;
 
+use ix_trace_rs::implements;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -178,6 +179,7 @@ impl ClauseBindingPayload {
 /// [`Error::PayloadShape`]. The three are distinct variants because a caller
 /// acts differently on each: raise the ceiling, look at what the tool printed,
 /// or re-measure with a matching engine.
+#[implements("NFR-012-M-1")]
 pub fn from_slice<T: DeserializeOwned>(
     subject: &str,
     shape: &'static str,

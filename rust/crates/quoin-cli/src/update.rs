@@ -8,6 +8,7 @@ use std::path::Path;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
+use ix_trace_rs::implements;
 use quoin_core::protocol::{Diagnostic, Response};
 use quoin_delivery::{DEFAULT_MANIFEST_URL, DeliveryError, HttpTransport, Transport, UpdateResult};
 use semver::Version;
@@ -52,6 +53,7 @@ fn npm_refusal() -> Response {
     }
 }
 
+#[implements("FR-022-AC-3")]
 fn run_with(
     arguments: &ArgMatches,
     executable: &Path,

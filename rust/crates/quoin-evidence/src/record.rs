@@ -75,6 +75,7 @@ pub struct RecordOutcome {
 /// unparseable, [`EvidenceError::RecordIntegrity`] when the run key is occupied
 /// by a different record, otherwise [`EvidenceError::Canonicalization`] or
 /// [`EvidenceError::StoreIo`].
+#[implements("NFR-029-M-2")]
 pub fn record_run<S: EvidenceSource + ?Sized>(
     source: &mut S,
     request: &RecordRequest,

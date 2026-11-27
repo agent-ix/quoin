@@ -163,6 +163,7 @@ pub enum CatalogError {
 /// not a YAML document the TypeScript `yaml` reader would accept, and
 /// [`CatalogError::ManifestNotMapping`] when it is a document that is not a
 /// mapping.
+#[implements("NFR-002-M-1", "NFR-002-M-2")]
 pub fn build(
     documents: &[ModuleDocument],
     semantics: &[SemanticView],

@@ -7,11 +7,13 @@
 
 use std::collections::BTreeMap;
 
+use ix_trace_rs::implements;
 use quoin_store::JsonValue;
 
 use crate::types::ids::NonEmptyText;
 
 /// Whether an observation carries a value or records why it does not.
+#[implements("FR-100-CON-1")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum MeasurementState {
     /// A value was produced.
