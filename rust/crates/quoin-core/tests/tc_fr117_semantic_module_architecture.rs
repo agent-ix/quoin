@@ -19,38 +19,55 @@ fn normalized(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+fn plane_section<'a>(text: &'a str, heading: &str) -> Option<&'a str> {
+    let marker = format!("### {heading}");
+    let start = text.find(&marker)? + marker.len();
+    let body = text.get(start..)?;
+    let end = body
+        .find("\n### ")
+        .or_else(|| body.find("\n## "))
+        .unwrap_or(body.len());
+    body.get(..end)
+}
+
 #[trace("FR-117-AC-1")]
 #[test]
 fn tc_fr117_ac1_defines_four_planes_with_concepts_authorities_and_projections() {
-    let planes = normalized(PLANES);
-    for plane in [
-        "Meta plane",
-        "Definition plane",
-        "Execution and observation plane",
-        "Presentation plane",
-    ] {
-        assert!(planes.contains(plane), "missing {plane}");
-    }
-    for concept in [
-        "semantic type definitions",
-        "requirements",
-        "runs, events, results",
-        "documents, reports, dashboards",
-    ] {
+    let expected = [
+        (
+            "Meta plane",
+            "semantic type definitions",
+            "TypeSpec schema/package source",
+            "JSON Schema, language types, wire descriptors, and registry metadata are outputs",
+        ),
+        (
+            "Definition plane",
+            "requirements, architecture, plans, policy, test definitions",
+            "Reviewed typed Markdown is the normal authority",
+            "Extracted JSON, graph records, search indexes, embeddings, and rendered views are projections",
+        ),
+        (
+            "Execution and observation plane",
+            "runs, events, results, evidence, incidents, measurements",
+            "Owning run, evidence, or event store is authoritative",
+            "a text view",
+        ),
+        (
+            "Presentation plane",
+            "documents, reports, dashboards, UI views, tables, and exports",
+            "It is normally derived",
+            "Markdown report is a presentation projection",
+        ),
+    ];
+    for (plane, concept, authority, projection) in expected {
         assert!(
-            planes.contains(concept),
-            "missing representative concept {concept}"
-        );
-    }
-    for authority in [
-        "TypeSpec schema/package source",
-        "Reviewed typed Markdown",
-        "Owning run, evidence, or event store",
-        "normally derived",
-    ] {
-        assert!(
-            planes.contains(authority),
-            "missing authority/projection {authority}"
+            plane_section(PLANES, plane).is_some_and(|section| {
+                let section = normalized(section);
+                section.contains(concept)
+                    && section.contains(authority)
+                    && section.contains(projection)
+            }),
+            "{plane} section must state its own representative concept, authority, and projection"
         );
     }
 }
@@ -238,7 +255,7 @@ fn tc_fr119_ac4_assigns_transactional_and_operational_authority_to_owning_stores
     );
     assert!(planes.contains("Operational observations | Owning run, evidence, or event store"));
     assert!(planes.contains(
-        "Markdown reports remain projections unless separately authored as new artifacts"
+        "Markdown report is a presentation projection of the referenced observations unless it is separately declared and reviewed as a new authored artifact"
     ));
 }
 
