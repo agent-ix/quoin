@@ -36,8 +36,8 @@ relationships:
 > still open. If its resolution shows a capability genuinely needs restating, it
 > is restated then, against a surface that exists.
 >
-> The text below is retained unchanged for provenance. It describes what was
-> required, not what is required.
+> The requirement text below is retained for provenance. Criterion verification cells
+> are marked `Withdrawn` so the computed matrix matches this disposition.
 
 
 ## Description
@@ -109,24 +109,24 @@ rather than lowering it.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-089-CON-1 | The eight classes SHALL be exhaustive and mutually exclusive over the reported findings. | Interface | Test |
-| FR-089-CON-2 | A finding SHALL NOT be removed from the partition by any classification. | Interface | Test |
-| FR-089-CON-3 | A `contract-fix-this-campaign` disposition SHALL NOT relax a declared constraint in order to lower a count; it amends a declaration the measurement showed to be wrong. | Safety | Inspection |
+| FR-089-CON-1 | The eight classes SHALL be exhaustive and mutually exclusive over the reported findings. | Interface | Withdrawn|
+| FR-089-CON-2 | A finding SHALL NOT be removed from the partition by any classification. | Interface | Withdrawn|
+| FR-089-CON-3 | A `contract-fix-this-campaign` disposition SHALL NOT relax a declared constraint in order to lower a count; it amends a declaration the measurement showed to be wrong. | Safety | Withdrawn|
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-089-AC-1 | Every reported finding appears in exactly one partition entry, and the partition entry count equals the reported finding count. | Test |
-| FR-089-AC-2 | A finding no ledger entry matches is classified `unknown` with disposition `undispositioned`, and both counts appear in the partition summary. | Test |
-| FR-089-AC-3 | A ledger entry claiming `tool-defect` without a repository and issue number is refused, and its findings stay `unknown`. | Test |
-| FR-089-AC-4 | A `deferred-corpus-fix` disposition with no named later campaign is refused, a `contract-fix-this-campaign` with no named module repository is refused, and an `accepted` with no named human is refused. | Test |
-| FR-089-AC-5 | Every partition entry names an owner, and an entry whose owner is absent or is a bare role is refused. | Test |
-| FR-089-AC-6 | Classifying a finding `contract-defect` requires a ledger entry recording that the declaration is wrong; without one the finding stays `unknown`. | Test |
-| FR-089-AC-7 | The per-class counts sum to the reported finding count. | Test |
-| FR-089-AC-8 | Moving a finding's document line without changing its diagnostic keeps the ledger match, and changing its diagnostic code loses it and returns the finding to `unknown`. | Test |
-| FR-089-AC-9 | A ledger entry that matches no finding appears in `unmatched-ledger-entries` and in the headline count. | Test |
-| FR-089-AC-10 | A finding of each of `malformed-document`, `missing-structure` and `stale-module` is produced from a ledger entry recording that condition, and none of the three can be assigned without one. | Test |
+| FR-089-AC-1 | Every reported finding appears in exactly one partition entry, and the partition entry count equals the reported finding count. | Withdrawn|
+| FR-089-AC-2 | A finding no ledger entry matches is classified `unknown` with disposition `undispositioned`, and both counts appear in the partition summary. | Withdrawn|
+| FR-089-AC-3 | A ledger entry claiming `tool-defect` without a repository and issue number is refused, and its findings stay `unknown`. | Withdrawn|
+| FR-089-AC-4 | A `deferred-corpus-fix` disposition with no named later campaign is refused, a `contract-fix-this-campaign` with no named module repository is refused, and an `accepted` with no named human is refused. | Withdrawn|
+| FR-089-AC-5 | Every partition entry names an owner, and an entry whose owner is absent or is a bare role is refused. | Withdrawn|
+| FR-089-AC-6 | Classifying a finding `contract-defect` requires a ledger entry recording that the declaration is wrong; without one the finding stays `unknown`. | Withdrawn|
+| FR-089-AC-7 | The per-class counts sum to the reported finding count. | Withdrawn|
+| FR-089-AC-8 | Moving a finding's document line without changing its diagnostic keeps the ledger match, and changing its diagnostic code loses it and returns the finding to `unknown`. | Withdrawn|
+| FR-089-AC-9 | A ledger entry that matches no finding appears in `unmatched-ledger-entries` and in the headline count. | Withdrawn|
+| FR-089-AC-10 | A finding of each of `malformed-document`, `missing-structure` and `stale-module` is produced from a ledger entry recording that condition, and none of the three can be assigned without one. | Withdrawn|
 
 ## Dependencies
 
