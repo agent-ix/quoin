@@ -10,6 +10,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use ix_trace_rs::implements;
 use quoin_combinatorial::js;
 use serde_json::Value;
 
@@ -132,6 +133,7 @@ fn read_manifest(source: &dyn ModuleCatalogSource, root: &ModuleRoot) -> Result<
 }
 
 /// One `verification_catalog` entry, coerced exactly as the reader coerces it.
+#[implements("FR-031-AC-13")]
 fn entry_of(id: &str, raw: &Value, module_name: &str) -> VerificationMethod {
     // `raw.name` on a non-object is `undefined` in JavaScript rather than a
     // throw, so a `verification_catalog` entry that is a scalar yields an
@@ -151,6 +153,9 @@ fn entry_of(id: &str, raw: &Value, module_name: &str) -> VerificationMethod {
             .and_then(Value::as_str)
             .map(ToOwned::to_owned),
         applicability: normalize_rules(field("applicability")),
+        unreachable_reason: field("unreachable_reason")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned),
         tooling: field("tooling")
             .and_then(Value::as_array)
             .map_or_default(|items| items.iter().map(string_of).collect()),

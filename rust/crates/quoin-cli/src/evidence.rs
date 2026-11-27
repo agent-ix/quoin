@@ -19,6 +19,25 @@ mod test_result;
 const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> evidence\n  runs/<SUITE-N>/<timestamp>.json  one file = one run of one suite\n  customer-artifacts/<artifact-id>.json  customer-supplied record or document\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n  discharge/<authority>/<set>/<version>/<clause>.json  attested discharge facts\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence record-customer-artifact  retain a record or document the customer supplied\n  quoin evidence record-discharge  store attested clause-discharge facts\n  quoin evidence approval-subject  print the record id and digest an approval tag signs\n  quoin evidence facts-from-mappings  propose discharge facts from effective controls
   quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records superseded by a newer one\n  quoin evidence export-test-result  export runs as an in-toto Test Result statement";
 
+#[implements("FR-030-AC-17")]
+fn validate_tool_identity(tool: &str) -> Result<(), String> {
+    let (name, version) = tool.rsplit_once(' ').ok_or_else(|| {
+        "--tool must be a tool name followed by an exact semantic version".to_owned()
+    })?;
+    if name.trim().is_empty() || name.trim() != name || version.is_empty() {
+        return Err("--tool must be a tool name followed by an exact semantic version".to_owned());
+    }
+    let parsed = semver::Version::parse(version).map_err(|_| {
+        "--tool must end in an exact semantic version (for example 3.2.4)".to_owned()
+    })?;
+    if parsed.to_string() != version {
+        return Err(
+            "--tool must use the canonical exact semantic version (without a v prefix)".to_owned(),
+        );
+    }
+    Ok(())
+}
+
 /// The evidence commands whose inputs need no Quire-derived obligation set.
 pub(crate) fn command() -> Command {
     Command::new("evidence")
@@ -134,7 +153,9 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
 }
 
 #[implements("FR-030-AC-28")]
+#[implements("FR-030-AC-18")]
 fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
+    validate_tool_identity(required(arguments, "tool")?)?;
     let repo = required(arguments, "repo")?;
     let modules = arguments
         .get_one::<String>("module")
@@ -178,6 +199,7 @@ fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
             "kind": arguments.get_one::<String>("kind"), "lineage": lineage, "timestamp": timestamp, "adapter": arguments.get_one::<String>("adapter"), "policy": policy,
             "results": results, "discharges": discharges, "obligations": coverage.payload.get("obligations").cloned().unwrap_or_else(|| serde_json::json!([])),
             "run_kind": arguments.get_one::<String>("run-kind"), "formal_rule_selection": formal_rule_selection,
+            "coverage_matrix": coverage.payload.get("coverage_matrix").cloned().unwrap_or_else(|| serde_json::json!([])),
         }),
     )?;
     render(response, |payload| {

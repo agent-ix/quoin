@@ -10,6 +10,7 @@
 
 use std::path::Path;
 
+use ix_trace_rs::implements;
 use quoin_evidence::adapters::{
     AdapterSelection, refuse_policy, select_adapter, select_finding_adapter,
 };
@@ -18,7 +19,9 @@ use quoin_evidence::assurance_records::{
 };
 use quoin_evidence::customer_artifact::write_customer_artifact;
 use quoin_evidence::mock_inspection::inspect_mock_injections;
-use quoin_evidence::record::{RecordRequest as StoreRecordRequest, record_run};
+use quoin_evidence::record::{
+    RecordRequest as StoreRecordRequest, record_run_with_coverage_matrix,
+};
 use quoin_evidence::scenario::{INTAKE_CONTRACT, INTAKE_OWNER, write_scenario_evidence};
 use quoin_evidence::store::{
     bind, read_bindings, write_bindings, write_mock_inspection, write_scan, write_trust_decision,
@@ -129,7 +132,14 @@ fn recording_warning(
     adapter: &str,
     entries: &[quoin_evidence::types::RunEntry],
     unmatched: &[String],
+    ambiguous: &[String],
 ) -> Option<String> {
+    if !ambiguous.is_empty() {
+        return Some(format!(
+            "warning: ambiguous run symbols: {}",
+            ambiguous.join(", ")
+        ));
+    }
     if !unmatched.is_empty() {
         return Some(format!(
             "warning: unmatched trace ids: {}",
@@ -262,6 +272,7 @@ const DISCHARGING_ADAPTERS: [&str; 2] = ["sbom", "differential-report"];
 
 /// The run-shaped half of [`record`]: transcribe the entries and let
 /// `quoin_evidence::record::record_run` update the binding graph.
+#[implements("FR-030-AC-18")]
 fn record_entries(
     request: &RecordRequest,
     adapter: quoin_evidence::adapters::RunAdapter,
@@ -356,18 +367,25 @@ fn record_entries(
                 projection,
             )
         } else {
-            record_run(source, &store_request, &request.obligations)
+            record_run_with_coverage_matrix(
+                source,
+                &store_request,
+                &request.obligations,
+                &request.coverage_matrix,
+            )
         }
         .map_err(|e| map_error(&e, op))?;
         let mut unmatched = outcome.unmatched;
+        let ambiguous = outcome.ambiguous;
         unmatched.extend(unknown.iter().cloned());
         unmatched.sort();
         unmatched.dedup();
         value(&RecordPayload::Run {
             run_path: absolute(&root, &outcome.run_path),
             bound: outcome.bound,
-            warning: recording_warning(adapter.name, &entries, &unmatched),
+            warning: recording_warning(adapter.name, &entries, &unmatched, &ambiguous),
             unmatched,
+            ambiguous,
             unrepresented: unrepresented.clone(),
         })
     })

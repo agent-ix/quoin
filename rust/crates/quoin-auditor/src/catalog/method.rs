@@ -28,6 +28,9 @@ pub struct VerificationMethod {
     /// (agent-ix/quoin#105).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence_kind: Option<String>,
+    /// Why this characteristics rule cannot be reached, when declared by the module.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unreachable_reason: Option<String>,
     /// Rule name → values.
     ///
     /// **Never interpreted structurally** — the advisor matches values, and
@@ -121,6 +124,7 @@ mod tests {
             class: class.to_owned(),
             definition: String::new(),
             evidence_kind: None,
+            unreachable_reason: None,
             applicability: std::collections::BTreeMap::new(),
             tooling: Vec::new(),
             module_name: "m".to_owned(),

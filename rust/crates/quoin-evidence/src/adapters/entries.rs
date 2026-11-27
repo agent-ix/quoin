@@ -9,6 +9,7 @@
 //! when no adapter fits their tool — the escape hatch that keeps the registry
 //! from being a gate.
 
+use ix_trace_rs::implements;
 use serde::Deserialize;
 
 use super::AdapterResult;
@@ -40,6 +41,7 @@ struct Document {
 ///
 /// Refuses input that is not JSON, and input whose `entries` is absent, is not
 /// an array, or holds an element that is not a run entry.
+#[implements("FR-030-AC-18")]
 pub fn parse_entries(raw: &str) -> Result<AdapterResult, EvidenceError> {
     let value: serde_json::Value = serde_json::from_str(raw).map_err(|error| {
         EvidenceError::adapter("entries", format!("input is not JSON: {error}"))

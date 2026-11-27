@@ -85,6 +85,7 @@ fn method(id: &str, kind: &str) -> VerificationMethod {
         class: "Test".to_owned(),
         definition: String::new(),
         evidence_kind: Some(kind.to_owned()),
+        unreachable_reason: None,
         applicability: BTreeMap::new(),
         tooling: Vec::new(),
         module_name: "m".to_owned(),

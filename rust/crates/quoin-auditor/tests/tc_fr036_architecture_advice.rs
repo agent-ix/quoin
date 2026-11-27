@@ -21,6 +21,7 @@ fn architecture_catalog() -> MethodCatalog {
             class: "Analysis".to_owned(),
             definition: "Check declared architectural boundaries.".to_owned(),
             evidence_kind: Some("static".to_owned()),
+            unreachable_reason: None,
             applicability: BTreeMap::from([(
                 "characteristics".to_owned(),
                 vec!["layering".to_owned(), "module-boundary".to_owned()],

@@ -108,6 +108,9 @@ pub struct RunEntry {
     pub symbol: SymbolId,
     /// What the producer said.
     pub outcome: Outcome,
+    /// Repo-relative source location for the symbol when the producer reports one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
     /// A native numeric result, where the format has one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub score: Option<f64>,
@@ -154,6 +157,7 @@ impl RunEntry {
         Self {
             symbol: SymbolId::new(symbol),
             outcome,
+            path: None,
             score: None,
             metric: None,
             trace_ids: None,

@@ -11,7 +11,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use quoin_quire_types::Obligation;
+use ix_trace_rs::implements;
+use quoin_quire_types::{CoverageMatrixRequirement, Obligation};
 
 use crate::error::EvidenceError;
 use crate::ids::{ObligationId, SuiteId, SymbolId};
@@ -46,6 +47,8 @@ pub struct RecordOutcome {
     pub bound: Vec<ObligationId>,
     /// Trace ids in the run that match no derived obligation, sorted.
     pub unmatched: Vec<String>,
+    /// Qualified symbols that occur in more than one source file without an entry path.
+    pub ambiguous: Vec<String>,
 }
 
 /// Record one suite run and update the binding graph.
@@ -77,7 +80,25 @@ pub fn record_run<S: EvidenceSource + ?Sized>(
     request: &RecordRequest,
     obligations: &[Obligation],
 ) -> Result<RecordOutcome, EvidenceError> {
-    record_run_inner(source, request, obligations, None)
+    record_run_inner(source, request, obligations, &[], None)
+}
+
+/// Record one suite run and use Quire's coverage binders to resolve source symbols.
+///
+/// An unpathed qualified name that appears in multiple files is reported as
+/// ambiguous and does not bind through the symbol join. Explicit trace ids are
+/// processed independently and continue to bind.
+///
+/// # Errors
+///
+/// Returns the same errors as [`record_run`].
+pub fn record_run_with_coverage_matrix<S: EvidenceSource + ?Sized>(
+    source: &mut S,
+    request: &RecordRequest,
+    obligations: &[Obligation],
+    coverage_matrix: &[CoverageMatrixRequirement],
+) -> Result<RecordOutcome, EvidenceError> {
+    record_run_inner(source, request, obligations, coverage_matrix, None)
 }
 
 /// Record a differential-report run and its immutable allowlisted projection.
@@ -93,13 +114,15 @@ pub fn record_run_with_analysis_projection<S: EvidenceSource + ?Sized>(
     obligations: &[Obligation],
     projection: &serde_json::Value,
 ) -> Result<RecordOutcome, EvidenceError> {
-    record_run_inner(source, request, obligations, Some(projection))
+    record_run_inner(source, request, obligations, &[], Some(projection))
 }
 
+#[implements("FR-030-AC-18")]
 fn record_run_inner<S: EvidenceSource + ?Sized>(
     source: &mut S,
     request: &RecordRequest,
     obligations: &[Obligation],
+    coverage_matrix: &[CoverageMatrixRequirement],
     projection: Option<&serde_json::Value>,
 ) -> Result<RecordOutcome, EvidenceError> {
     // From the run write to the graph write. `bindings.json` is read, extended
@@ -151,8 +174,46 @@ fn record_run_inner<S: EvidenceSource + ?Sized>(
 
     let mut discharged: BTreeMap<&str, Vec<SymbolId>> = BTreeMap::new();
     let mut unmatched: BTreeSet<String> = BTreeSet::new();
+    let mut ambiguous: BTreeSet<String> = BTreeSet::new();
+
+    let mut symbols: BTreeMap<&str, Vec<(&str, &str)>> = BTreeMap::new();
+    for requirement in coverage_matrix {
+        for criterion in &requirement.criteria {
+            for binder in &criterion.binders {
+                symbols
+                    .entry(binder.qualified_name.as_str())
+                    .or_default()
+                    .push((binder.path.as_str(), criterion.id.as_str()));
+            }
+        }
+    }
 
     for entry in &request.entries {
+        if entry.outcome == Outcome::Pass
+            && let Some(candidates) = symbols.get(entry.symbol.as_str())
+        {
+            if let Some(path) = entry.path.as_deref() {
+                for (_, id) in candidates
+                    .iter()
+                    .filter(|(candidate_path, _)| *candidate_path == path)
+                {
+                    if by_id.contains_key(id) {
+                        discharged.entry(id).or_default().push(entry.symbol.clone());
+                    }
+                }
+            } else {
+                let paths: BTreeSet<&str> = candidates.iter().map(|(path, _)| *path).collect();
+                if paths.len() > 1 {
+                    ambiguous.insert(entry.symbol.as_str().to_owned());
+                } else {
+                    for (_, id) in candidates {
+                        if by_id.contains_key(id) {
+                            discharged.entry(id).or_default().push(entry.symbol.clone());
+                        }
+                    }
+                }
+            }
+        }
         for id in entry.trace_ids.iter().flatten() {
             let matched: Vec<&Obligation> = by_id.get(id.as_str()).map_or_else(
                 || by_target.get(id.as_str()).cloned().unwrap_or_default(),
@@ -191,6 +252,7 @@ fn record_run_inner<S: EvidenceSource + ?Sized>(
         }
         let mut sorted = symbols;
         sorted.sort();
+        sorted.dedup();
         let outcome = bind(
             &bindings,
             &Binding {
@@ -213,5 +275,6 @@ fn record_run_inner<S: EvidenceSource + ?Sized>(
         run_path,
         bound,
         unmatched: unmatched.into_iter().collect(),
+        ambiguous: ambiguous.into_iter().collect(),
     })
 }
