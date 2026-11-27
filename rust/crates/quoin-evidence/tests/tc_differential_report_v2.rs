@@ -591,14 +591,10 @@ fn tc_001_the_same_bytes_give_the_same_result_wherever_they_are_read() {
             "{}",
             String::from_utf8_lossy(&output.stderr)
         );
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let marker = stdout
-            .find("PARSE_RESULT: ")
-            .expect("probe reports the adapter result");
-        stdout[marker + "PARSE_RESULT: ".len()..]
+        String::from_utf8_lossy(&output.stdout)
             .lines()
-            .next()
-            .unwrap()
+            .find_map(|line| line.strip_prefix("PARSE_RESULT: "))
+            .expect("probe reports the adapter result")
             .to_owned()
     };
 
