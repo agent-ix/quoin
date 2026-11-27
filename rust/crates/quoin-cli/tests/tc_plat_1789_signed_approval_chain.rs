@@ -467,7 +467,7 @@ fn a_tag_binds_exactly_the_digest_quoin_computed_and_one_changed_character_refus
     assert!(refused.get("approver").is_none());
 }
 
-#[trace("FR-065-AC-12", "FR-068-AC-13", "FR-188-AC-25")]
+#[trace("FR-065-AC-12", "FR-068-AC-13")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_forged_claimed_approval_stays_a_claim_and_the_real_verifier_refuses_it() {
