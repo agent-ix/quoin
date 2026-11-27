@@ -130,6 +130,10 @@ fn ranking_cell(label: &str) -> String {
 }
 
 /// The lines for a repository that could be read.
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
+#[implements("NFR-023-AC-3")]
+#[implements("NFR-023-AC-4")]
 fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, MeasurementError> {
     let mut lines = vec![
         format!(

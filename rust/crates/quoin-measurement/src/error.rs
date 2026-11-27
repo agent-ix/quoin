@@ -43,6 +43,9 @@ pub enum MeasurementErrorCode {
     /// that refusal across under this code, with the intake code named in the
     /// subject and its findings kept.
     RecordUnreadable,
+    /// A measured figure has no collection or observation index from which to
+    /// publish its required provenance (NFR-023).
+    FigureProvenanceAbsent,
     /// A `MeasurementPlan` frontmatter block was present and unacceptable.
     PlanInvalid,
     /// An `AssuranceProfile` frontmatter block was present and unacceptable.
@@ -141,12 +144,13 @@ pub enum MeasurementErrorCode {
 
 impl MeasurementErrorCode {
     /// Every code, in declaration order.
-    pub const ALL: [Self; 35] = [
+    pub const ALL: [Self; 36] = [
         Self::CollectionInvalid,
         Self::CollectionIdUnsafe,
         Self::CollectionIdCollision,
         Self::CollectionUnreadable,
         Self::RecordUnreadable,
+        Self::FigureProvenanceAbsent,
         Self::PlanInvalid,
         Self::ProfileInvalid,
         Self::GoverningPlanAbsent,
@@ -188,6 +192,7 @@ impl MeasurementErrorCode {
             Self::CollectionIdCollision => "QM-COLLECTION-ID-COLLISION",
             Self::CollectionUnreadable => "QM-COLLECTION-UNREADABLE",
             Self::RecordUnreadable => "QM-RECORD-UNREADABLE",
+            Self::FigureProvenanceAbsent => "QM-FIGURE-PROVENANCE-ABSENT",
             Self::PlanInvalid => "QM-PLAN-INVALID",
             Self::ProfileInvalid => "QM-PROFILE-INVALID",
             Self::GoverningPlanAbsent => "QM-GOVERNING-PLAN-ABSENT",
