@@ -110,8 +110,7 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
         command.arg("--target").arg(target);
     }
     let started = execute(&mut command)?;
-    let result: Value = serde_json::from_str(&started)
-        .map_err(|e| format!("ix-flow returned invalid JSON: {e}"))?;
+    let result = run_result(&started)?;
     let id = instance_id(&result)?;
     if name == "design-gate" {
         context
@@ -272,6 +271,17 @@ fn executable_path(program: &str) -> Result<PathBuf, LaunchFailure> {
 }
 
 #[implements("FR-099-AC-10")]
+fn run_result(stdout: &str) -> Result<Value, LaunchFailure> {
+    if stdout.trim().is_empty() {
+        return Err("ix-flow returned invalid JSON: empty response"
+            .to_owned()
+            .into());
+    }
+    serde_json::from_str(stdout)
+        .map_err(|error| format!("ix-flow returned invalid JSON: {error}").into())
+}
+
+#[implements("FR-099-AC-10")]
 fn executable_path_in(program: &str, path: &OsStr) -> Result<PathBuf, LaunchFailure> {
     std::env::split_paths(path)
         .map(|directory| directory.join(program))
@@ -298,16 +308,28 @@ fn executable_path_in(program: &str, path: &OsStr) -> Result<PathBuf, LaunchFail
 }
 
 #[implements("FR-099-AC-10")]
-fn resolve_program(program: &OsStr) -> Result<PathBuf, LaunchFailure> {
+fn resolve_program(program: &OsStr, command: &ProcessCommand) -> Result<PathBuf, LaunchFailure> {
     let path = std::path::Path::new(program);
     let candidate = if path.components().count() > 1 || path.is_absolute() {
         path.to_path_buf()
     } else {
-        executable_path(path.to_str().ok_or_else(|| {
+        let program = path.to_str().ok_or_else(|| {
             LaunchFailure::Local(
                 "could not resolve ix-flow executable: program name is not UTF-8".to_owned(),
             )
-        })?)?
+        })?;
+        match command
+            .get_envs()
+            .find(|(key, _)| *key == OsStr::new("PATH"))
+        {
+            Some((_, Some(path))) => executable_path_in(program, path)?,
+            Some((_, None)) => {
+                return Err(LaunchFailure::Local(
+                    "PATH is unavailable while resolving ix-flow".to_owned(),
+                ));
+            }
+            None => executable_path(program)?,
+        }
     };
     candidate.canonicalize().map_err(|error| {
         LaunchFailure::Local(format!(
@@ -367,7 +389,7 @@ fn runner(home: &std::path::Path, operation: &str) -> ProcessCommand {
 fn execute(command: &mut ProcessCommand) -> Result<String, LaunchFailure> {
     // Resolve PATH once, then spawn the canonical executable so a later PATH
     // change or symlink swap cannot redirect this child launch.
-    let resolved = resolve_program(command.get_program())?;
+    let resolved = resolve_program(command.get_program(), command)?;
     let mut resolved_command = ProcessCommand::new(resolved);
     resolved_command.args(command.get_args());
     for (key, value) in command.get_envs() {
@@ -524,7 +546,7 @@ fn node_program() -> &'static str {
 mod tests {
     use super::{
         LaunchFailure, ProcessCommand, command, executable_path_in, execute, instance_id, run,
-        skill_path,
+        run_result, skill_path,
     };
     use ix_trace_rs::trace;
 
@@ -683,5 +705,36 @@ mod tests {
             Some(runner),
             "the later executable must be selected over the non-executable shadow"
         );
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-099-AC-10")]
+    #[test]
+    fn ix_flow_resolution_honors_command_path_override() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir().expect("runner directory is created");
+        let runner = directory.path().join("ix-flow");
+        std::fs::write(&runner, "#!/bin/sh\nprintf selected\n").expect("runner fixture is written");
+        std::fs::set_permissions(&runner, std::fs::Permissions::from_mode(0o700))
+            .expect("runner fixture is executable");
+
+        let mut command = ProcessCommand::new("ix-flow");
+        command.env("PATH", directory.path());
+        let selected = execute(&mut command);
+
+        assert_eq!(selected.ok().as_deref(), Some("selected"));
+    }
+
+    #[trace("FR-099-AC-10")]
+    #[test]
+    fn ix_flow_empty_success_response_is_rejected_as_invalid_json() {
+        let parsed = run_result(" \n\t");
+
+        assert!(matches!(
+            parsed,
+            Err(LaunchFailure::Local(message))
+                if message == "ix-flow returned invalid JSON: empty response"
+        ));
     }
 }
