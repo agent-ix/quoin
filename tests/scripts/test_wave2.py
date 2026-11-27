@@ -162,6 +162,7 @@ fn another_ignored_test() {}
             {entry["symbol"] for entry in entries},
             {kernel[0] for kernel in behavioral_mutation_test.KERNELS},
         )
+        self.assertTrue(all(entry["outcome"] == "pass" for entry in entries))
         self.assertTrue(
             all(entry["traceIds"] == ["NFR-042-M-1"] for entry in entries),
         )
