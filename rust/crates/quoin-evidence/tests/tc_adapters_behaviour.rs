@@ -20,6 +20,10 @@ use quoin_evidence::adapters::{
     parse_cargo_audit, parse_cargo_mutants, parse_contract_conformance, parse_differential_report,
     parse_entries, parse_junit, parse_sbom, select_adapter,
 };
+use quoin_evidence::record::{RecordRequest, record_run};
+use quoin_evidence::store::read_bindings;
+use quoin_evidence::{MemoryEvidence, SuiteId};
+use quoin_quire_types::Obligation;
 
 type AdapterCheck = (
     &'static str,
@@ -119,6 +123,106 @@ fn tc_155_every_outcome_class_and_declared_trace_ids_are_read() {
     assert_eq!(
         entries[3].trace_ids.as_deref(),
         Some(["FR-1-AC-1".to_owned(), "FR-1-AC-2".to_owned()].as_slice())
+    );
+}
+
+#[trace("FR-120-AC-1")]
+#[test]
+fn repeated_trace_properties_accumulate_ids_and_split_on_whitespace_and_commas() {
+    let xml = concat!(
+        r#"<testsuite><testcase classname="t" name="case"><properties>"#,
+        r#"<property name="trace" value="FR-120-AC-1, FR-120-AC-2"/>"#,
+        r#"<property name="trace" value="FR-120-AC-8"/>"#,
+        r#"<property name="traceIds" value="FR-120-AC-5 FR-120-AC-6"/>"#,
+        r#"<property name="trace_ids" value="FR-120-AC-7"/>"#,
+        r#"</properties></testcase></testsuite>"#,
+    );
+    let entry = &parse_junit(xml).expect("JUnit result parses").entries[0];
+    assert_eq!(
+        entry.trace_ids.as_deref(),
+        Some(
+            [
+                "FR-120-AC-1",
+                "FR-120-AC-2",
+                "FR-120-AC-8",
+                "FR-120-AC-5",
+                "FR-120-AC-6",
+                "FR-120-AC-7",
+            ]
+            .map(str::to_owned)
+            .as_slice()
+        )
+    );
+}
+
+#[trace("FR-120-AC-2")]
+#[test]
+fn equal_classname_and_name_preserves_dots_and_spaces() {
+    let xml = r#"<testsuite><testcase classname="module.with spaces" name="module.with spaces"/></testsuite>"#;
+    let entry = &parse_junit(xml).expect("JUnit result parses").entries[0];
+    assert_eq!(entry.symbol.as_str(), "module.with spaces");
+}
+
+#[trace("FR-120-AC-5")]
+#[test]
+fn nonpassing_tagged_junit_cases_keep_ids_without_discharging_them() {
+    let xml = concat!(
+        r#"<testsuite><testcase classname="t" name="error"><properties><property name="trace" value="FR-120-AC-5"/></properties><error/></testcase>"#,
+        r#"<testcase classname="t" name="fail"><properties><property name="trace" value="FR-120-AC-5"/></properties><failure/></testcase>"#,
+        r#"<testcase classname="t" name="skip"><properties><property name="trace" value="FR-120-AC-5"/></properties><skipped/></testcase>"#,
+        r#"<testcase classname="t" name="untagged"/>"#,
+        r#"</testsuite>"#,
+    );
+    let parsed = parse_junit(xml).expect("JUnit result parses");
+    assert_eq!(
+        parsed
+            .entries
+            .iter()
+            .map(|entry| entry.outcome)
+            .collect::<Vec<_>>(),
+        [Outcome::Error, Outcome::Fail, Outcome::Skip, Outcome::Pass]
+    );
+    for entry in &parsed.entries[..3] {
+        assert_eq!(
+            entry.trace_ids.as_deref(),
+            Some(["FR-120-AC-5".to_owned()].as_slice())
+        );
+    }
+    assert_eq!(parsed.entries[3].trace_ids, None);
+
+    let obligations = ["FR-120-AC-5"]
+        .into_iter()
+        .map(|id| Obligation {
+            id: id.to_owned(),
+            identity: None,
+            document: None,
+            statement: "JUnit nonpassing results do not discharge".to_owned(),
+            target_ids: None,
+            method: Some("Test".to_owned()),
+            criticality: None,
+            parameters: None,
+        })
+        .collect::<Vec<_>>();
+    let mut store = MemoryEvidence::new();
+    let recorded = record_run(
+        &mut store,
+        &RecordRequest {
+            suite: SuiteId::new("junit-fr120"),
+            tool: "junit".to_owned(),
+            evidence_kind: Some("test".to_owned()),
+            lineage: None,
+            timestamp: "2026-11-27T00:00:00Z".to_owned(),
+            entries: parsed.entries,
+        },
+        &obligations,
+    )
+    .expect("the parsed run is recorded");
+    assert!(recorded.bound.is_empty());
+    assert!(
+        read_bindings(&store)
+            .expect("bindings read")
+            .bindings
+            .is_empty()
     );
 }
 

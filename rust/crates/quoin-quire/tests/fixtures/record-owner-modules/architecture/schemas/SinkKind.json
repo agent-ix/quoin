@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/SinkKind.json",
+  "type": "string",
+  "enum": [
+    "ui_screen",
+    "log",
+    "export_file",
+    "analytics_event",
+    "llm_prompt",
+    "tool_call",
+    "outbound_message",
+    "datastore"
+  ],
+  "description": "Where classified data is persisted, displayed or sent."
+}

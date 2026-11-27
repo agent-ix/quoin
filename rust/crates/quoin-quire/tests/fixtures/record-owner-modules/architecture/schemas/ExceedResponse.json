@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ExceedResponse.json",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 599
+    },
+    "retry_after": {
+      "type": "boolean"
+    },
+    "behavior": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "What a service does when a rate-limit threshold is exceeded."
+}

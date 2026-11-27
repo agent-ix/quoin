@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Port.json",
+  "type": "object",
+  "properties": {
+    "owner": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/SemanticId.json"
+    },
+    "direction": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/PortDirection.json"
+    },
+    "interfaceType": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/TypeRef.json"
+    },
+    "multiplicity": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Multiplicity.json"
+    }
+  },
+  "required": [
+    "owner",
+    "direction",
+    "interfaceType",
+    "multiplicity"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "A port of a part: its owning part, flow direction, interface type (an\ninterface declaration) and multiplicity. `fields` and `operations` are\nforbidden by the seal."
+}

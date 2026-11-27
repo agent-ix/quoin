@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/Endianness.json",
+  "type": "string",
+  "enum": [
+    "little",
+    "big"
+  ],
+  "description": "Byte order of a persisted binary layout."
+}

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/PopulationExtent.json",
+  "type": "string",
+  "enum": [
+    "closed",
+    "open"
+  ],
+  "description": "Whether a population's membership is fixed (`closed`) or may grow (`open`)."
+}

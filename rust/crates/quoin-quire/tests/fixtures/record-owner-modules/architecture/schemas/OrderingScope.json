@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/OrderingScope.json",
+  "type": "string",
+  "enum": [
+    "none",
+    "partition",
+    "global"
+  ],
+  "description": "Scope over which a queue preserves message order."
+}

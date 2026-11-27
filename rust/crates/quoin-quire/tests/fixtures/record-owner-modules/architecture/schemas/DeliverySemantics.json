@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/DeliverySemantics.json",
+  "type": "string",
+  "enum": [
+    "at_most_once",
+    "at_least_once",
+    "exactly_once"
+  ],
+  "description": "Message-delivery guarantee of a queue."
+}

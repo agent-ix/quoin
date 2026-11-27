@@ -1441,7 +1441,7 @@ fn tc_479_008_a_metric_in_only_one_collection_is_not_computed() {
 /// attention items."
 ///
 /// Provenance: quoin#479
-#[trace("FR-044-AC-4")]
+#[trace("FR-044-AC-4", "NFR-023-AC-1")]
 #[test]
 fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible() {
     // `bravo` authors one plan and has never recorded a collection — the exact
@@ -1484,8 +1484,8 @@ fn tc_479_009_the_report_is_deterministic_and_keeps_an_unmeasured_plan_visible()
     let rendered = render_measurement_report(&report).expect("alpha's report renders");
     for literal in [
         "| Metric | Plan | Stage | Current |",
-        "finding_recall [language=python] | ap-recall (spec/assurance/10-recall.md) | observe | 0.5 ratio |",
-        "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio |",
+        "finding_recall [language=python] | ap-recall (spec/assurance/10-recall.md) | observe | 0.5 ratio <!-- ix-figure:",
+        "finding_recall [language=rust, tier=2] | ap-recall (spec/assurance/10-recall.md) | observe | 1e+21 ratio <!-- ix-figure:",
         "unmeasured_metric | ap-unmeasured (spec/assurance/50-unmeasured.md; ground truth: mechanical) | gate | not_computed: no record |",
         "Corpus gaps: 3",
         "c-2026-03 (quoin) — 2026-03-01T00:00:00.000Z — quoin 0.9.1",

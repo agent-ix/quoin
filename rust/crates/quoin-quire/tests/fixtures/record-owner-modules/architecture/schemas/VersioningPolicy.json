@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/VersioningPolicy.json",
+  "type": "object",
+  "properties": {
+    "scheme": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/VersioningScheme.json"
+    },
+    "breaking_change_signal": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "scheme"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "The change-signalling profile of an external contract."
+}

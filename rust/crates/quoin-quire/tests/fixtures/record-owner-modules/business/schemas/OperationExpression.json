@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/OperationExpression.json",
+  "type": "object",
+  "properties": {
+    "operation": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/Identifier.json"
+    },
+    "slot": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/ExpressionSlot.json"
+    },
+    "expression": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/Expression.json"
+    }
+  },
+  "required": [
+    "operation",
+    "slot",
+    "expression"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "The inline expression of one operation `Pre:` or `Post:` line. It sits\nbeside `operations` because `OperationDecl.pre` and `post` carry clause\nreferences only. `operation` names an `operations[].name` of the same\nrecord, a reader rule JSON Schema does not express."
+}

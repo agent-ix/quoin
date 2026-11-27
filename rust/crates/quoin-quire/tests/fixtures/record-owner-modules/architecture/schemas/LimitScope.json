@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/LimitScope.json",
+  "type": "string",
+  "enum": [
+    "per_token",
+    "per_tenant",
+    "per_ip",
+    "global"
+  ],
+  "description": "The population a rate-limit threshold applies to."
+}

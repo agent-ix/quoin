@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/RegistrationPolicy.json",
+  "type": "object",
+  "properties": {
+    "mechanism": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.4.1/Identifier.json"
+    },
+    "conflict": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/ConflictPolicy.json"
+    },
+    "discovery": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "mechanism",
+    "conflict"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "How implementations register against an extension point."
+}

@@ -177,6 +177,116 @@ fn tc_fr112_npm_repack_requires_the_selected_release_manifest_assets() {
     }
 }
 
+#[trace("FR-102-AC-7")]
+#[test]
+fn tc_fr102_first_party_crates_and_both_release_channels_share_native_assets() {
+    let repository = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let workspace_path = repository.join("rust/Cargo.toml");
+    let manifest = fs::read_to_string(&workspace_path).expect("workspace manifest is readable");
+    let workspace = manifest
+        .split_once("[workspace.package]")
+        .expect("workspace package policy exists")
+        .1;
+    assert!(
+        workspace
+            .lines()
+            .any(|line| line.trim() == "publish = false"),
+        "first-party Rust crates inherit the unpublished workspace policy"
+    );
+    let crates = repository.join("rust/crates");
+    for entry in fs::read_dir(&crates).expect("first-party crate directory") {
+        let entry = entry.expect("crate directory entry");
+        if !entry.path().is_dir() {
+            continue;
+        }
+        let path = entry.path().join("Cargo.toml");
+        if !path.is_file() {
+            continue;
+        }
+        let crate_manifest = fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("read crate manifest {}: {error}", path.display()));
+        assert!(
+            crate_manifest
+                .lines()
+                .any(|line| line.trim() == "publish.workspace = true"),
+            "{} must inherit the unpublished workspace package policy",
+            path.display()
+        );
+        assert!(
+            !crate_manifest
+                .lines()
+                .any(|line| line.trim_start().starts_with("publish = ")),
+            "{} must not declare a crates.io publication target",
+            path.display()
+        );
+    }
+
+    let native = workflow("native-release.yml");
+    assert_eq!(
+        native["on"]["workflow_dispatch"]["inputs"]["tag"]["required"],
+        Value::Bool(true),
+        "native releases take an existing tag"
+    );
+    assert_eq!(
+        native["jobs"]["build"]["uses"].as_str(),
+        Some("./.github/workflows/native-release-build.yml")
+    );
+    assert_eq!(native["jobs"]["publish"]["needs"].as_str(), Some("build"));
+    let downloaded = steps(&native, "publish")
+        .iter()
+        .find(|step| step["uses"].as_str() == Some("actions/download-artifact@v8"))
+        .expect("manual release downloads the native build artifacts");
+    assert_eq!(
+        downloaded["with"]["name"].as_str(),
+        Some("release-artifacts")
+    );
+    assert!(
+        run(step(
+            &native,
+            "publish",
+            "Create and upload the manual GitHub Release"
+        ))
+        .contains("gh release create \"$TAG\" --repo \"$GITHUB_REPOSITORY\" --verify-tag")
+    );
+
+    let build = workflow("native-release-build.yml");
+    let uploaded = steps(&build, "assemble")
+        .iter()
+        .find(|step| {
+            step["uses"].as_str() == Some("actions/upload-artifact@v7")
+                && step["with"]["name"].as_str() == Some("release-artifacts")
+        })
+        .expect("native release build publishes the archive artifact");
+    assert_eq!(uploaded["with"]["path"].as_str(), Some("release/"));
+    let checkout = steps(&build, "package")
+        .iter()
+        .find(|step| step["uses"].as_str() == Some("actions/checkout@v7"))
+        .expect("native build checks out the release source");
+    assert_eq!(checkout["with"]["ref"].as_str(), Some("${{ inputs.tag }}"));
+    let native_build = run(step(&build, "package", "Build the native quoin artifact"));
+    assert!(
+        native_build.contains("cargo build --locked --release -p quoin-cli --bin quoin"),
+        "native assets are built from the selected tag"
+    );
+
+    let npm = workflow("release.yml");
+    let download = run(step(&npm, "publish-npm", "Download the release"));
+    assert!(download.contains("gh release download \"$TAG\""));
+    for step in steps(&npm, "publish-npm") {
+        let Some(script) = step["run"].as_str() else {
+            continue;
+        };
+        assert!(
+            !script.contains("cargo build --release -p quoin-cli"),
+            "{script}"
+        );
+        assert!(
+            !script.contains("cargo build --release --bin quoin"),
+            "{script}"
+        );
+    }
+}
+
 #[trace("FR-112-AC-4")]
 #[test]
 fn tc_fr112_smoke_checks_glibc_metadata_for_both_linux_platform_packages() {

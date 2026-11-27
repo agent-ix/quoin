@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/StabilityPolicy.json",
+  "type": "object",
+  "properties": {
+    "compatibility": {
+      "$ref": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/CompatibilityWindow.json"
+    },
+    "deprecation_window": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "compatibility"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "The compatibility guarantee an extension point offers."
+}

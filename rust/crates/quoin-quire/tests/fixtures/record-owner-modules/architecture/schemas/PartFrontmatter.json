@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/PartFrontmatter.json",
+  "type": "object",
+  "properties": {
+    "software_safety_class": {
+      "type": "string",
+      "minLength": 1
+    },
+    "software_safety_class_assigned_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "software_safety_class_rationale": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "unevaluatedProperties": {},
+  "description": "The frontmatter a part document may carry for its software safety class.\nOpen and self-contained, with no schema references, declaring only the three properties as\nplain strings with no value list. Required together.",
+  "dependentRequired": {
+    "software_safety_class": [
+      "software_safety_class_assigned_by",
+      "software_safety_class_rationale"
+    ],
+    "software_safety_class_assigned_by": [
+      "software_safety_class"
+    ],
+    "software_safety_class_rationale": [
+      "software_safety_class"
+    ]
+  }
+}

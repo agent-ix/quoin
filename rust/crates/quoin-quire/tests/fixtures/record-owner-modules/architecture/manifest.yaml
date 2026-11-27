@@ -1,0 +1,836 @@
+manifest_version: 1.0.0
+name: spec-objects-architecture
+version: 0.5.0
+description: 'Filament Module: tier-2 architecture ObjectTypes (api_endpoint, data_schema, data_sink, queue, action, ui_component, interface, external_contract, extension_point, binary_format, rate_limit) and the systems-model kinds (part, port, connection, allocation)'
+semantic:
+  contract_version: 1.0.0
+  package: agent-ix/spec-objects-architecture
+  exports:
+  - api_endpoint
+  - data_schema
+  - data_sink
+  - queue
+  - action
+  - ui_component
+  - interface
+  - external_contract
+  - extension_point
+  - binary_format
+  - rate_limit
+  - part
+  - port
+  - connection
+  - allocation
+  imports: {}
+  targets: [json-schema, markdown]
+  mappings: [typed-table, sysml-fence, ocl-clause, generalization, relationships, record-sections]
+  compatibility_posture: strict
+  legacy_forms: warning
+nav:
+  category:
+    slug: architecture
+    label: Architecture
+    icon: Network
+    order: 52
+# FR-007: the edge verbs and roles the systems-model kinds (QSpec FR-152)
+# introduce. `specializes` is declared exactly as spec-objects-business
+# declares it, so a registry that loads both merges one definition; no other
+# verb or role here exists in spec-artifacts-iso or spec-objects-business. The
+# other verbs and roles this manifest uses are declared by spec-artifacts-iso.
+edge_types:
+  specializes: { description: "Generalization: the source type specializes the target type and inherits its declarations.", category: structural, inverse: generalizes }
+  owned_by: { description: "Systems element is owned by its owning type or part.", category: structural }
+  typed_by: { description: "Systems element is typed by a type or interface.", category: structural }
+  connects: { description: "Connection joins the ports at its source and target ends.", category: structural }
+  allocates: { description: "Allocation names its source element (part, port or operation).", category: realization }
+  allocated_to: { description: "Allocation names its target element (part).", category: realization }
+  # FR-010: a design element realizes a requirement. `realizes` stays the
+  # enterprise-capability verb spec-artifacts-iso declares.
+  realizes_requirement: { description: "A design element (part, connection or decision record) realizes the requirement at the target.", category: traceability, inverse: requirement_realized_by }
+  # FR-016: a design element keeps the implementation of a requirement apart from
+  # other items. A different fact from realization: an element can realize a
+  # requirement without being segregated.
+  segregates_for_requirement: { description: "A design element (part, connection or decision record) states how the software item that carries the requirement at the target is kept apart from other items.", category: traceability, inverse: requirement_segregated_by }
+  crosses: { description: "A connection crosses the trust boundary at the target.", category: dataflow }
+  delivers_to: { description: "A connection or part delivers data to the sink at the target.", category: dataflow }
+roles:
+  systems-part: { description: "A systems-model part (QSpec FR-152 Part)." }
+  systems-port: { description: "A systems-model port owned by a part (QSpec FR-152 Port)." }
+  systems-interface: { description: "An interface a systems port is typed by (QSpec FR-152 Interface)." }
+archetypes: []
+grammars: []
+# FR-010: the design relations. Each requirement kind is asked for a part,
+# connection or ADR that realizes it; the engine names none of them.
+traceability:
+  required_relations:
+  - name: fr-has-design-element
+    from: FR
+    edges: [realizes_requirement]
+    to: [part, connection, ADR]
+    direction: incoming
+    check: requirement-without-design
+  - name: nfr-has-design-element
+    from: NFR
+    edges: [realizes_requirement]
+    to: [part, connection, ADR]
+    direction: incoming
+    check: nfr-without-design
+  # FR-016: a requirement a control is linked to (`satisfies` from the requirement,
+  # or `satisfied_by` from the control) is asked for the element that segregates
+  # it. `when_any` (quire-rs FR-058) is an OR over the existence of an edge to a
+  # control; it cannot say the control is a risk control, so an ADR stating "no
+  # segregation needed" is the remedy that keeps the trace. No relation reads a
+  # class, score or acceptability value.
+  - name: fr-has-segregation
+    from: FR
+    edges: [segregates_for_requirement]
+    to: [part, connection, ADR]
+    direction: incoming
+    check: fr-without-segregation
+    when_any:
+    - {verb: satisfies, direction: outgoing, other: [control]}
+    - {verb: satisfied_by, direction: incoming, other: [control]}
+  - name: nfr-has-segregation
+    from: NFR
+    edges: [segregates_for_requirement]
+    to: [part, connection, ADR]
+    direction: incoming
+    check: nfr-without-segregation
+    when_any:
+    - {verb: satisfies, direction: outgoing, other: [control]}
+    - {verb: satisfied_by, direction: incoming, other: [control]}
+  - name: connection-carries-classification
+    from: connection
+    edges: [carries]
+    to: [data_classification]
+    direction: outgoing
+    check: connection-without-classification
+    record_keys: [regulatedCategories]
+  - name: classification-carried-by-connection
+    from: data_classification
+    edges: [carries]
+    to: [connection]
+    direction: incoming
+    check: classification-without-connection
+    record_keys: [regulatedCategories]
+  - name: connection-crosses-trust-boundary
+    from: connection
+    edges: [crosses]
+    to: [trust_boundary]
+    direction: outgoing
+    check: connection-crosses-trust-boundary
+    record_keys: [trust_level]
+  - name: connection-delivers-to-sink
+    from: connection
+    edges: [delivers_to]
+    to: [data_sink]
+    direction: outgoing
+    check: connection-delivers-to-sink
+    record_keys: [kind, processorAgreement, processor]
+  - name: part-delivers-to-sink
+    from: part
+    edges: [delivers_to]
+    to: [data_sink]
+    direction: outgoing
+    check: part-delivers-to-sink
+    record_keys: [kind, processorAgreement, processor]
+  design_relations: [fr-has-design-element, nfr-has-design-element, fr-has-segregation, nfr-has-segregation]
+  # FR-012: a requirement (FR or NFR) must not state a class below the part it
+  # is allocated to; a part must not state a class below the part that owns it;
+  # a part's class is held to the vocabulary spec-artifacts-iso carries; a
+  # project that enables `trace:unassigned-class` requires a class.
+  field_consistency:
+  - name: requirement-class-below-allocated-part
+    from: [FR, NFR]
+    field: software_safety_class
+    via: {archetype: allocation, edges: [allocates], direction: incoming}
+    edges: [allocated_to]
+    direction: outgoing
+    to: [part]
+    to_field: software_safety_class
+    order_from: {archetype: FR, field: software_safety_class}
+    rule: not_below
+    check: class-below-part
+  - name: part-class-below-owner
+    from: [part]
+    field: software_safety_class
+    edges: [owned_by]
+    direction: outgoing
+    to: [part]
+    to_field: software_safety_class
+    order_from: {archetype: FR, field: software_safety_class}
+    rule: not_below
+    check: class-below-owner
+  vocabulary:
+  - name: part-class-in-vocabulary
+    from: [part]
+    field: software_safety_class
+    carried: software_safety_class
+    check: undeclared-class-value
+  required_fields:
+  - name: part-needs-class
+    from: [part]
+    field: software_safety_class
+    exclude: []
+    check: unassigned-class
+grammar_severity:
+  trace:unassigned-class: "off"
+  trace:connection-without-classification: "off"
+  trace:classification-without-connection: "off"
+  trace:connection-crosses-trust-boundary: "off"
+  trace:connection-delivers-to-sink: "off"
+  trace:part-delivers-to-sink: "off"
+artifact_types: []
+lint_rules: []
+object_types:
+- name: api_endpoint
+  roles: [externally-exposed, deployable, measurable, configurable]
+  allowed_links:
+    exposes: [domain-object]
+    operates_on: [domain-object]
+    reads: [data_schema, aggregate_root, entity]
+    writes: [data_schema, aggregate_root, entity]
+    calls: [api_endpoint, external_contract]
+    publishes: [queue]
+    implements: [interface]
+    requires: [permission, auth_flow]
+    realizes: [business-intent]
+  data_schema:
+    schema: schemas/ApiEndpoint.json
+  body_extraction:
+    yield_pattern:
+      match:
+        # FR-003: frontmatter ids may use hyphen-separated segments. Semantic
+        # type and member names retain the core Identifier grammar. Every
+        # object type shares this locator and the ObjectId schema pattern.
+        id: &id001
+          from: frontmatter_field
+          path:
+          - id
+          regex: ^([A-Za-z][A-Za-z0-9_]*(?:-[A-Za-z0-9_]+)*)$
+          required: true
+        title: &id002
+          from: frontmatter_field
+          path:
+          - title
+          required: true
+        type: &id003
+          from: frontmatter_field
+          path:
+          - type
+          required: true
+        # `Endpoint` stays the required prose anchor; the concrete routes are the
+        # optional `Routes` table below, which the `record-sections` mapping reads
+        # into the record key `routes` (FR-008).
+        endpoint:
+          from: section_body
+          after_heading: Endpoint
+          required: true
+        routes:
+          from: section_body
+          after_heading: Routes
+          required: false
+        api_contract:
+          from: section_body
+          after_heading: 2. API Contract
+          required: false
+        operations:
+          from: section_body
+          after_heading: Operations
+          required: false
+- name: data_schema
+  allowed_links:
+    contains: [data_schema, enumeration]
+    represents: [domain-object]
+    references: [data_schema]
+  data_schema:
+    schema: schemas/DataSchema.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        schema_json:
+          from: code_block
+          after_heading: Schema
+          required: true
+          language: json
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+- name: data_sink
+  allowed_links:
+    carries: [data_classification]
+    references: [part, external_contract, role]
+  frontmatter_schema_ref: schemas/DataSinkFrontmatter.json
+  data_schema:
+    schema: schemas/DataSink.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        kind:
+          from: frontmatter_field
+          path: [kind]
+          required: true
+        processorAgreement:
+          from: frontmatter_field
+          path: [processor_agreement]
+          required: true
+        processor:
+          from: frontmatter_field
+          path: [processor]
+          required: false
+        region:
+          from: frontmatter_field
+          path: [region]
+          required: false
+        purpose:
+          from: frontmatter_field
+          path: [purpose]
+          required: false
+        audienceRoles:
+          from: frontmatter_field
+          path: [audience_roles]
+          required: false
+- name: queue
+  roles: [externally-exposed, deployable, configurable]
+  allowed_links:
+    carries: [data_schema, event]
+    references: [data_schema]
+  data_schema:
+    schema: schemas/Queue.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        message_schema:
+          from: code_block
+          after_heading: Message Format
+          required: true
+          language: json
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+        delivery:
+          from: section_body
+          after_heading: Delivery
+          required: false
+- name: action
+  roles: [externally-exposed]
+  allowed_links:
+    triggers: [process, action]
+    reads: [data_schema]
+    writes: [data_schema]
+    calls: [api_endpoint]
+    operates_on: [domain-object]
+  data_schema:
+    schema: schemas/Action.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        inputs:
+          from: section_body
+          after_heading: Inputs
+          required: true
+        operations:
+          from: section_body
+          after_heading: Operations
+          required: false
+- name: ui_component
+  roles: [externally-exposed, deployable]
+  allowed_links:
+    contains: [ui_component]
+    contained_by: [ui_component]
+    calls: [api_endpoint, action]
+    renders: [data_schema]
+    realizes: [business-intent]
+  data_schema:
+    schema: schemas/UiComponent.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        props:
+          from: section_body
+          after_heading: Props
+          required: true
+        properties:
+          from: section_body
+          after_heading: Properties
+          required: false
+# `integration` object type RETIRED (format-walkthrough decision #8,
+# 2026-06-11): the tag `tags: [integration]` is the working discovery
+# surface (IntegrationTab); the object type's anchors never matched its
+# 9 users. Internal contracts -> `interface`; external-system contracts
+# -> `external_contract`; service-client FRs -> relationship edges.
+- name: interface
+  roles: [externally-exposed, systems-interface]
+  allowed_links:
+    contains: [api_endpoint]
+    references: [data_schema]
+    specializes: [interface]
+  # FR-007: the QSpec FR-152 Interface kind — its features are fields and
+  # operations, ordered as one sequence by `featureOrder`, which the
+  # `## Features` table carries in row order (quire-rs FR-075, #448). Meaning
+  # id from agent-ix/quire-specification#86 (FR-208).
+  construct:
+    identity: none
+    shape: interface
+    members:
+      featureOrder: required
+      fields: optional
+      operations: optional
+      supertypes: optional
+      clauses: optional
+      relationships: optional
+    meaning: filament.meaning.systems.interface/v1
+  data_schema:
+    schema: schemas/Interface.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        # Language-neutral operations contract (trait / TS interface /
+        # ABC / hexagonal port). YAML, not source code — specs are
+        # human-readable design (decision #7). Implementations are NOT
+        # enumerated here: each implementation FR links via an
+        # `implements` edge.
+        contract_yaml:
+          from: code_block
+          after_heading: Contract
+          language: yaml
+          required: true
+        operations:
+          from: section_body
+          after_heading: Operations
+          required: false
+        associated_types:
+          from: section_body
+          after_heading: Associated Types
+          required: false
+        features:
+          from: table_row
+          under_section: Features
+          required: true
+          assert:
+            columns: [Feature, Kind]
+            min_rows: 1
+- name: external_contract
+  roles: [externally-exposed]
+  allowed_links:
+    implements: [interface]
+    conforms_to: [external_contract]
+    references: [data_schema]
+  data_schema:
+    schema: schemas/ExternalContract.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        # Contract with an EXTERNAL system (the concept `integration`
+        # squatted on). Boundary vs `interface`: interface = contracts
+        # within the system; external_contract = contracts with systems
+        # outside it.
+        contract:
+          from: section_body
+          after_heading: Contract
+          required: true
+        provider:
+          from: section_body
+          after_heading: Provider
+          required: false
+        versioning:
+          from: section_body
+          after_heading: Versioning
+          required: false
+        endpoints:
+          from: section_body
+          after_heading: Endpoints
+          required: false
+        behavior:
+          from: section_body
+          after_heading: Behavior
+          required: false
+        operations:
+          from: section_body
+          after_heading: Operations
+          required: false
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+- name: extension_point
+  allowed_links:
+    extends: [interface]
+    references: [interface]
+  data_schema:
+    schema: schemas/ExtensionPoint.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        # Pluggability as a first-class node: names the interface it
+        # exposes plus registration/stability guarantees.
+        contract:
+          from: section_body
+          after_heading: Contract
+          required: true
+        exposes:
+          from: section_body
+          after_heading: Exposes
+          required: false
+        registration:
+          from: section_body
+          after_heading: Registration
+          required: false
+        stability:
+          from: section_body
+          after_heading: Stability
+          required: false
+        operations:
+          from: section_body
+          after_heading: Operations
+          required: false
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+- name: binary_format
+  allowed_links:
+    serializes: [data_schema]
+    references: [data_schema]
+  data_schema:
+    schema: schemas/BinaryFormat.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        # Persisted binary layout (decision #11): YAML vocabulary for
+        # what JSON Schema cannot express — record types with per-field
+        # name/offset/size/type/endianness. `data_schema` stays for
+        # genuinely JSON-shaped data.
+        layout_yaml:
+          from: code_block
+          after_heading: Layout
+          language: yaml
+          required: true
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+- name: rate_limit
+  allowed_links:
+    throttles: [api_endpoint, action]
+  data_schema:
+    schema: schemas/RateLimit.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        thresholds:
+          from: section_body
+          after_heading: Thresholds
+          required: true
+        invariants:
+          from: section_body
+          after_heading: Invariants
+          required: false
+
+# FR-007: the systems-model kinds QSpec FR-152 binds (part, port, connection,
+# allocation; interface is the object type above). Each carries exactly the
+# members FR-152's kind table states beyond the declaration key (the artifact
+# id), authored as one row of one table and declared once as a `construct`
+# (filament-core-service FR-035 CR-004). Meaning ids come from
+# agent-ix/quire-specification#86 (FR-208).
+- name: part
+  roles: [systems-part]
+  frontmatter_schema_ref: schemas/PartFrontmatter.json
+  allowed_links:
+    owned_by: ["*"]
+    typed_by: ["*"]
+    delivers_to: [data_sink]
+    realizes_requirement: [FR, NFR]
+    segregates_for_requirement: [FR, NFR]
+  construct:
+    identity: none
+    shape: record
+    members:
+      owner: required
+      declaredType: required
+      multiplicity: required
+      fields: forbidden
+      operations: forbidden
+    meaning: filament.meaning.systems.part/v1
+  data_schema:
+    schema: schemas/Part.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        part:
+          from: table_row
+          under_section: Part
+          required: true
+          assert:
+            columns: [Owner, Declared Type, Multiplicity]
+            min_rows: 1
+        softwareSafetyClass:
+          from: frontmatter_field
+          path:
+          - software_safety_class
+          required: false
+        softwareSafetyClassAssignedBy:
+          from: frontmatter_field
+          path:
+          - software_safety_class_assigned_by
+          required: false
+        softwareSafetyClassRationale:
+          from: frontmatter_field
+          path:
+          - software_safety_class_rationale
+          required: false
+- name: port
+  roles: [systems-port]
+  allowed_links:
+    owned_by: [systems-part]
+    typed_by: [systems-interface]
+  construct:
+    identity: none
+    shape: record
+    members:
+      owner: required
+      direction: required
+      interfaceType: required
+      multiplicity: required
+      fields: forbidden
+      operations: forbidden
+    references:
+      owner: [systems-part]
+      interfaceType: [systems-interface]
+    meaning: filament.meaning.systems.port/v1
+  data_schema:
+    schema: schemas/Port.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        port:
+          from: table_row
+          under_section: Port
+          required: true
+          assert:
+            columns: [Owner, Direction, Interface, Multiplicity]
+            min_rows: 1
+- name: connection
+  allowed_links:
+    connects: [systems-port]
+    carries: [data_classification]
+    crosses: [trust_boundary]
+    delivers_to: [data_sink]
+    realizes_requirement: [FR, NFR]
+    segregates_for_requirement: [FR, NFR]
+  construct:
+    identity: none
+    shape: record
+    members:
+      sourceEnd: required
+      targetEnd: required
+      flowDirection: required
+      fields: forbidden
+      operations: forbidden
+    references:
+      sourceEnd: [systems-port]
+      targetEnd: [systems-port]
+    meaning: filament.meaning.systems.connection/v1
+  data_schema:
+    schema: schemas/Connection.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        connection:
+          from: table_row
+          under_section: Connection
+          required: true
+          assert:
+            columns: [Source, Source Multiplicity, Target, Target Multiplicity, Direction]
+            min_rows: 1
+- name: allocation
+  allowed_links:
+    allocates: ["*"]
+    allocated_to: [systems-part]
+  construct:
+    identity: none
+    shape: record
+    members:
+      sourceElement: required
+      targetElement: required
+      fields: forbidden
+      operations: forbidden
+    references:
+      targetElement: [systems-part]
+    meaning: filament.meaning.systems.allocation/v1
+  data_schema:
+    schema: schemas/Allocation.json
+  body_extraction:
+    yield_pattern:
+      match:
+        id: *id001
+        title: *id002
+        type: *id003
+        allocation:
+          from: table_row
+          under_section: Allocation
+          required: true
+          assert:
+            columns: [Source, Target]
+            min_rows: 1
+
+# FR-043: concrete-term lexicon — API / web / UI / data-shape / computing
+# objects the EARS object-aware vague-response check accepts as verifiable
+# responses (so `the system shall provide an endpoint` is not flagged).
+lexicon:
+  endpoint: {definition: a network-addressable HTTP path + method serving a capability}
+  route: {definition: a URL path pattern dispatched to a handler}
+  operation: {definition: a named, invokable unit of behavior (e.g. a CRUD operation)}
+  method: {definition: an HTTP verb or a callable on an interface}
+  api: {definition: an application programming interface surface}
+  command: {definition: an imperative request to perform an action}
+  request: {definition: an inbound message asking for work}
+  response: {definition: an outbound message returning a result}
+  header: {definition: a key/value pair carried on a request or response}
+  payload: {definition: the body/content of a message}
+  query: {definition: a parameterized read request over a data source}
+  webhook: {definition: an outbound HTTP callback invoked on an event}
+  handler: {definition: code that processes a request, event, or signal}
+  interface: {definition: a contract a component exposes or depends on}
+  gateway: {definition: an entry-point service routing to backends}
+  contract: {definition: an agreed request/response or data shape between parties}
+  schema: {definition: a typed structure describing data}
+  field: {definition: a named member of a record or schema}
+  record: {definition: a structured data row/entry}
+  mapping: {definition: an association from keys to values}
+  index: {definition: a lookup structure over records}
+  cursor: {definition: an opaque token encoding a position for stable iteration}
+  pagination: {definition: splitting a result set into pages}
+  stream: {definition: an ordered, possibly unbounded sequence of items}
+  streaming: {definition: incremental delivery of data as it is produced}
+  parallelism: {definition: concurrent execution of independent work}
+  queue: {definition: an ordered buffer of pending work items}
+  channel: {definition: a typed conduit for passing messages}
+  connection: {definition: an established link between two endpoints}
+  session: {definition: a bounded interaction context between client and server}
+  parser: {definition: code that turns input text into a structured form}
+  renderer: {definition: code that turns a structure into output}
+  serializer: {definition: code that encodes a value to a transport form}
+  adapter: {definition: code bridging one interface to another}
+  primitive: {definition: a small reusable building-block type or operation}
+  component: {definition: a self-contained UI or system building block}
+  panel: {definition: a bounded UI region}
+  button: {definition: a clickable UI control}
+  dropdown: {definition: a UI control selecting from a list}
+  menu: {definition: a UI list of actions}
+  form: {definition: a UI grouping of inputs}
+  dialog: {definition: a modal UI surface}
+  tab: {definition: a switchable UI section}
+  widget: {definition: a discrete UI element}
+  picker: {definition: a UI control for selecting a value}
+  column: {definition: a vertical field in a table}
+  row: {definition: a horizontal record in a table}
+  cell: {definition: a single table position}
+  page: {definition: a routed UI view}
+  view: {definition: a rendered presentation of data}
+  graph: {definition: a set of nodes and edges}
+  node: {definition: a vertex in a graph or tree}
+  edge: {definition: a connection between two nodes}
+  frame: {definition: a unit of streamed or rendered content}
+  attachment: {definition: a file or object linked to a record}
+  template: {definition: a reusable parameterized form}
+  # CRUD verbs + general-computing objects (cross-cutting software vocabulary).
+  create: {definition: an operation that adds a new record}
+  read: {definition: an operation that retrieves a record}
+  update: {definition: an operation that modifies a record}
+  delete: {definition: an operation that removes a record}
+  event: {definition: a recorded occurrence emitted for consumers}
+  file: {definition: a named unit of stored bytes}
+  step: {definition: one ordered unit of a procedure or pipeline}
+  layer: {definition: one tier of a layered structure}
+  state: {definition: the current condition of a stateful entity}
+  lifecycle: {definition: the ordered phases of an entity's existence}
+  transition: {definition: a move from one state to another}
+  signal: {definition: an asynchronous notification}
+  log: {definition: an append-only record of events}
+  config: {definition: externalized settings governing behavior}
+  overlay: {definition: a layered configuration applied over a base}
+  digest: {definition: a hash summarizing content}
+  report: {definition: a generated summary document}
+  module: {definition: a packaged, reusable unit of functionality}
+  plugin: {definition: an installable extension contributing capability}
+  object: {definition: a typed, identifiable data instance}
+  artifact: {definition: a produced, versioned output}
+  document: {definition: an authored, structured file}
+  content: {definition: the substantive body of a document or message}
+  parameter: {definition: a named input governing behavior}
+  reply: {definition: a response in a thread or conversation}
+  thread: {definition: an ordered conversation of messages}
+  comment: {definition: an authored note attached to a target}
+  review: {definition: a structured assessment of an artifact}
+  workflow: {definition: an orchestrated sequence of steps}
+  account: {definition: an identity's registration with a system}
+  provider: {definition: an external system supplying a capability}
+  label: {definition: a short classifying tag}
+  status: {definition: a discrete condition value}
+  flag: {definition: a boolean configuration toggle}
+  job: {definition: a unit of scheduled or queued work}
+  task: {definition: a discrete unit of work}
+  result: {definition: the produced outcome of an operation}
+  entry: {definition: one item in a list or log}
+  key: {definition: a unique identifier or lookup token}
+  list: {definition: an ordered collection / a list operation}
+  spec: {definition: an authored specification artifact}
+  crud: {definition: the create-read-update-delete operation set}
+  pointer: {definition: a reference to a location or value}
+  reference: {definition: a link to another artifact or entity}
+  # Top-up: common concrete objects surfaced by the corpus re-baseline (FR-043).
+  path: {definition: a code path, file path, or route path}
+  pattern: {definition: a recurring structural or matching template}
+  loop: {definition: a repeated control-flow construct}
+  function: {definition: a named callable unit of code}
+  database: {definition: a persistent structured data store}
+  error: {definition: a failure condition or error value}
+  action: {definition: a discrete invokable behavior}
+  version: {definition: an identified revision of an artifact}
+  input: {definition: data supplied to an operation}
+  tracing: {definition: distributed request/span instrumentation}
+  observability: {definition: logs/metrics/traces instrumentation surface}
+  boundary: {definition: a delimiting interface between contexts}
+  branching: {definition: conditional control flow}

@@ -12,6 +12,8 @@
 //! [`crate::report::render`] rather than being transcribed a second time. The
 //! two sentences are the arguments.
 
+use ix_trace_rs::implements;
+
 use crate::common::scalar::js_f64_string;
 use crate::error::MeasurementError;
 use crate::portfolio::ranking::{PortfolioRanking, RANKING_ADVISORY_NOTE, rank_portfolio};
@@ -29,6 +31,9 @@ use crate::report::verdict_render::stage_verdict_table;
 /// # Errors
 ///
 /// As [`crate::report::render_measurement_report`].
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
+#[implements("NFR-023-AC-3")]
 pub fn render_portfolio_report(report: &PortfolioReport) -> Result<String, MeasurementError> {
     let mut lines = vec![
         "# QA portfolio report".to_owned(),
@@ -125,6 +130,10 @@ fn ranking_cell(label: &str) -> String {
 }
 
 /// The lines for a repository that could be read.
+#[implements("NFR-023-AC-1")]
+#[implements("NFR-023-AC-2")]
+#[implements("NFR-023-AC-3")]
+#[implements("NFR-023-AC-4")]
 fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, MeasurementError> {
     let mut lines = vec![
         format!(
@@ -185,7 +194,7 @@ fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, Measu
                     row,
                     "producer supplied no reason",
                     "not_computed: no collection"
-                ),
+                )?,
                 plan_cell(row),
                 row.collection.as_ref().map_or_else(
                     || "n/a".to_owned(),

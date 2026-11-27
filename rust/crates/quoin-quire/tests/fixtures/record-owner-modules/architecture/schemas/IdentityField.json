@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-architecture/IdentityField.json",
+  "type": "object",
+  "properties": {
+    "identity": {
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "required": [
+    "identity"
+  ],
+  "description": "Open marker: a `FieldDecl` flagged as identity. Deliberately open so it\nmatches any identity-flagged field."
+}

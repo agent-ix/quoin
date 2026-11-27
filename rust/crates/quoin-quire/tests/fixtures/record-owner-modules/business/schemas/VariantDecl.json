@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/VariantDecl.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/Identifier.json"
+    },
+    "payload": {
+      "$ref": "https://schemas.agent-ix.org/semantic-core/0.3.3/SemanticId.json"
+    },
+    "description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "unevaluatedProperties": {
+    "not": {}
+  },
+  "description": "One variant of a closed union, one row of the `## Variants` table. `payload`\nis the artifact id of the type the selected variant carries (a table cell\nreads a `SemanticId`, not a `TypeRef` object); a variant with no payload\nleaves the cell empty and omits the key."
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.agent-ix.org/agent-ix/spec-objects-business/StepKind.json",
+  "type": "string",
+  "enum": [
+    "command",
+    "event",
+    "decision",
+    "compensation",
+    "wait"
+  ],
+  "description": "Closed set of process step kinds."
+}
