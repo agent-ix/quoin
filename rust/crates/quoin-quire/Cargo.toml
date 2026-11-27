@@ -45,4 +45,5 @@ thiserror = { workspace = true }
 
 [dev-dependencies]
 quire-fixtures = { workspace = true }
+spec-objects-architecture-fixture = { git = "https://github.com/agent-ix/quire-rs", rev = "5796c39854aca9a26b8ed0130141dc734988c090" }
 tempfile = { workspace = true }
