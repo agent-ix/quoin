@@ -95,7 +95,7 @@ fn quoin(repo: &Path, args: &[&str]) -> Output {
     run(Path::new(env!("CARGO_BIN_EXE_quoin")), repo, &full_args)
 }
 
-#[trace("FR-191-AC-27", "FR-191-AC-28")]
+#[trace("FR-191-AC-27", "FR-191-AC-28", "FR-191-AC-31")]
 #[test]
 fn real_ea_release_and_quire_dossier_export_scenario() {
     let ea = binary("QUOIN_E2E_EA");
