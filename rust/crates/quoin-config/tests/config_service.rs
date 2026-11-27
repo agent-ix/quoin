@@ -21,7 +21,7 @@ use quoin_config::service::{DoctorStatus, IncidentKind, MAX_CONFIG_FILE_BYTES};
 use quoin_config::{ConfigErrorCode, ConfigService, IncidentLog, QuoinConfig, RuntimeContext};
 
 struct Fixture {
-    _root: tempfile::TempDir,
+    root: tempfile::TempDir,
     env: FixedEnvironment,
     ctx: RuntimeContext,
     user_config: PathBuf,
@@ -33,7 +33,7 @@ fn fixture() -> Fixture {
     let env = FixedEnvironment::new().with_var("XDG_CONFIG_HOME", xdg.to_string_lossy());
     Fixture {
         user_config: xdg.join("ix").join("config.d").join("quoin.yaml"),
-        _root: root,
+        root,
         env,
         ctx: RuntimeContext::new(),
     }
@@ -89,7 +89,7 @@ fn matrix_request_limit_round_trips_and_project_value_overrides_user_value() {
         Some(12_345)
     );
 
-    let project_root = f._root.path().join(".ix");
+    let project_root = f.root.path().join(".ix");
     let project_config = project_root.join("config.d/quoin.yaml");
     fs::create_dir_all(project_config.parent().expect("project config parent"))
         .expect("project config directory");
