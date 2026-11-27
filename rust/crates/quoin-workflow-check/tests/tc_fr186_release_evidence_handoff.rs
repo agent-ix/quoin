@@ -121,7 +121,9 @@ fn tc_fr186_required_suite_bindings_and_incomplete_run_are_retained() {
         .expect("evidence job has steps");
     let run_position = steps
         .iter()
-        .position(|step| step["name"].as_str() == Some("Run and retain release evidence"))
+        .position(|step| {
+            step["name"].as_str() == Some("Run and validate retained release evidence")
+        })
         .expect("release evidence attempt step exists");
     let upload_position = steps
         .iter()
@@ -295,7 +297,10 @@ fn tc_fr186_attestation_waits_for_uploaded_evidence_and_names_its_artifact() {
     assert!(native_release["jobs"]["package"]["permissions"]["id-token"].is_null());
     let manual_release = workflow("native-release.yml");
     assert!(manual_release["jobs"]["build"]["permissions"]["id-token"].is_null());
-    let run = evidence_step(&native_release, "Run and retain release evidence");
+    let run = evidence_step(
+        &native_release,
+        "Run and validate retained release evidence",
+    );
     let upload = native_release["jobs"]["evidence"]["steps"]
         .as_sequence()
         .expect("evidence job has steps")

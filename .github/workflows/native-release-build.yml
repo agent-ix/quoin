@@ -244,9 +244,19 @@ jobs:
           git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
           cd rust
           cargo fetch --locked
-      - name: Run and retain release evidence
+      - name: Install cosign for OIDC-backed DSSE provenance
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad
+        with:
+          cosign-release: v3.0.2
+      - name: Run and validate retained release evidence
         env:
           npm_config_registry: https://registry.npmjs.org
+          EXPECTED_TAG: ${{ inputs.tag }}
+          TAG_NAME: ${{ github.ref_name }}
+          SOURCE_REVISION: ${{ github.sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_NAME: ${{ github.workflow }}
         shell: bash
         run: |
           set -euo pipefail
@@ -348,6 +358,142 @@ jobs:
           else
             echo "::warning::release evidence artifact will identify SUITE-001 as incomplete" >&2
           fi
+
+          # quoin matrix invokes the quire matrix engine at this tagged checkout.
+          matrix_file="$RUNNER_TEMP/quoin-release-test-matrix.json"
+          rust/target/debug/quoin matrix --repo . --json > "$matrix_file"
+          jq -e '
+            (.requirements | type == "array" and length > 0)
+            and ([.requirements[].criteria[] | select(.status != "retired")] | length > 0)
+          ' "$matrix_file" >/dev/null || {
+            echo "::error::Quire matrix is missing or has no active criteria" >&2
+            exit 1
+          }
+
+          full_matrix="$RUNNER_TEMP/quoin-release-complete-matrix.json"
+          jq -S -c '[.requirements[] | {document, id, criteria}]' "$matrix_file" > "$full_matrix"
+          active_matrix_count=$(jq '[.[] | .criteria[] | select(.status != "retired")] | length' "$full_matrix")
+          test "$active_matrix_count" -gt 0 || {
+            echo "::error::complete Quire matrix contains no active obligations" >&2
+            exit 1
+          }
+
+          expected_tag="${EXPECTED_TAG#refs/tags/}"
+          [[ "$TAG_NAME" == "$expected_tag" ]] || {
+            echo "::error::tag name does not match the reusable workflow input" >&2
+            exit 1
+          }
+          resolved_revision=$(git rev-parse HEAD)
+          [[ "$resolved_revision" == "$SOURCE_REVISION" ]] || {
+            echo "::error::checked-out source does not match the tag workflow revision" >&2
+            exit 1
+          }
+
+          record_path="spec/evidence/runs/SUITE-001/missing.json"
+          run_sha256=null
+          if [[ "${#records[@]}" -gt 1 ]]; then
+            echo "::error::ambiguous current-job SUITE-001 run records" >&2
+            exit 1
+          elif [[ "${#records[@]}" -eq 1 ]]; then
+            record_path="${records[0]}"
+            test -f "$record_path" || {
+              echo "::error::current-job run record disappeared before provenance creation" >&2
+              exit 1
+            }
+            run_sha256=$(sha256sum "$record_path" | cut -d ' ' -f 1)
+          fi
+
+          test -f spec/evidence/suites.md || {
+            echo "::error::suite declarations are missing from the tagged source" >&2
+            exit 1
+          }
+          suite_declarations_sha256=$(sha256sum spec/evidence/suites.md | cut -d ' ' -f 1)
+          runs_json=$(jq -cn --arg path "$record_path" --argjson sha "$run_sha256" \
+            '[{suite:"SUITE-001",recordPath:$path,sha256:$sha}]')
+          payload_file="$RUNNER_TEMP/execution-provenance.payload.json"
+          jq -S -c -n \
+            --arg revision "$resolved_revision" \
+            --arg suite_sha "$suite_declarations_sha256" \
+            --slurpfile matrix "$full_matrix" \
+            --argjson runs "$runs_json" \
+            '{version:2,sourceRevision:$revision,suiteDeclarationsSha256:$suite_sha,testMatrix:$matrix[0],runs:$runs}' \
+            > "$payload_file"
+          payload_fields=$(jq -c 'keys' "$payload_file")
+          expected_payload_fields='["runs","sourceRevision","suiteDeclarationsSha256","testMatrix","version"]'
+          test "$payload_fields" = "$expected_payload_fields" || {
+            echo "::error::execution provenance payload has an unexpected field set" >&2
+            exit 1
+          }
+          test "$(jq -r .version "$payload_file")" = 2 || {
+            echo "::error::execution provenance payload version is not 2" >&2
+            exit 1
+          }
+          jq -S -c '[.requirements[] | {document, id, criteria}]' "$matrix_file" \
+            > "$RUNNER_TEMP/quoin-release-matrix-recheck.json"
+          cmp "$full_matrix" "$RUNNER_TEMP/quoin-release-matrix-recheck.json" || {
+            echo "::error::execution provenance matrix omits or changes active Quire criteria" >&2
+            exit 1
+          }
+          jq -S -c '.testMatrix' "$payload_file" > "$RUNNER_TEMP/quoin-release-payload-matrix.json"
+          cmp "$full_matrix" "$RUNNER_TEMP/quoin-release-payload-matrix.json" || {
+            echo "::error::execution provenance payload omits or changes Quire matrix criteria" >&2
+            exit 1
+          }
+          if [[ "$run_sha256" != null ]]; then
+            test -f "$record_path" || {
+              echo "::error::non-null SUITE-001 digest has no referenced run bytes" >&2
+              exit 1
+            }
+            actual_sha=$(sha256sum "$record_path" | cut -d ' ' -f 1)
+            [[ "$actual_sha" == "$run_sha256" ]] || {
+              echo "::error::SUITE-001 run-record digest mismatch" >&2
+              exit 1
+            }
+          else
+            test ! -e "$record_path" || {
+              echo "::error::missing-run null digest conflicts with an existing referenced record" >&2
+              exit 1
+            }
+          fi
+
+          provenance_dir=spec/evidence
+          payload_type=application/vnd.agent-ix.execution-provenance.v2+json
+          sign_dsse_payload() {
+            local payload="$1" payload_type="$2" envelope="$3" bundle="$4" stem="$5"
+            local pae="$RUNNER_TEMP/$stem.pae" payload_length type_length signature
+            payload_length=$(wc -c < "$payload" | tr -d ' ')
+            type_length=${#payload_type}
+            { printf 'DSSEv1 %s %s %s ' "$type_length" "$payload_type" "$payload_length"; cat "$payload"; } > "$pae"
+            cosign sign-blob --yes "$pae" --bundle "$bundle"
+            signature=$(jq -er '.messageSignature.signature' "$bundle")
+            jq -S -c -n \
+              --arg payload_type "$payload_type" \
+              --arg payload "$(base64 < "$payload" | tr -d '\r\n')" \
+              --arg signature "$signature" \
+              '{payloadType:$payload_type,payload:$payload,signatures:[{keyid:"",sig:$signature}]}' \
+              > "$envelope"
+          }
+          sign_dsse_payload "$payload_file" "$payload_type" \
+            "$provenance_dir/execution-provenance.dsse.json" \
+            "$provenance_dir/execution-provenance.sigstore.json" execution-provenance
+
+          identity_payload="$RUNNER_TEMP/release-evidence-identity.payload.json"
+          jq -S -c -n \
+            --arg tag "$TAG_NAME" \
+            --arg source "$resolved_revision" \
+            --arg run "$WORKFLOW_RUN_ID" \
+            --arg attempt "$WORKFLOW_RUN_ATTEMPT" \
+            --arg workflow "$WORKFLOW_NAME" \
+            '{tagName:$tag,sourceRevision:$source,workflowRun:{id:$run,attempt:$attempt,workflow:$workflow}}' \
+            > "$identity_payload"
+          sign_dsse_payload "$identity_payload" \
+            application/vnd.agent-ix.release-evidence-identity.v1+json \
+            "$provenance_dir/release-evidence-identity.dsse.json" \
+            "$provenance_dir/release-evidence-identity.sigstore.json" release-evidence-identity
+          test -s "$provenance_dir/execution-provenance.dsse.json"
+          test -s "$provenance_dir/execution-provenance.sigstore.json"
+          test -s "$provenance_dir/release-evidence-identity.dsse.json"
+          test -s "$provenance_dir/release-evidence-identity.sigstore.json"
       - uses: actions/upload-artifact@v7
         with:
           name: release-evidence

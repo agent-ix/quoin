@@ -14,11 +14,14 @@ use ix_trace_rs::trace;
 use serde_yaml_ng::Value;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
+
+fn repository_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..")
+}
 
 fn workflow(name: &str) -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../.github/workflows")
-        .join(name);
+    let path = repository_root().join(".github/workflows").join(name);
     let source = fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read workflow {}: {error}", path.display()));
     serde_yaml_ng::from_str(&source)
@@ -98,6 +101,30 @@ fn release_evidence_upload_contains_the_maintained_and_fresh_evidence_tree() {
         !script.contains("git commit") && !script.contains("git push"),
         "generated run evidence remains workflow output and is not committed"
     );
+
+    let evidence_root = repository_root().join("spec/evidence");
+    assert!(evidence_root.join("suites.md").is_file());
+    assert!(evidence_root.join("bindings.json").is_file());
+    assert!(
+        script.contains("spec/evidence/release-evidence-status.json"),
+        "the uploaded tree includes the retained status for missing or failed runs"
+    );
+    let tracked = Command::new("git")
+        .args([
+            "ls-files",
+            "-z",
+            "--",
+            "spec/evidence/runs/SUITE-001",
+            "spec/evidence/release-evidence-status.json",
+        ])
+        .current_dir(repository_root())
+        .output()
+        .expect("git lists committed evidence files");
+    assert!(tracked.status.success(), "git ls-files succeeds");
+    assert!(
+        tracked.stdout.is_empty(),
+        "run-specific evidence and status remain untracked in the source revision"
+    );
 }
 
 #[trace("FR-186-AC-5")]
@@ -124,6 +151,10 @@ fn release_evidence_records_tag_revision_and_producing_run_identity() {
         run.contains("sourceRevision") && (run.contains("workflowRun") || run.contains("runId")),
         "the artifact serializes source and run identity alongside the release tag"
     );
+    assert!(run.contains("sign_dsse_payload"));
+    assert!(run.contains("cosign sign-blob --yes"));
+    assert!(run.contains("release-evidence-identity.dsse.json"));
+    assert!(run.contains("release-evidence-identity.sigstore.json"));
 }
 
 #[trace("FR-186-AC-7")]
@@ -137,7 +168,7 @@ fn release_provenance_binds_the_exact_v2_payload_and_complete_tagged_matrix() {
     assert!(run.contains("application/vnd.agent-ix.execution-provenance.v2+json"));
     assert!(
         run.contains(
-            "[\"version\",\"sourceRevision\",\"suiteDeclarationsSha256\",\"testMatrix\",\"runs\"]"
+            "expected_payload_fields='[\"runs\",\"sourceRevision\",\"suiteDeclarationsSha256\",\"testMatrix\",\"version\"]'"
         ),
         "the DSSE payload has exactly the five FR-186 fields"
     );
