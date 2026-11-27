@@ -21,6 +21,7 @@ use crate::{ShellError, invocation};
 
 const FLOWS: [&str; 4] = ["formalize", "review", "to-plan", "design-gate"];
 const MAX_OUTPUT: u64 = 1024 * 1024;
+const IX_FLOW_INSTALL: &str = "install ix-flow with npm install -g @agent-ix/ix-flow@latest";
 
 pub(crate) fn run(name: &str, arguments: &ArgMatches) -> Result<Response, ShellError> {
     launch(name, arguments).map_err(|error| match error {
@@ -43,21 +44,31 @@ impl From<String> for LaunchFailure {
     }
 }
 
+#[implements("FR-020-AC-3")]
 fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure> {
     if !FLOWS.contains(&name) {
         return Err("an unknown flow command reached dispatch".to_owned().into());
     }
     let path = skill_path(name, arguments)?;
     let home = absolute_home()?;
-    let version = execute(ProcessCommand::new(runner_program()).arg("--version"))?;
-    let parsed = semver::Version::parse(version.trim().trim_start_matches('v'))
-        .map_err(|_| "ix-flow did not report a supported semantic version".to_owned())?;
+    let version =
+        execute(ProcessCommand::new(runner_program()).arg("--version")).map_err(|failure| {
+            match failure {
+                LaunchFailure::Local(message) => {
+                    LaunchFailure::Local(format!("{message}; {IX_FLOW_INSTALL}"))
+                }
+                LaunchFailure::Child(exit, message) => {
+                    LaunchFailure::Child(exit, format!("{message}; {IX_FLOW_INSTALL}"))
+                }
+            }
+        })?;
+    let parsed = semver::Version::parse(version.trim().trim_start_matches('v')).map_err(|_| {
+        LaunchFailure::Local(format!(
+            "ix-flow did not report a supported semantic version; {IX_FLOW_INSTALL}"
+        ))
+    })?;
     if parsed < semver::Version::new(0, 3, 1) {
-        return Err(
-            "ix-flow >=0.3.1 is required; run npm install -g @agent-ix/ix-flow@latest"
-                .to_owned()
-                .into(),
-        );
+        return Err(format!("ix-flow >=0.3.1 is required; {IX_FLOW_INSTALL}").into());
     }
     let host_entry = if name == "design-gate" {
         let host_entry = host_entrypoint()?;
