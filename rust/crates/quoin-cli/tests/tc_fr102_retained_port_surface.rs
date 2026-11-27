@@ -28,11 +28,16 @@ struct Case {
 
 fn normalize(text: &str) -> String {
     let version = env!("CARGO_PKG_VERSION");
-    text.replace(
-        &format!("@agent-ix/quoin/{version}"),
-        "@agent-ix/quoin/<VERSION>",
-    )
-    .replace(version, "<VERSION>")
+    let marker = "@agent-ix/quoin/";
+    let Some(version_start) = text.find(marker).map(|index| index + marker.len()) else {
+        return text.replace(version, "<VERSION>");
+    };
+    let version_end = text[version_start..]
+        .find(['\n', '\r'])
+        .map_or(text.len(), |offset| version_start + offset);
+    let mut normalized = text.to_owned();
+    normalized.replace_range(version_start..version_end, "<VERSION>");
+    normalized.replace(version, "<VERSION>")
 }
 
 #[trace("FR-102-CON-3")]
