@@ -497,6 +497,7 @@ fn validate_record(record: &ArtifactRecord) -> Result<(), DeliveryError> {
 )]
 mod tests {
     use ix_trace_rs::trace;
+    use std::cell::RefCell;
     use std::collections::BTreeMap;
 
     use super::*;
@@ -518,6 +519,25 @@ mod tests {
         }
     }
 
+    struct RecordingTransport {
+        bodies: BTreeMap<String, Vec<u8>>,
+        requests: RefCell<Vec<String>>,
+    }
+
+    impl Transport for RecordingTransport {
+        fn get(&self, url: &Url, limit: usize) -> Result<Vec<u8>, DeliveryError> {
+            self.requests.borrow_mut().push(url.to_string());
+            let body = self
+                .bodies
+                .get(url.as_str())
+                .ok_or_else(|| DeliveryError::Transport("fixture URL absent".to_owned()))?;
+            if body.len() > limit {
+                return Err(DeliveryError::BodyTooLarge);
+            }
+            Ok(body.clone())
+        }
+    }
+
     fn manifest(archive: &[u8], url: &str) -> Vec<u8> {
         serde_json::to_vec(&serde_json::json!({"schema_version": 2, "version": "9.9.9", "artifacts": [{"target": host_target().unwrap(), "asset": "quoin-v9.9.9-test.tar.gz", "archive": "tar-gz", "size": archive.len(), "url": url}]})).unwrap()
     }
@@ -531,6 +551,19 @@ mod tests {
         header.set_mode(0o755);
         header.set_cksum();
         archive.append_data(&mut header, path, bytes).unwrap();
+        archive.into_inner().unwrap().finish().unwrap()
+    }
+
+    fn tar_members(members: &[(&[u8], &str)]) -> Vec<u8> {
+        let encoder = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        let mut archive = tar::Builder::new(encoder);
+        for (bytes, path) in members {
+            let mut header = tar::Header::new_gnu();
+            header.set_size(u64::try_from(bytes.len()).unwrap());
+            header.set_mode(0o755);
+            header.set_cksum();
+            archive.append_data(&mut header, *path, *bytes).unwrap();
+        }
         archive.into_inner().unwrap().finish().unwrap()
     }
 
@@ -560,7 +593,102 @@ mod tests {
         ));
     }
 
-    #[trace("FR-022")]
+    #[trace("FR-022-AC-1")]
+    #[test]
+    fn tc_fr022_update_selects_host_artifact_checks_size_and_single_member() {
+        let manifest_url = "https://example.test/manifest.json";
+        let host_url = "https://example.test/host.tar.gz";
+        let unrelated_url = "https://example.test/unrelated.tar.gz";
+        let archive = tar(b"opaque replacement bytes", executable_name());
+        let manifest_value = serde_json::json!({
+            "schema_version": 2,
+            "version": "9.9.9",
+            "artifacts": [
+                {"target": host_target().unwrap(), "asset": "host.tar.gz", "archive": "tar-gz", "size": archive.len(), "url": host_url},
+                {"target": "unrelated-host", "asset": "unrelated.tar.gz", "archive": "tar-gz", "size": 1, "url": unrelated_url}
+            ]
+        });
+        let manifest = serde_json::to_vec(&manifest_value).unwrap();
+        let mut bodies = BTreeMap::new();
+        bodies.insert(manifest_url.to_owned(), manifest);
+        bodies.insert(host_url.to_owned(), archive.clone());
+        let transport = RecordingTransport {
+            bodies,
+            requests: RefCell::new(Vec::new()),
+        };
+        let scratch = tempfile::tempdir().unwrap();
+        let executable = scratch.path().join(executable_name());
+        fs::write(&executable, b"old executable").unwrap();
+
+        let result = update(
+            &transport,
+            manifest_url,
+            false,
+            &Version::new(1, 0, 0),
+            &executable,
+            false,
+        )
+        .unwrap();
+        #[cfg(not(windows))]
+        assert_eq!(
+            result,
+            UpdateResult::Replaced {
+                version: Version::new(9, 9, 9)
+            }
+        );
+        #[cfg(windows)]
+        assert!(
+            matches!(result, UpdateResult::Staged { version, .. } if version == Version::new(9, 9, 9))
+        );
+        assert_eq!(transport.requests.into_inner(), [manifest_url, host_url]);
+        #[cfg(not(windows))]
+        assert_eq!(fs::read(&executable).unwrap(), b"opaque replacement bytes");
+
+        let mut wrong_size_manifest = manifest_value.clone();
+        wrong_size_manifest["artifacts"][0]["size"] = serde_json::json!(archive.len() + 1);
+        let mut wrong_size_bodies = BTreeMap::new();
+        wrong_size_bodies.insert(
+            manifest_url.to_owned(),
+            serde_json::to_vec(&wrong_size_manifest).unwrap(),
+        );
+        wrong_size_bodies.insert(host_url.to_owned(), archive.clone());
+        let wrong_size_transport = RecordingTransport {
+            bodies: wrong_size_bodies,
+            requests: RefCell::new(Vec::new()),
+        };
+        let unchanged = scratch.path().join(format!("old-{}", executable_name()));
+        fs::write(&unchanged, b"still old").unwrap();
+        assert!(matches!(
+            update(
+                &wrong_size_transport,
+                manifest_url,
+                false,
+                &Version::new(1, 0, 0),
+                &unchanged,
+                false,
+            ),
+            Err(DeliveryError::SizeMismatch)
+        ));
+        assert_eq!(fs::read(&unchanged).unwrap(), b"still old");
+
+        let multiple_members = tar_members(&[
+            (b"replacement", executable_name()),
+            (b"unexpected", "extra-file"),
+        ]);
+        assert!(matches!(
+            extract(&multiple_members, ArchiveFormat::TarGz, executable_name()),
+            Err(DeliveryError::Archive(_))
+        ));
+        assert_eq!(
+            archive.len(),
+            manifest_value["artifacts"][0]["size"]
+                .as_u64()
+                .and_then(|size| usize::try_from(size).ok())
+                .unwrap()
+        );
+    }
+
+    #[trace("FR-022-AC-2")]
     #[test]
     fn tc_373_747_check_only_never_fetches_or_mutates_the_archive() {
         let archive_url = "https://example.test/quoin.tar.gz";
@@ -568,11 +696,15 @@ mod tests {
         let manifest_url = "https://example.test/manifest.json";
         let mut bodies = BTreeMap::new();
         bodies.insert(manifest_url.to_owned(), manifest(&archive, archive_url));
+        let transport = RecordingTransport {
+            bodies,
+            requests: RefCell::new(Vec::new()),
+        };
         let scratch = tempfile::tempdir().unwrap();
         let executable = scratch.path().join(executable_name());
         fs::write(&executable, b"old executable").unwrap();
         let result = update(
-            &FixtureTransport { bodies },
+            &transport,
             manifest_url,
             false,
             &Version::new(1, 0, 0),
@@ -587,6 +719,7 @@ mod tests {
             }
         );
         assert_eq!(fs::read(executable).unwrap(), b"old executable");
+        assert_eq!(transport.requests.into_inner(), [manifest_url]);
     }
 
     #[trace("FR-022")]
