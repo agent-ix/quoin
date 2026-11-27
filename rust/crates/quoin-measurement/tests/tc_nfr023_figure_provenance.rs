@@ -255,6 +255,24 @@ fn audit_figures(markdown: &str, rows: &[CurrentRow]) -> FigureAudit {
     }
 }
 
+fn rendered_current_number(markdown: &str, metric: &str) -> f64 {
+    let line = markdown
+        .lines()
+        .find(|line| line.starts_with(&format!("| {metric} |")))
+        .unwrap_or_else(|| panic!("rendered row for {metric} is present"));
+    let cell = line
+        .split('|')
+        .nth(4)
+        .unwrap_or_else(|| panic!("Current cell for {metric} is present"));
+    let number = cell
+        .split_whitespace()
+        .next()
+        .unwrap_or_else(|| panic!("Current cell for {metric} has a value"));
+    number
+        .parse::<f64>()
+        .unwrap_or_else(|error| panic!("Current cell for {metric} is numeric: {error}"))
+}
+
 fn audit_finding_recall_attention(markdown: &str, rows: &[CurrentRow]) -> FigureAudit {
     let mut checked = 0usize;
     let mut violations = Vec::new();
@@ -368,14 +386,10 @@ fn every_reported_value_recomputes_from_the_artifact_field_it_names() {
             .as_f64()
             .expect("artifact value is numeric");
         assert_eq!(observation.value, Some(recorded), "{}", row.metric);
-        let line = fixture
-            .markdown
-            .lines()
-            .find(|line| line.starts_with(&format!("| {} |", row.metric)))
-            .expect("measured observation is rendered");
-        assert!(
-            line.contains(&format!("{}", recorded)),
-            "{}: {line}",
+        assert_eq!(
+            rendered_current_number(&fixture.markdown, &row.metric),
+            recorded,
+            "the rendered Current cell for {} equals its artifact value",
             row.metric
         );
         assert!(
@@ -419,7 +433,16 @@ fn every_reported_value_recomputes_from_the_artifact_field_it_names() {
         recall.collection.as_ref().expect("source collection").path
     );
     assert_eq!(binding["field"], format!("/observations/{index}/value"));
-    assert_eq!(fixture.artifact["observations"][index]["value"], 0);
+    let attention_value = fixture
+        .artifact
+        .pointer(binding["field"].as_str().expect("attention field pointer"))
+        .and_then(Value::as_f64)
+        .expect("attention field resolves to a numeric artifact value");
+    assert_eq!(attention_value, 0.0);
+    assert_eq!(
+        rendered_current_number(&fixture.markdown, "finding_recall"),
+        attention_value
+    );
     assert!(attention_line.contains("zero seeded defects detected"));
 }
 
@@ -534,16 +557,6 @@ fn figure_audit_reports_missing_bindings_and_incomplete_rates_and_marks_empty_as
             .any(|message| message.contains("unit"))
     );
 
-    let mut orphan = fixture.report.current[0].clone();
-    orphan.collection = None;
-    let audit = audit_figures(&fixture.markdown, &[orphan]);
-    assert!(
-        audit
-            .violations
-            .iter()
-            .any(|message| message.contains("no source collection"))
-    );
-
     let empty = audit_figures("# QA measurement report\n", &[]);
     assert_eq!(empty.checked, 0);
     assert!(
@@ -551,4 +564,54 @@ fn figure_audit_reports_missing_bindings_and_incomplete_rates_and_marks_empty_as
         "an empty run is explicitly inconclusive"
     );
     assert!(empty.violations.is_empty());
+}
+
+#[trace("NFR-023-AC-4")]
+#[test]
+fn report_and_portfolio_renderers_refuse_measured_figures_without_source_coordinates() {
+    let fixture = fixture();
+    for missing in ["collection", "observation_index"] {
+        let mut report = fixture.report.clone();
+        let orphan = report.current.first_mut().expect("measured row exists");
+        match missing {
+            "collection" => orphan.collection = None,
+            "observation_index" => orphan.observation_index = None,
+            _ => unreachable!("the fixture lists only source coordinates"),
+        }
+
+        let measurement_error =
+            render_measurement_report(&report).expect_err("an unbound numeric figure is refused");
+        assert_eq!(
+            measurement_error.code(),
+            MeasurementErrorCode::FigureProvenanceAbsent,
+            "missing {missing} must be reported by the measurement renderer"
+        );
+        assert_eq!(measurement_error.subject(), "quality.files");
+        assert_eq!(measurement_error.findings(), &[missing.to_owned()]);
+
+        let portfolio = PortfolioReport {
+            newest_collection_timestamp: Some("2026-11-27T00:00:00.000Z".to_owned()),
+            repositories: vec![PortfolioRepositoryReport {
+                name: "fixture".to_owned(),
+                root: fixture.repo.to_string_lossy().into_owned(),
+                status: RepositoryStatus::Readable,
+                store: StoreState::Present,
+                profiles: Vec::new(),
+                plans: report.plans.clone(),
+                measurements: Some(report),
+                latest_collection: None,
+                comparison: None,
+                staleness: Staleness::NotComputed,
+            }],
+        };
+        let portfolio_error = render_portfolio_report(&portfolio)
+            .expect_err("portfolio refuses an unbound numeric figure");
+        assert_eq!(
+            portfolio_error.code(),
+            MeasurementErrorCode::FigureProvenanceAbsent,
+            "missing {missing} must be reported by the portfolio renderer"
+        );
+        assert_eq!(portfolio_error.subject(), "quality.files");
+        assert_eq!(portfolio_error.findings(), &[missing.to_owned()]);
+    }
 }

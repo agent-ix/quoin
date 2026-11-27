@@ -20,7 +20,7 @@ use ix_trace_rs::implements;
 use quoin_store::{JsonObject, JsonValue};
 
 use crate::common::scalar::{js_f64_string, js_string};
-use crate::error::MeasurementError;
+use crate::error::{MeasurementError, MeasurementErrorCode};
 use crate::intervention::report::render_intervention_report;
 use crate::json_bridge::to_serde;
 use crate::operational::report::render_operational_report;
@@ -196,8 +196,22 @@ fn figure_binding(
     row: &CurrentRow,
     observation: &MeasurementObservation,
 ) -> Result<Option<String>, MeasurementError> {
-    let (Some(collection), Some(index)) = (&row.collection, row.observation_index) else {
+    if observation.value.is_none() {
         return Ok(None);
+    }
+    let Some(collection) = &row.collection else {
+        return Err(MeasurementError::with_findings(
+            MeasurementErrorCode::FigureProvenanceAbsent,
+            &row.metric,
+            vec!["collection".to_owned()],
+        ));
+    };
+    let Some(index) = row.observation_index else {
+        return Err(MeasurementError::with_findings(
+            MeasurementErrorCode::FigureProvenanceAbsent,
+            &row.metric,
+            vec!["observation_index".to_owned()],
+        ));
     };
     let population = observation
         .population

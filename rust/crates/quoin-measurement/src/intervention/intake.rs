@@ -116,6 +116,9 @@ impl From<MeasurementError> for InterventionIntakeError {
             | MeasurementErrorCode::CollectionIdUnsafe
             | MeasurementErrorCode::CollectionUnreadable
             | MeasurementErrorCode::RecordUnreadable
+            // Raised only by the measurement/portfolio renderer; intervention
+            // intake never constructs a rendered figure.
+            | MeasurementErrorCode::FigureProvenanceAbsent
             | MeasurementErrorCode::PlanInvalid
             | MeasurementErrorCode::ProfileInvalid
             | MeasurementErrorCode::DateTimeInvalid
