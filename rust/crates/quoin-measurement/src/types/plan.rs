@@ -8,6 +8,7 @@
 use std::collections::BTreeSet;
 use std::num::NonZeroU32;
 
+use ix_trace_rs::implements;
 use engineering_assurance::measurement::{
     AnswerFamilies, DecisionRule, Estimator, NegativeControls, Objective, ProtectedApparatus,
 };
@@ -245,6 +246,7 @@ impl PopulationSet {
 /// One measurement plan, as read from an assurance document's frontmatter.
 ///
 /// `PartialEq` only, not `Eq`: [`Objective`]'s bound is an `f64`.
+#[implements("FR-100-CON-1")]
 #[derive(Clone, Debug, PartialEq)]
 pub struct MeasurementPlan {
     /// The plan's identity.

@@ -140,7 +140,7 @@ pub struct OrgOptions<'a> {
 /// `--config-root` override and the project-local `.ix` layer. Incidents from a
 /// broken config file are appended to `log` — the read still succeeds, with no
 /// stored org, and resolution carries on to the remote (FR-027-AC-5).
-#[implements("FR-027-AC-5")]
+#[implements("FR-027-AC-5", "FR-023-AC-5")]
 pub fn resolve_org(
     repo_root: &Path,
     options: &OrgOptions<'_>,
@@ -199,6 +199,7 @@ pub fn resolve_org(
 /// `origin` remote. Returns the degradation [`Resolved::degraded`] recorded and
 /// the schema issues behind it, so the boundary can report a degraded read as a
 /// diagnostic instead of losing it.
+#[implements("FR-023-AC-5")]
 #[must_use]
 pub fn resolve_org_from_documents(
     options: &OrgOptions<'_>,

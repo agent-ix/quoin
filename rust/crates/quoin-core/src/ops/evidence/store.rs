@@ -9,6 +9,7 @@
 
 use std::path::Path;
 
+use ix_trace_rs::implements;
 use quoin_evidence::SuiteId;
 use quoin_evidence::independence::assess_independence;
 use quoin_evidence::mock_inspection::mock_inspection_input;
@@ -117,6 +118,7 @@ pub fn trust_assessments(
 /// - [`CoreErrorCode::Refused`] when the request exceeds
 ///   [`MAX_AUDIT_INPUTS_BYTES`], or when the store cannot be read.
 /// - [`CoreErrorCode::Io`] when no evidence host was granted.
+#[implements("FR-065-CON-4")]
 pub fn audit_inputs(
     request: &serde_json::Value,
     capabilities: &Capabilities<'_>,

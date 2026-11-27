@@ -5,6 +5,7 @@
 
 use std::collections::BTreeMap;
 
+use ix_trace_rs::implements;
 use serde::{Deserialize, Serialize};
 
 use crate::ids::{SuiteId, SymbolId};
@@ -103,6 +104,7 @@ impl Outcome {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[implements("FR-100-CON-1")]
 pub struct RunEntry {
     /// The producer's own identity for the result.
     pub symbol: SymbolId,
@@ -175,6 +177,7 @@ impl RunEntry {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[implements("FR-100-CON-1")]
 pub struct RunRecord {
     /// Always [`STORE_SCHEMA_VERSION`](super::STORE_SCHEMA_VERSION).
     pub schema_version: u32,

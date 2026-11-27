@@ -194,7 +194,7 @@ pub fn parse_junit(raw: &str) -> Result<AdapterResult, EvidenceError> {
 /// # Errors
 ///
 /// Refuses input holding no `<testcase>` element with a non-empty symbol.
-#[implements("FR-030-AC-18")]
+#[implements("FR-030-AC-18", "FR-120-AC-3", "FR-120-AC-6", "NFR-029-M-1")]
 pub fn parse_junit_for_tool(raw: &str, tool: &str) -> Result<AdapterResult, EvidenceError> {
     let pytest = is_pytest(tool);
     let mut entries: Vec<RunEntry> = Vec::new();

@@ -17,6 +17,7 @@ workspace = true
 
 [dependencies]
 flate2 = { workspace = true }
+ix-trace-rs = { workspace = true }
 reqwest = { workspace = true }
 semver = { workspace = true }
 serde = { workspace = true }
@@ -27,5 +28,4 @@ url = { workspace = true }
 zip = { workspace = true }
 
 [dev-dependencies]
-ix-trace-rs = { workspace = true }
 tempfile = { workspace = true }

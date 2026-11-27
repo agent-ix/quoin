@@ -196,6 +196,7 @@ fn actor(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Ref
     }
 }
 
+#[implements("FR-116-AC-7")]
 fn revision(probe: &Probe<'_>, provenance: &mut Vec<String>, refusals: &mut Vec<Refusal>) {
     let locator = probe.locator;
     if probe.host.selected_head_conflict {

@@ -163,6 +163,7 @@ pub enum CatalogError {
 /// not a YAML document the TypeScript `yaml` reader would accept, and
 /// [`CatalogError::ManifestNotMapping`] when it is a document that is not a
 /// mapping.
+#[implements("NFR-002-M-1")]
 pub fn build(
     documents: &[ModuleDocument],
     semantics: &[SemanticView],
@@ -350,7 +351,7 @@ fn skeleton_path(root: &str, type_name: &str, names: &[String]) -> Option<String
         .map(|name| join(&join(root, "skeletons"), name))
 }
 
-#[implements("FR-099-AC-12")]
+#[implements("FR-099-AC-12", "NFR-002-M-2")]
 fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
     // A `BTreeMap` would make output deterministic, but not compatible: the
     // TypeScript implementation used a `Map`, so duplicate groups were emitted

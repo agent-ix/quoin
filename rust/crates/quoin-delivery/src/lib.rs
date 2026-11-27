@@ -15,6 +15,7 @@ use std::io::{Cursor, Read, Write};
 use std::path::{Component, Path, PathBuf};
 
 use flate2::read::GzDecoder;
+use ix_trace_rs::implements;
 use semver::Version;
 use serde::Deserialize;
 use tar::Archive;
@@ -174,6 +175,7 @@ pub mod quoin_outcome {
 ///
 /// Returns a classified failure for malformed release data, unsafe archives,
 /// unsupported hosts, transport failures, or local installation failures.
+#[implements("FR-022-AC-1", "FR-022-AC-2")]
 pub fn update(
     transport: &dyn Transport,
     manifest_url: &str,

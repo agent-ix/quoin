@@ -247,7 +247,7 @@ fn audit_outcome(report: &quoin_finding_types::AuditReport, id: &str) -> AuditOu
 /// # Errors
 /// As [`coverage::compute`], and [`Error::AuditFailed`] when the FR-032 audit
 /// of the retained runs cannot be built.
-#[implements("FR-153")]
+#[implements("FR-153", "FR-116-AC-7", "FR-116-AC-8", "FR-116-AC-13", "FR-116-AC-15")]
 pub fn compute(request: &Request) -> Result<Outcome> {
     compute_with(request, CoveragePurpose::Strict, |_, _, _| Ok(())).map(|(outcome, ())| outcome)
 }
@@ -280,7 +280,13 @@ enum CoveragePurpose {
     DesignMatrix,
 }
 
-#[implements("FR-165-AC-21")]
+#[implements(
+    "FR-165-AC-21",
+    "FR-116-AC-7",
+    "FR-116-AC-8",
+    "FR-116-AC-13",
+    "FR-116-AC-15"
+)]
 fn compute_with<T>(
     request: &Request,
     purpose: CoveragePurpose,
@@ -533,6 +539,7 @@ fn conflicting_selection(
 }
 
 /// Build the engine's input over borrowed views and run `use_backing` on it.
+#[implements("FR-116-AC-13")]
 fn with_backing<T>(
     selected: &SelectedInventory,
     entries: &[CriterionEntry<'_>],

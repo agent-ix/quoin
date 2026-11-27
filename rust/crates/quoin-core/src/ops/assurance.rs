@@ -8,6 +8,7 @@
 //! is compared against the retained `src/assurance/` itself, which is the
 //! whole reason that module is retained rather than deleted.
 
+use ix_trace_rs::implements;
 use serde::{Deserialize, Serialize};
 
 use crate::capabilities::Capabilities;
@@ -86,6 +87,7 @@ pub const MAX_BUILD_CASE_BYTES: usize = 16 * 1024 * 1024;
 /// - [`CoreErrorCode::Refused`] when the request exceeds [`MAX_BUILD_CASE_BYTES`].
 ///
 /// [`CaseInput`]: quoin_assurance::CaseInput
+#[implements("FR-065-CON-4")]
 pub fn build_case(request: &serde_json::Value) -> Result<Response, CoreError> {
     // Measured on the parsed value rather than on raw stdin: the dispatcher
     // has already read and parsed the stream, so this is the honest place to
