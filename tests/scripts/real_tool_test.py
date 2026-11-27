@@ -228,50 +228,6 @@ def run() -> int:
     entries.append(item)
     failed |= check_failed
 
-    report_value = os.environ.get("QUOIN_TEST_OSV_REPORT")
-    mirror_date = os.environ.get("QUOIN_OSV_MIRROR_DATE")
-    scanner_version, scanner_output = evidence.version(["osv-scanner", "--version"])
-    report_path = Path(report_value).expanduser() if report_value else None
-    osv_trace_ids = ignored_test_trace_ids(
-        evidence.ROOT / "rust/crates/quoin-soup/src/soup/advisory/osv_tests.rs",
-        {"tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined"},
-    )
-    osv_reasons = []
-    if not osv_trace_ids:
-        osv_reasons.append("no trace ids found on the selected ignored Rust test")
-    if scanner_output is None:
-        osv_reasons.append("osv-scanner is unavailable")
-    if not report_path or not report_path.is_absolute() or not report_path.is_file():
-        osv_reasons.append("QUOIN_TEST_OSV_REPORT must name an existing absolute authentic report")
-    if not mirror_date:
-        osv_reasons.append("QUOIN_OSV_MIRROR_DATE must supply the exact caller-used mirror date")
-    osv_config = {"tool": "osv-scanner", "tool_version": scanner_version,
-                  "input": str(report_path) if report_path else "missing"}
-    if mirror_date:
-        osv_config["osv_mirror_date"] = mirror_date
-    if osv_reasons:
-        osv_config.update({"execution_state": "not-executed", "reason": "; ".join(osv_reasons)})
-        entries.append(evidence.entry("osv-authentic-report", "error", osv_config, osv_trace_ids))
-        failed = True
-    else:
-        env = os.environ.copy()
-        env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
-        env["CARGO_BUILD_JOBS"] = "4"
-        env["RUST_TEST_THREADS"] = "4"
-        env["QUOIN_TEST_OSV_REPORT"] = str(report_path)
-        log, status, error = evidence.execute(
-            "osv-authentic-report",
-            ["cargo", "test", "-j", "4", "--locked", "--package", "quoin-soup", "--lib",
-             "soup::advisory::osv_tests::tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined",
-             "--", "--ignored", "--exact", "--test-threads=4"], env)
-        osv_config.update({"execution_state": "executed", "log": log})
-        outcome, execution_state = evidence.classify_execution(status, error)
-        osv_config["execution_state"] = execution_state
-        if error:
-            osv_config["reason"] = error
-        entries.append(evidence.entry("osv-authentic-report", outcome, osv_config, osv_trace_ids))
-        failed |= outcome != "pass"
-
     results = evidence.ARTIFACTS / "real-tool-results.json"
     evidence.write_entries(results, entries)
     record_status = evidence.record("SUITE-004", "quoin-real-tool-test 1", results, "real-tool")

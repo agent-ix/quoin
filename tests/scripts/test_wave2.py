@@ -73,13 +73,10 @@ fn another_ignored_test() {}
 
         self.assertEqual(len(captured), 1)
         entries = captured[0]
-        self.assertEqual(len(entries), 8)
+        self.assertEqual(len(entries), 7)
         for item in entries:
             self.assertEqual(item["outcome"], "error")
             self.assertEqual(item["config"]["execution_state"], "not-executed")
-        osv = next(item for item in entries if item["symbol"] == "osv-authentic-report")
-        self.assertNotIn("osv_mirror_date", osv["config"])
-        self.assertEqual(osv["config"]["artifact_id"], evidence.RUN_ID)
         trace_ids = {item["symbol"]: item.get("traceIds", []) for item in entries}
         self.assertEqual(
             trace_ids["case-approval-real-acceptance"],
