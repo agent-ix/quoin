@@ -249,8 +249,7 @@ fn select_request_limit(cli: Option<usize>, configured: Option<usize>) -> Result
     }
     if limit > HARD_MAX_REQUEST_BYTES {
         return Err(format!(
-            "the selected matrix request limit is {limit} bytes; the hard maximum is {} bytes. Reduce the configured value or use repeatable --module PATH to scope the matrix",
-            HARD_MAX_REQUEST_BYTES
+            "the selected matrix request limit is {limit} bytes; the hard maximum is {HARD_MAX_REQUEST_BYTES} bytes. Reduce the configured value or use repeatable --module PATH to scope the matrix"
         ));
     }
     Ok(limit)
@@ -266,13 +265,11 @@ fn ensure_request_size(request: &serde_json::Value, limit: usize) -> Result<(), 
     }
     let error = if observed <= HARD_MAX_REQUEST_BYTES {
         format!(
-            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit. Raise it with --max-request-bytes {observed}, `quoin config set matrix_max_request_bytes {observed}` for the user setting, or `matrix_max_request_bytes: {observed}` in project .ix/config.d/quoin.yaml (quoin.matrix_max_request_bytes); reduce the request with repeatable --module PATH. The hard maximum is {} bytes",
-            HARD_MAX_REQUEST_BYTES
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit. Raise it with --max-request-bytes {observed}, `quoin config set matrix_max_request_bytes {observed}` for the user setting, or `matrix_max_request_bytes: {observed}` in project .ix/config.d/quoin.yaml (quoin.matrix_max_request_bytes); reduce the request with repeatable --module PATH. The hard maximum is {HARD_MAX_REQUEST_BYTES} bytes"
         )
     } else {
         format!(
-            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {}-byte hard maximum. This request cannot be raised further; reduce its size with repeatable --module PATH",
-            HARD_MAX_REQUEST_BYTES
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {HARD_MAX_REQUEST_BYTES}-byte hard maximum. This request cannot be raised further; reduce its size with repeatable --module PATH"
         )
     };
     Err(error)
