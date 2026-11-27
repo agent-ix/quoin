@@ -204,6 +204,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -243,9 +244,19 @@ jobs:
           git config --global url."https://x-access-token:${REGISTRY_TOKEN}@github.com/".insteadOf "https://github.com/"
           cd rust
           cargo fetch --locked
+      - name: Install cosign for OIDC-backed DSSE provenance
+        uses: sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad
+        with:
+          cosign-release: v3.0.2
       - name: Run and validate retained release evidence
         env:
           npm_config_registry: https://registry.npmjs.org
+          EXPECTED_TAG: ${{ inputs.tag }}
+          TAG_NAME: ${{ github.ref_name }}
+          SOURCE_REVISION: ${{ github.sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          WORKFLOW_RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_NAME: ${{ github.workflow }}
         shell: bash
         run: |
           set -euo pipefail
@@ -253,9 +264,17 @@ jobs:
           validate_binding_traces() {
             local bindings_file="$1"
             local runs_file="$2"
-            jq -e --slurpfile runs "$runs_file" '
-              any(.bindings[]; .suite == "SUITE-001")
-              and all(.bindings[] | select(.suite == "SUITE-001");
+            local required_obligations="$3"
+            jq -e --argjson required "$required_obligations" --slurpfile runs "$runs_file" '
+              . as $document
+              | any($document.bindings[]; .suite == "SUITE-001")
+              and all($required[];
+                . as $obligation |
+                any($document.bindings[];
+                  .suite == "SUITE-001" and .obligation == $obligation
+                )
+              )
+              and all($document.bindings[] | select(.suite == "SUITE-001");
                 . as $binding |
                 any($runs[0][];
                   .suite == "SUITE-001"
@@ -270,52 +289,212 @@ jobs:
             ' "$bindings_file" >/dev/null
           }
 
+          # BEGIN release-evidence status helper
+          write_release_evidence_status() {
+            local suite_exit_code="$1"
+            local run_record_count="$2"
+            local status_file="$3"
+            local outcome=complete
+            if [[ "$suite_exit_code" -ne 0 || "$run_record_count" -eq 0 ]]; then
+              outcome=incomplete
+            fi
+            printf '{"schemaVersion":1,"suite":"SUITE-001","status":"%s","suiteExitCode":%s,"runRecordCount":%s}\n' \
+              "$outcome" "$suite_exit_code" "$run_record_count" > "$status_file"
+          }
+          # END release-evidence status helper
+
           test_dir="$RUNNER_TEMP/quoin-evidence-binding-test"
           mkdir -p "$test_dir"
+          test_required='["FR-AC-1"]'
           jq -n '{schemaVersion:1,bindings:[{obligation:"FR-AC-1",suite:"SUITE-001",symbols:["tests::bound"]}]}' > "$test_dir/bindings.json"
           jq -n '{schemaVersion:1,suite:"SUITE-001",evidenceKind:"Unit",entries:[{symbol:"tests::bound",outcome:"pass",traceIds:["FR-OTHER"]},{symbol:"tests::unrelated",outcome:"pass",traceIds:["FR-AC-1"]}]}' > "$test_dir/unrelated-run.json"
           jq -s . "$test_dir/unrelated-run.json" > "$test_dir/unrelated-runs.json"
-          if validate_binding_traces "$test_dir/bindings.json" "$test_dir/unrelated-runs.json"; then
+          if validate_binding_traces "$test_dir/bindings.json" "$test_dir/unrelated-runs.json" "$test_required"; then
             echo "::error::evidence validator accepted a passing test without the bound obligation trace" >&2
             exit 1
           fi
 
           jq -n '{schemaVersion:1,suite:"SUITE-001",evidenceKind:"Unit",entries:[{symbol:"tests::bound",outcome:"pass",traceIds:["FR-AC-1"]},{symbol:"tests::unrelated",outcome:"pass",traceIds:["FR-AC-1"]}]}' > "$test_dir/matching-run.json"
           jq -s . "$test_dir/matching-run.json" > "$test_dir/matching-runs.json"
-          validate_binding_traces "$test_dir/bindings.json" "$test_dir/matching-runs.json" || {
+          validate_binding_traces "$test_dir/bindings.json" "$test_dir/matching-runs.json" "$test_required" || {
             echo "::error::evidence validator rejected a passing bound symbol with its obligation trace" >&2
             exit 1
           }
 
-          started_at=$(date +%s)
-          if ! make evidence; then
-            echo "::error::no_retained_evidence_store: make evidence did not produce run records and bindings for the tagged commit" >&2
-            exit 1
+          required_obligations='["FR-186-AC-1","FR-186-AC-2","FR-186-AC-3","FR-186-AC-4","FR-186-AC-5","FR-186-AC-6","FR-186-AC-7","FR-186-AC-8"]'
+          mkdir -p spec/evidence
+          run_start_marker="$RUNNER_TEMP/quoin-suite-001-start"
+          touch "$run_start_marker"
+          suite_exit_code=0
+          if make evidence; then
+            :
+          else
+            suite_exit_code=$?
+            echo "::warning::SUITE-001 run failed; retaining its run attempt as incomplete evidence" >&2
           fi
 
           bindings=spec/evidence/bindings.json
-          jq -e '.schemaVersion == 1 and any(.bindings[]; .suite == "SUITE-001" and (.symbols | length > 0))' "$bindings" >/dev/null || {
-            echo "::error::no_retained_evidence_store: evidence bindings are empty or invalid" >&2
+          jq -e '.schemaVersion == 1 and (.bindings | type == "array")' "$bindings" >/dev/null || {
+            echo "::error::no_retained_evidence_store: evidence bindings are invalid" >&2
             exit 1
           }
 
-          mapfile -t records < <(find spec/evidence/runs/SUITE-001 -type f -name '*.json' -newermt "@$started_at" -print 2>/dev/null)
-          if [ "${#records[@]}" -eq 0 ]; then
-            echo "::error::no_retained_evidence_store: no SUITE-001 run record was created during this tagged-commit job" >&2
-            exit 1
-          fi
+          mapfile -t records < <(find spec/evidence/runs/SUITE-001 -type f -name '*.json' -newer "$run_start_marker" -print 2>/dev/null)
           for record in "${records[@]}"; do
             jq -e '.schemaVersion == 1 and .suite == "SUITE-001" and .evidenceKind == "Unit" and (.entries | type == "array" and length > 0)' "$record" >/dev/null || {
               echo "::error::no_retained_evidence_store: a current-job SUITE-001 run record is invalid" >&2
               exit 1
             }
           done
-          current_runs="$RUNNER_TEMP/quoin-evidence-current-runs.json"
-          jq -s . "${records[@]}" > "$current_runs"
-          if ! validate_binding_traces "$bindings" "$current_runs"; then
-            echo "::error::no_retained_evidence_store: a bound obligation lacks a passing symbol with that trace in the current run records" >&2
-            exit 1
+
+          write_release_evidence_status "$suite_exit_code" "${#records[@]}" spec/evidence/release-evidence-status.json
+          if [[ "$suite_exit_code" -eq 0 && "${#records[@]}" -gt 0 ]]; then
+            current_runs="$RUNNER_TEMP/quoin-evidence-current-runs.json"
+            jq -s . "${records[@]}" > "$current_runs"
+            if ! validate_binding_traces "$bindings" "$current_runs" "$required_obligations"; then
+              echo "::error::complete SUITE-001 run lacks a passing FR-186-AC-1 through FR-186-AC-8 binding" >&2
+              exit 1
+            fi
+          else
+            echo "::warning::release evidence artifact will identify SUITE-001 as incomplete" >&2
           fi
+
+          # quoin matrix invokes the quire matrix engine at this tagged checkout.
+          matrix_file="$RUNNER_TEMP/quoin-release-test-matrix.json"
+          rust/target/debug/quoin matrix --repo . --json > "$matrix_file"
+          jq -e '
+            (.requirements | type == "array" and length > 0)
+            and ([.requirements[].criteria[] | select(.status != "retired")] | length > 0)
+          ' "$matrix_file" >/dev/null || {
+            echo "::error::Quire matrix is missing or has no active criteria" >&2
+            exit 1
+          }
+
+          full_matrix="$RUNNER_TEMP/quoin-release-complete-matrix.json"
+          jq -S -c '[.requirements[] | {document, id, criteria}]' "$matrix_file" > "$full_matrix"
+          active_matrix_count=$(jq '[.[] | .criteria[] | select(.status != "retired")] | length' "$full_matrix")
+          test "$active_matrix_count" -gt 0 || {
+            echo "::error::complete Quire matrix contains no active obligations" >&2
+            exit 1
+          }
+
+          expected_tag="${EXPECTED_TAG#refs/tags/}"
+          [[ "$TAG_NAME" == "$expected_tag" ]] || {
+            echo "::error::tag name does not match the reusable workflow input" >&2
+            exit 1
+          }
+          resolved_revision=$(git rev-parse HEAD)
+          [[ "$resolved_revision" == "$SOURCE_REVISION" ]] || {
+            echo "::error::checked-out source does not match the tag workflow revision" >&2
+            exit 1
+          }
+
+          record_path="spec/evidence/runs/SUITE-001/missing.json"
+          run_sha256=null
+          if [[ "${#records[@]}" -gt 1 ]]; then
+            echo "::error::ambiguous current-job SUITE-001 run records" >&2
+            exit 1
+          elif [[ "${#records[@]}" -eq 1 ]]; then
+            record_path="${records[0]}"
+            test -f "$record_path" || {
+              echo "::error::current-job run record disappeared before provenance creation" >&2
+              exit 1
+            }
+            run_sha256=$(sha256sum "$record_path" | cut -d ' ' -f 1)
+          fi
+
+          test -f spec/evidence/suites.md || {
+            echo "::error::suite declarations are missing from the tagged source" >&2
+            exit 1
+          }
+          suite_declarations_sha256=$(sha256sum spec/evidence/suites.md | cut -d ' ' -f 1)
+          run_sha_json=$(jq -cn --arg sha "$run_sha256" 'if $sha == "null" then null else $sha end')
+          runs_json=$(jq -cn --arg path "$record_path" --argjson sha "$run_sha_json" \
+            '[{suite:"SUITE-001",recordPath:$path,sha256:$sha}]')
+          payload_file="$RUNNER_TEMP/execution-provenance.payload.json"
+          jq -S -c -n \
+            --arg revision "$resolved_revision" \
+            --arg suite_sha "$suite_declarations_sha256" \
+            --slurpfile matrix "$full_matrix" \
+            --argjson runs "$runs_json" \
+            '{version:2,sourceRevision:$revision,suiteDeclarationsSha256:$suite_sha,testMatrix:$matrix[0],runs:$runs}' \
+            > "$payload_file"
+          payload_fields=$(jq -c 'keys' "$payload_file")
+          expected_payload_fields='["runs","sourceRevision","suiteDeclarationsSha256","testMatrix","version"]'
+          test "$payload_fields" = "$expected_payload_fields" || {
+            echo "::error::execution provenance payload has an unexpected field set" >&2
+            exit 1
+          }
+          test "$(jq -r .version "$payload_file")" = 2 || {
+            echo "::error::execution provenance payload version is not 2" >&2
+            exit 1
+          }
+          jq -S -c '[.requirements[] | {document, id, criteria}]' "$matrix_file" \
+            > "$RUNNER_TEMP/quoin-release-matrix-recheck.json"
+          cmp "$full_matrix" "$RUNNER_TEMP/quoin-release-matrix-recheck.json" || {
+            echo "::error::execution provenance matrix omits or changes active Quire criteria" >&2
+            exit 1
+          }
+          jq -S -c '.testMatrix' "$payload_file" > "$RUNNER_TEMP/quoin-release-payload-matrix.json"
+          cmp "$full_matrix" "$RUNNER_TEMP/quoin-release-payload-matrix.json" || {
+            echo "::error::execution provenance payload omits or changes Quire matrix criteria" >&2
+            exit 1
+          }
+          if [[ "$run_sha256" != null ]]; then
+            test -f "$record_path" || {
+              echo "::error::non-null SUITE-001 digest has no referenced run bytes" >&2
+              exit 1
+            }
+            actual_sha=$(sha256sum "$record_path" | cut -d ' ' -f 1)
+            [[ "$actual_sha" == "$run_sha256" ]] || {
+              echo "::error::SUITE-001 run-record digest mismatch" >&2
+              exit 1
+            }
+          else
+            test ! -e "$record_path" || {
+              echo "::error::missing-run null digest conflicts with an existing referenced record" >&2
+              exit 1
+            }
+          fi
+
+          provenance_dir=spec/evidence
+          payload_type=application/vnd.agent-ix.execution-provenance.v2+json
+          sign_dsse_payload() {
+            local payload="$1" payload_type="$2" envelope="$3" bundle="$4" stem="$5"
+            local pae="$RUNNER_TEMP/$stem.pae" payload_length type_length signature
+            payload_length=$(wc -c < "$payload" | tr -d ' ')
+            type_length=${#payload_type}
+            { printf 'DSSEv1 %s %s %s ' "$type_length" "$payload_type" "$payload_length"; cat "$payload"; } > "$pae"
+            cosign sign-blob --yes "$pae" --bundle "$bundle"
+            signature=$(jq -er '.messageSignature.signature' "$bundle")
+            jq -S -c -n \
+              --arg payload_type "$payload_type" \
+              --arg payload "$(base64 < "$payload" | tr -d '\r\n')" \
+              --arg signature "$signature" \
+              '{payloadType:$payload_type,payload:$payload,signatures:[{keyid:"",sig:$signature}]}' \
+              > "$envelope"
+          }
+          sign_dsse_payload "$payload_file" "$payload_type" \
+            "$provenance_dir/execution-provenance.dsse.json" \
+            "$provenance_dir/execution-provenance.sigstore.json" execution-provenance
+
+          identity_payload="$RUNNER_TEMP/release-evidence-identity.payload.json"
+          jq -S -c -n \
+            --arg tag "$TAG_NAME" \
+            --arg source "$resolved_revision" \
+            --arg run "$WORKFLOW_RUN_ID" \
+            --arg attempt "$WORKFLOW_RUN_ATTEMPT" \
+            --arg workflow "$WORKFLOW_NAME" \
+            '{tagName:$tag,sourceRevision:$source,workflowRun:{id:$run,attempt:$attempt,workflow:$workflow}}' \
+            > "$identity_payload"
+          sign_dsse_payload "$identity_payload" \
+            application/vnd.agent-ix.release-evidence-identity.v1+json \
+            "$provenance_dir/release-evidence-identity.dsse.json" \
+            "$provenance_dir/release-evidence-identity.sigstore.json" release-evidence-identity
+          test -s "$provenance_dir/execution-provenance.dsse.json"
+          test -s "$provenance_dir/execution-provenance.sigstore.json"
+          test -s "$provenance_dir/release-evidence-identity.dsse.json"
+          test -s "$provenance_dir/release-evidence-identity.sigstore.json"
       - uses: actions/upload-artifact@v7
         with:
           name: release-evidence

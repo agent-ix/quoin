@@ -27,9 +27,12 @@ FR-006).
 | SUITE-005 | Behavioral mutation checks | `make mutation-test` | cargo-mutants | Integration |
 
 For the Quoin tag-attestation release-verification result, `SUITE-001` is the
-declared suite. Its required release bindings are `FR-186-AC-1` through
-`FR-186-AC-6`; each criterion must have at least one passing tagged case in the
-fresh run. The maintained suite
+declared suite. Its complete required release binding set is
+`FR-186-AC-1`, `FR-186-AC-2`, `FR-186-AC-3`,
+`FR-186-AC-4`, `FR-186-AC-5`, `FR-186-AC-6`, `FR-186-AC-7`, and
+`FR-186-AC-8`; a healthy fresh run must have at least one passing tagged case
+for each criterion. A failed or missing run is retained with an explicit
+incomplete status in the release-evidence artifact. The maintained suite
 declaration and binding registry are committed. `make evidence` generates
 run-specific bindings and a run record for the tag; the workflow uploads those
 generated facts with the maintained declarations and tag/run provenance as the

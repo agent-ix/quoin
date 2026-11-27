@@ -7,6 +7,7 @@ use std::path::{self, Path};
 use std::process::Output;
 
 use clap::{Arg, ArgMatches};
+use ix_trace_rs::implements;
 use quoin_assurance::gsn::{GsnCase, SignedAcceptance};
 use quoin_core::protocol::canonical_json;
 use quoin_core::runtime::engineering_assurance_call_offline;
@@ -212,6 +213,7 @@ fn approved(output: &Output, request: &Request<'_>) -> Result<SignedAcceptance, 
 }
 
 impl Approved {
+    #[implements("FR-225-AC-1", "FR-225-AC-2", "FR-225-AC-5")]
     fn accept(self, request: &Request<'_>) -> Result<SignedAcceptance, String> {
         let expected_tag = request
             .tag

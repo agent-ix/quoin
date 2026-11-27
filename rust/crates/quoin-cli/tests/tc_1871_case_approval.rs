@@ -335,11 +335,18 @@ fn sacm_and_gsn_share_the_real_verified_approval_for_both_case_modes() {
             quoin_jsonschema::SchemaValidator::compile_vendored(&schema_path, &schema, &[])
                 .expect("GSN schema compiles");
         assert!(validator.is_valid(&gsn), "{:?}", validator.errors(&gsn));
-        let accepted = gsn
-            .as_object_mut()
-            .unwrap()
-            .remove("signed_acceptance")
-            .unwrap();
+        let warning = gsn
+            .get("warning")
+            .and_then(Value::as_str)
+            .unwrap_or("<none>")
+            .to_owned();
+        let accepted = gsn.as_object_mut().unwrap().remove("signed_acceptance");
+        assert!(
+            accepted.is_some(),
+            "signed acceptance missing; warning={warning}; stderr={}; payload={gsn}",
+            String::from_utf8_lossy(&approved.stderr)
+        );
+        let accepted = accepted.unwrap();
         assert_eq!(gsn, unsigned);
         assert_eq!(
             accepted,
@@ -496,8 +503,21 @@ fn sacm_case_approval_uses_dedicated_inputs_and_preserves_missing_claimed_time()
         "trust": {"allowed_signers": trust},
         "signature": {"status": "signed_valid", "kind": "tag", "signature_kind": "ssh",
             "signer": {"source": "allowed_signers", "mapping": "mapped", "principal": PRINCIPAL}},
-        "signed_at_missing": "tagger_date_unreadable", "trusted_at_missing": "ssh_signature",
+        "signed_at_missing": "tagger_date_unreadable",
     });
+    executable(
+        &exe,
+        &format!("#!/bin/sh\ncat >/dev/null\ncat <<'APPROVAL'\n{result}\nAPPROVAL\n"),
+    );
+    let missing_trusted_time = fixture.verified("--gsn", "selected", &exe, &fixture.trust_path());
+    assert_eq!(
+        serde_json::from_str::<Value>(&success(&missing_trusted_time)).unwrap(),
+        unsigned,
+        "an EA approval without trusted_at_missing is malformed and must not be accepted"
+    );
+
+    let mut result = result;
+    result["trusted_at_missing"] = json!("ssh_signature");
     executable(
         &exe,
         &format!("#!/bin/sh\ncat >/dev/null\ncat <<'APPROVAL'\n{result}\nAPPROVAL\n"),
