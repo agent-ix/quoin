@@ -41,13 +41,27 @@ fn existing_audit_and_assurance_reports_remain_readable_with_unselected_records_
     let case = corpus["cases"]
         .as_array()
         .and_then(|cases| {
-            cases
-                .iter()
-                .find(|case| case["op"] == "build_case" && case["boundary"].is_null())
+            cases.iter().find(|case| {
+                case["name"] == "build-case/no-claim-declares-itself"
+                    && case["op"] == "build_case"
+                    && case["boundary"].is_null()
+            })
         })
-        .expect("there is a valid legacy assurance report case");
+        .expect("the stable legacy assurance golden case is present");
     let input = case["input"].clone();
     let assurance_before = invoke("assurance.build_case", &input);
+    let expected_assurance = json!({
+        "claims": [],
+        "reason": "no document declares itself a top-level claim (searched claim types: StR); declare one or pass --claim-type",
+        "unreachable": [],
+        "unreadable": [],
+        "producerTrust": []
+    });
+    assert_eq!(
+        assurance_before,
+        canonical_json(&expected_assurance).expect("expected payload serializes"),
+        "the legacy assurance golden report remains byte-stable"
+    );
 
     let temp = tempfile::tempdir().expect("isolated report repository exists");
     let audit_input = json!({"repo": temp.path()});
@@ -64,13 +78,14 @@ fn existing_audit_and_assurance_reports_remain_readable_with_unselected_records_
     )
     .expect("unselected record fixture writes");
     let audit_with_unselected = invoke("evidence.audit_inputs", &audit_input);
+    let assurance_with_unselected = invoke("assurance.build_case", &input);
     assert_eq!(
         audit_before, audit_with_unselected,
         "legacy evidence-audit output is unchanged"
     );
     assert_eq!(
-        assurance_before,
-        invoke("assurance.build_case", &input),
-        "legacy assurance output stays readable"
+        assurance_with_unselected,
+        canonical_json(&expected_assurance).expect("expected payload serializes"),
+        "the legacy assurance golden report is unchanged with change assurance unselected"
     );
 }

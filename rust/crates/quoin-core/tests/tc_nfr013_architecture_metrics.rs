@@ -11,7 +11,7 @@
 use ix_trace_rs::trace;
 use std::path::{Path, PathBuf};
 
-const ARCH: &str = "../../../../docs/semantic-module-architecture";
+const ARCH: &str = "docs/semantic-module-architecture";
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -115,14 +115,19 @@ fn each_external_decision_row_carries_repository_path_status_and_source_revision
             day.len() == 2 && (1..=31).contains(&day.parse::<u8>().unwrap_or(0)),
             "source day is valid: {row}"
         );
-        let revision = source
-            .split_whitespace()
-            .next()
+        let revisions: Vec<_> = source
+            .split_once('(')
+            .map(|(revisions, _)| revisions)
             .unwrap_or_default()
-            .trim_matches('`');
+            .split(',')
+            .map(|revision| revision.trim().trim_matches('`'))
+            .collect();
         assert!(
-            revision.len() >= 7 && revision.chars().all(|ch| ch.is_ascii_hexdigit()),
-            "source revision is a hex token: {row}"
+            !revisions.is_empty()
+                && revisions.iter().all(|revision| {
+                    revision.len() >= 7 && revision.chars().all(|ch| ch.is_ascii_hexdigit())
+                }),
+            "every source revision is a hex token: {row}"
         );
     }
 }

@@ -60,7 +60,17 @@ fn evidence_and_measurement_domain_types_have_one_declared_owner() {
     for (declaration, expected_owner) in declarations {
         let matches: Vec<_> = all
             .iter()
-            .filter(|(_, _, _, source)| source.contains(declaration))
+            .filter(|(_, _, _, source)| {
+                source.lines().any(|line| {
+                    line.trim_start()
+                        .strip_prefix(declaration)
+                        .is_some_and(|rest| {
+                            rest.chars()
+                                .next()
+                                .is_none_or(|ch| !ch.is_ascii_alphanumeric() && ch != '_')
+                        })
+                })
+            })
             .collect();
         assert_eq!(
             matches.len(),

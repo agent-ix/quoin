@@ -30,10 +30,10 @@ fn an_engine_payload_missing_a_required_capability_is_not_an_empty_report() {
     let removed = stale
         .as_object_mut()
         .expect("flattened object")
-        .remove("unmatched_tags");
+        .remove("unbacked_rows");
     assert!(
         removed.is_some(),
-        "fixture report exercises the capability field"
+        "fixture report exercises the required report field"
     );
     let error = payload::from_slice::<CoveragePayload>(
         "coverage",
@@ -44,7 +44,7 @@ fn an_engine_payload_missing_a_required_capability_is_not_an_empty_report() {
     .expect_err("a skewed engine must not masquerade as a clean empty report");
     assert_eq!(error.code(), quoin_quire::ErrorCode::PayloadShape);
     assert!(
-        error.to_string().contains("unmatched_tags"),
+        error.to_string().contains("unbacked_rows"),
         "named skew diagnostic: {error}"
     );
 }

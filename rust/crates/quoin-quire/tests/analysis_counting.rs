@@ -193,7 +193,7 @@ fn admitted() -> HostObservations {
     }
 }
 
-#[trace("FR-153-AC-14")]
+#[trace("FR-153-AC-14", "FR-116-AC-13")]
 #[test]
 fn conflicting_selected_heads_are_a_record_conflict() {
     let store = satisfied_store(&[AC1]);
@@ -202,11 +202,21 @@ fn conflicting_selected_heads_are_a_record_conflict() {
         selected_head_conflict: true,
         ..admitted()
     };
+    let outcome = store.count(&[AC1], host);
     assert_uncounted_naming(
-        &store.count(&[AC1], host),
+        &outcome,
         CauseCode::RecordConflict,
         "performed revision premise",
     );
+    let refusal = evidence_result(&outcome, CauseCode::RecordConflict);
+    assert_eq!(refusal.requested_target, AC1);
+    let mut expected = expected_locator(&store.runs()[0]);
+    expected.run = format!(
+        "{}@{}",
+        store.runs()[0].record.suite,
+        store.runs()[0].record.timestamp
+    );
+    assert_eq!(refusal.locator.as_ref(), Some(&expected));
 }
 
 /// What the host observed of the one act that produced `file`: its own CI
@@ -682,7 +692,7 @@ fn a_formal_rule_selection_absent_from_current_status_is_a_selection_mismatch() 
     );
 }
 
-#[trace("FR-116-AC-19")]
+#[trace("FR-116-AC-19", "FR-116-AC-13")]
 #[test]
 fn same_rendered_id_with_a_different_selected_document_is_a_selection_mismatch() {
     let source = fixture();
@@ -728,11 +738,18 @@ fn same_rendered_id_with_a_different_selected_document_is_a_selection_mismatch()
     let store = satisfied_store(&[AC1]);
     let mut runs = store.runs();
     runs[0].observation.selected_target = Some(second.clone());
+    let mut selected_run = runs.clone();
+    selected_run[0].observation.selected_target = Some(second.clone());
+    let mut expected_selection = expected_locator(&selected_run[0]);
+    expected_selection.run = format!(
+        "{}/{}",
+        selected_run[0].record.suite, selected_run[0].record.timestamp
+    );
     let mismatch = compute(&Request {
         scope: selected_scope.clone(),
         requested: vec![AC1.to_owned()],
         requested_targets: vec![Some(first.clone())],
-        runs: runs.clone(),
+        runs: selected_run,
         bindings: store.bindings(),
         injections: Some(Vec::new()),
         mock_inspection_suites: Some(vec!["SUITE-A".to_owned()]),
@@ -744,6 +761,9 @@ fn same_rendered_id_with_a_different_selected_document_is_a_selection_mismatch()
             .iter()
             .any(|(cause, _)| *cause == CauseCode::SelectionMismatch)
     );
+    let refusal = evidence_result(&mismatch, CauseCode::SelectionMismatch);
+    assert_eq!(refusal.requested_target, AC1);
+    assert_eq!(refusal.locator.as_ref(), Some(&expected_selection));
 
     runs[0].observation.selected_target = Some(first.clone());
     let matching = compute(&Request {
@@ -777,9 +797,42 @@ fn assert_uncounted_naming(outcome: &Counted, cause: CauseCode, premise: &str) {
         causes(outcome)
     );
     assert!(strict_decision(&outcome.report, &[]).is_err());
+    assert!(
+        outcome
+            .report
+            .evidence_results
+            .as_ref()
+            .expect("unbacked causes remain in the report")
+            .iter()
+            .all(|result| result.requested_target == AC1),
+        "every refusal keeps the original requested target"
+    );
 }
 
-#[trace("FR-153-AC-2", "FR-184-AC-1", "FR-184-AC-14")]
+fn evidence_result(outcome: &Counted, cause: CauseCode) -> &quire_rs::evidence::EvidenceResult {
+    outcome
+        .report
+        .evidence_results
+        .as_ref()
+        .expect("refusals remain in the evidence report")
+        .iter()
+        .find(|result| result.cause == cause)
+        .expect("the requested refusal cause remains distinct")
+}
+
+fn expected_locator(run: &RetainedRun) -> quire_rs::evidence::RetainedLocator {
+    quire_rs::evidence::RetainedLocator {
+        record: run.file.clone(),
+        run: format!("{}@{}", run.record.suite, run.record.timestamp),
+        entry: run
+            .record
+            .entries
+            .first()
+            .map_or_else(String::new, |entry| entry.symbol.to_string()),
+    }
+}
+
+#[trace("FR-153-AC-2", "FR-184-AC-1", "FR-184-AC-14", "FR-116-AC-13")]
 #[test]
 fn the_shipped_default_and_a_missing_checkout_sha_leave_the_obligation_unevaluated() {
     let store = satisfied_store(&[AC1]);
@@ -797,6 +850,13 @@ fn the_shipped_default_and_a_missing_checkout_sha_leave_the_obligation_unevaluat
         &outcome,
         CauseCode::Unevaluated,
         "performed revision premise",
+    );
+    assert_eq!(
+        evidence_result(&outcome, CauseCode::Unevaluated)
+            .locator
+            .as_ref(),
+        Some(&expected_locator(&store.runs()[0])),
+        "an unevaluated retained attempt keeps its exact source locator"
     );
 
     // What ships today: no assessment exists and the host supplies nothing.
@@ -890,7 +950,7 @@ fn without_the_hosts_mock_inspection_the_audit_cannot_call_the_obligation_health
     );
 }
 
-#[trace("FR-116-AC-7", "FR-116-AC-8", "FR-153-AC-13")]
+#[trace("FR-116-AC-7", "FR-116-AC-8", "FR-153-AC-13", "FR-116-AC-13")]
 #[test]
 fn an_observation_of_one_record_never_qualifies_another() {
     let mut store = Recorded::new();
@@ -916,6 +976,9 @@ fn an_observation_of_one_record_never_qualifies_another() {
         runs[1].file,
         "the refusal names the record whose own revision differs"
     );
+    assert_eq!(wrong[0].requested_target, AC1);
+    let expected_wrong = expected_locator(&runs[1]);
+    assert_eq!(wrong[0].locator.as_ref(), Some(&expected_wrong));
 
     // No observation of its own: unevaluated, whatever the other record has.
     runs[1].observation = RunObservation::default();
@@ -1007,7 +1070,7 @@ fn the_actor_needs_an_admission_reference_and_authority_over_the_target() {
     );
 }
 
-#[trace("FR-116-AC-15")]
+#[trace("FR-116-AC-15", "FR-116-AC-13")]
 #[test]
 fn the_reliance_decision_must_be_for_the_reports_producer() {
     let store = satisfied_store(&[AC1]);
@@ -1016,10 +1079,17 @@ fn the_reliance_decision_must_be_for_the_reports_producer() {
             reliance: Some(decision(producer, &[])),
             ..admitted()
         };
+        let outcome = store.count(&[AC1], host);
         assert_uncounted_naming(
-            &store.count(&[AC1], host),
+            &outcome,
             CauseCode::QualificationRejected,
             "bounded reliance premise",
+        );
+        let refusal = evidence_result(&outcome, CauseCode::QualificationRejected);
+        assert_eq!(refusal.requested_target, AC1);
+        assert_eq!(
+            refusal.locator.as_ref(),
+            Some(&expected_locator(&store.runs()[0]))
         );
     }
     // A decision with no limitations is the positive case.
@@ -1131,7 +1201,13 @@ fn association_and_engine_observations_are_premises_of_the_decision() {
     }
 }
 
-#[trace("FR-153-AC-3", "FR-184-AC-3", "FR-184-AC-4", "FR-184-AC-5")]
+#[trace(
+    "FR-153-AC-3",
+    "FR-184-AC-3",
+    "FR-184-AC-4",
+    "FR-184-AC-5",
+    "FR-116-AC-13"
+)]
 #[test]
 fn refuted_inconclusive_and_unavailable_reports_are_failed_or_errored_with_locators() {
     for (report, cause) in [
@@ -1145,17 +1221,48 @@ fn refuted_inconclusive_and_unavailable_reports_are_failed_or_errored_with_locat
         assert_eq!(counted(&outcome), 0);
         assert!(unbacked(&outcome).contains(&AC1.to_owned()));
         let results = outcome.report.evidence_results.clone().unwrap();
-        assert!(
-            results
-                .iter()
-                .any(|result| result.cause == cause && result.locator.is_some()),
+        let refusal = results
+            .iter()
+            .find(|result| result.cause == cause)
+            .expect("failure and error causes remain distinct");
+        assert_eq!(refusal.requested_target, AC1);
+        assert_eq!(
+            refusal.locator.as_ref(),
+            Some(&expected_locator(&store.runs()[0])),
             "{cause:?}: {results:?}"
         );
         assert!(strict_decision(&outcome.report, &[]).is_err());
     }
+
+    let mut skipped = Recorded::new();
+    skipped.record_entry(
+        "SUITE-A",
+        "2026-11-13T10:00:00Z",
+        (SATISFIED_SYMBOL, Outcome::Skip),
+        &[AC1],
+        &satisfied_report(),
+    );
+    let outcome = skipped.count(&[AC1], admitted());
+    let refusal = outcome
+        .report
+        .evidence_results
+        .as_ref()
+        .unwrap()
+        .iter()
+        .find(|result| result.cause == CauseCode::Skipped)
+        .expect("a skipped attempt keeps its distinct cause");
+    assert!(
+        refusal.locator.is_some(),
+        "a retained skipped run keeps its locator"
+    );
+    assert_eq!(refusal.requested_target, AC1);
+    assert_eq!(
+        refusal.locator.as_ref(),
+        Some(&expected_locator(&skipped.runs()[0]))
+    );
 }
 
-#[trace("FR-153-AC-4", "FR-184-AC-6")]
+#[trace("FR-153-AC-4", "FR-184-AC-6", "FR-116-AC-13")]
 #[test]
 fn a_disagreement_is_absent_like_an_obligation_never_recorded() {
     let mut store = Recorded::new();
@@ -1173,6 +1280,17 @@ fn a_disagreement_is_absent_like_an_obligation_never_recorded() {
         );
     }
     assert_eq!(causes(&disagreed), causes(&never));
+    for outcome in [&disagreed, &never] {
+        assert!(
+            outcome
+                .report
+                .evidence_results
+                .as_ref()
+                .unwrap()
+                .iter()
+                .all(|result| result.requested_target == AC1)
+        );
+    }
 }
 
 /// The satisfied capture's own entry symbol.
@@ -1199,7 +1317,7 @@ fn pass_then(later: Option<Outcome>) -> Recorded {
     store
 }
 
-#[trace("FR-153-AC-5", "FR-184-AC-7", "FR-184-AC-8")]
+#[trace("FR-153-AC-5", "FR-184-AC-7", "FR-184-AC-8", "FR-116-AC-13")]
 #[test]
 fn a_later_run_supersedes_a_pass_whatever_the_supply_order() {
     for (store, expected) in [
@@ -1224,8 +1342,33 @@ fn a_later_run_supersedes_a_pass_whatever_the_supply_order() {
             let mut want = expected.clone();
             want.sort();
             assert_eq!(found, want);
+            assert!(
+                outcome
+                    .report
+                    .evidence_results
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .filter(|result| result.cause != CauseCode::Absent)
+                    .all(|result| result.locator.is_some()),
+                "available stale/failure records retain their locator"
+            );
         }
         assert_eq!(causes(&forward), causes(&reversed));
+        assert_eq!(
+            forward.report.evidence_results, reversed.report.evidence_results,
+            "requested targets, locators, causes and ordering survive run reordering"
+        );
+        let available: Vec<_> = store.runs().iter().map(expected_locator).collect();
+        let results = forward.report.evidence_results.as_ref().unwrap();
+        assert!(results.iter().all(|result| result.requested_target == AC1));
+        assert!(
+            results
+                .iter()
+                .filter_map(|result| result.locator.as_ref())
+                .all(|locator| available.contains(locator)),
+            "retained result locators resolve to original run records: {results:?}"
+        );
     }
 }
 
