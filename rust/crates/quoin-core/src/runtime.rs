@@ -9,6 +9,7 @@
 
 use std::path::{Component, Path, PathBuf};
 
+use ix_trace_rs::implements;
 use quoin_assurance::{ApprovalRefusal, ApprovalRequest, ApprovalVerdict, ApprovalVerifier};
 use quoin_auditor::catalog::load_method_catalog_from;
 use quoin_auditor::{
@@ -604,6 +605,7 @@ pub fn engineering_assurance_call_offline(
     call_engineering_assurance(&mut command, subcommand, request)
 }
 
+#[implements("FR-188-AC-20")]
 fn call_engineering_assurance(
     command: &mut std::process::Command,
     subcommand: &str,
@@ -619,12 +621,20 @@ fn call_engineering_assurance(
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|error| format!("engineering-assurance is unavailable: {error}"))?;
-    child
-        .stdin
-        .take()
-        .ok_or_else(|| "engineering-assurance stdin is unavailable".to_owned())?
-        .write_all(request.to_string().as_bytes())
-        .map_err(|error| error.to_string())?;
+    let write_result = {
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| "engineering-assurance stdin is unavailable".to_owned())?;
+        let result = stdin.write_all(request.to_string().as_bytes());
+        drop(stdin);
+        result
+    };
+    if let Err(error) = write_result
+        && error.kind() != std::io::ErrorKind::BrokenPipe
+    {
+        return Err(error.to_string());
+    }
     child.wait_with_output().map_err(|error| error.to_string())
 }
 
