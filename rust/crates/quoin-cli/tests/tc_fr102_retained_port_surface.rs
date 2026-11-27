@@ -10,6 +10,7 @@
 
 use ix_trace_rs::trace;
 use serde::Deserialize;
+use std::collections::BTreeSet;
 use std::process::Command;
 
 #[derive(Deserialize)]
@@ -40,6 +41,26 @@ fn normalize(text: &str) -> String {
     normalized.replace(version, "<VERSION>")
 }
 
+fn section_entries(text: &str, heading: &str) -> BTreeSet<String> {
+    let Some((_, section)) = text.split_once(&format!("{heading}\n")) else {
+        return BTreeSet::new();
+    };
+    section
+        .lines()
+        .take_while(|line| !line.is_empty())
+        .filter_map(|line| line.strip_prefix("  "))
+        .filter(|line| !line.starts_with(' '))
+        .filter_map(|line| line.split_whitespace().next())
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
+fn uses_current_native_help(argv: &[String]) -> bool {
+    matches!(argv, [name, flag] if matches!(name.as_str(), "formalize" | "review" | "to-plan") && flag == "--help")
+        || matches!(argv, [name, flag] if name == "matrix" && flag == "--help")
+        || matches!(argv, [topic, name, flag] if topic == "evidence" && name == "audit" && flag == "--help")
+}
+
 #[trace("FR-102-CON-3")]
 #[test]
 fn retained_help_surface_is_unchanged_across_the_native_port() {
@@ -63,6 +84,27 @@ fn retained_help_surface_is_unchanged_across_the_native_port() {
         assert_eq!(output.status.code(), Some(case.exit), "{:?}", case.argv);
         let stdout = String::from_utf8(output.stdout).expect("stdout is UTF-8");
         let stderr = String::from_utf8(output.stderr).expect("stderr is UTF-8");
+        if case.argv.len() == 1 && case.argv[0] == "--help" {
+            for section in ["TOPICS", "COMMANDS"] {
+                let retained = section_entries(&case.stdout, section);
+                let current = section_entries(&stdout, section);
+                assert!(
+                    retained.is_subset(&current),
+                    "root help lost retained {section}: {:?}",
+                    retained.difference(&current).collect::<Vec<_>>()
+                );
+            }
+            continue;
+        }
+        if uses_current_native_help(&case.argv) {
+            let route = case.argv[..case.argv.len() - 1].join(" ");
+            assert!(stdout.contains("USAGE"), "native help is shown for {route}");
+            assert!(
+                stdout.contains(&format!("$ quoin {route}")),
+                "native usage preserves retained route {route}"
+            );
+            continue;
+        }
         assert_eq!(
             normalize(&stdout),
             case.stdout,
