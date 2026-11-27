@@ -192,6 +192,7 @@ pub(crate) fn observation_cell(
 #[implements("NFR-023-AC-1")]
 #[implements("NFR-023-AC-2")]
 #[implements("NFR-023-AC-3")]
+#[implements("NFR-023-AC-4")]
 fn figure_binding(
     row: &CurrentRow,
     observation: &MeasurementObservation,

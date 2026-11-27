@@ -256,21 +256,32 @@ fn audit_figures(markdown: &str, rows: &[CurrentRow]) -> FigureAudit {
 }
 
 fn rendered_current_number(markdown: &str, metric: &str) -> f64 {
+    let current_column = if markdown
+        .lines()
+        .any(|line| line == "| Metric | State/value | Plan | Collection |")
+    {
+        2
+    } else {
+        4
+    };
     let line = markdown
         .lines()
         .find(|line| line.starts_with(&format!("| {metric} |")))
         .unwrap_or_else(|| panic!("rendered row for {metric} is present"));
     let cell = line
         .split('|')
-        .nth(4)
+        .nth(current_column)
         .unwrap_or_else(|| panic!("Current cell for {metric} is present"));
-    let number = cell
+    let visible_value = cell
+        .split_once("<!-- ix-figure:")
+        .map_or(cell, |(visible, _)| visible);
+    let number = visible_value
         .split_whitespace()
         .next()
         .unwrap_or_else(|| panic!("Current cell for {metric} has a value"));
-    number
-        .parse::<f64>()
-        .unwrap_or_else(|error| panic!("Current cell for {metric} is numeric: {error}"))
+    number.parse::<f64>().unwrap_or_else(|error| {
+        panic!("Current cell for {metric} has numeric token {number:?}: {error}")
+    })
 }
 
 fn audit_finding_recall_attention(markdown: &str, rows: &[CurrentRow]) -> FigureAudit {
@@ -399,14 +410,10 @@ fn every_reported_value_recomputes_from_the_artifact_field_it_names() {
             "{} is tied to the source artifact path",
             row.metric
         );
-        let portfolio_line = fixture
-            .portfolio_markdown
-            .lines()
-            .find(|line| line.starts_with(&format!("| {} |", row.metric)))
-            .expect("portfolio observation is rendered");
-        assert!(
-            portfolio_line.contains("<!-- ix-figure: "),
-            "{}: {portfolio_line}",
+        assert_eq!(
+            rendered_current_number(&fixture.portfolio_markdown, &row.metric),
+            recorded,
+            "the portfolio Current cell for {} equals its artifact value",
             row.metric
         );
     }
