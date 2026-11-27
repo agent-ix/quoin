@@ -155,7 +155,7 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
 #[implements("FR-030-AC-28")]
 #[implements("FR-030-AC-18")]
 fn record_run(arguments: &ArgMatches) -> Result<Response, String> {
-    validate_tool_identity(required(arguments, "tool")?)?;
+    validate_tool_identity(&required(arguments, "tool")?)?;
     let repo = required(arguments, "repo")?;
     let modules = arguments
         .get_one::<String>("module")
