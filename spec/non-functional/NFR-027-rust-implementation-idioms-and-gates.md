@@ -21,8 +21,8 @@ SHALL take its lints from one workspace-level declaration, SHALL expose one
 `thiserror`-derived error type per crate boundary drawn from a stable code
 catalog, and SHALL carry identifiers and resource references as newtypes. Each
 candidate revision SHALL run the workspace build, lint, test, and dependency
-gates, and its release review SHALL inspect the public API and test-trace
-population named in this requirement.
+  gates, and its release review SHALL inspect the public API, test-trace
+  population, and CI gate changes named in this requirement.
 
 ## Scope
 
@@ -94,8 +94,8 @@ is recorded as a review finding independently of the code it accompanies.
 | NFR-027-AC-5 | Inspection of public library signatures finds no `Box<dyn Error>` or `anyhow` error return. | Inspection |
 | NFR-027-AC-6 | Inspection of public library signatures finds no bare `String` or `Uuid` used as an identifier or resource reference. | Inspection |
 | NFR-027-AC-7 | Inspection of the Rust test population confirms every test function carries a trace tag resolving to an artefact under `spec/`. | Inspection |
-| NFR-027-AC-8 | A continuous-integration change that removes a gate lane, narrows one, or adds `continue-on-error` fails this requirement's check. | Test |
-| NFR-027-AC-9 | Each of the source and test checks reports the population it scanned, and a check that scanned nothing is reported as inconclusive rather than as passing. | Test |
+| NFR-027-AC-8 | The release review inspects continuous-integration changes and records any removal or narrowing of a gate lane, or addition of `continue-on-error`. | Inspection |
+| NFR-027-AC-9 | The release review records the source and test populations inspected; an empty population is marked inconclusive rather than passing. | Inspection |
 
 ## Dependencies
 

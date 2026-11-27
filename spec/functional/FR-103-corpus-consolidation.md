@@ -9,6 +9,12 @@ relationships:
 
 # FR-103: Consolidate the Quoin side of corpus tooling
 
+> **⛔ Withdrawn — 2026-09-12.** The corpus-measurement and consolidation
+> capability was disposed under #388. The description, inputs, outputs,
+> behavior, and error conditions below are retained as historical context, not
+> active Quoin obligations. The surviving data-integrity constraint is
+> FR-103-CON-1; current Rust code remains governed by FR-100-CON-3.
+
 ## Description
 
 Quoin SHALL consolidate the corpus accounting and selection behaviour it owns

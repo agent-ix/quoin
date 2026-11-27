@@ -65,8 +65,10 @@ it replaces, compared byte for byte. No difference is exempt. No digest is compu
   cutover if the written bytes differ from the stored bytes.
 - Quoin SHALL test JCS canonicalization over adversarial Unicode, number-format
   and key-order inputs.
-- Quoin SHALL port each `fast-check` property suite under `tests/props` to a
-  `proptest` suite asserting the same property.
+- The former retained TypeScript `fast-check` population under `tests/props`
+  was absent at native cutover. Its one-to-one port obligation is withdrawn
+  with FR-098-AC-6; future native regression properties are scoped by their
+  own criteria.
 - If Rust disagrees with a retained expected fixture on any golden input, then
   Quoin SHALL refuse the cutover and SHALL name the differing input, the
   operation and both results.
