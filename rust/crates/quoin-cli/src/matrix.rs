@@ -293,7 +293,7 @@ fn request_size_error(observed: usize, limit: usize, has_limit_flag: bool) -> St
         )
     } else {
         format!(
-            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {HARD_MAX_REQUEST_BYTES}-byte hard maximum. You can {raise_limit}, but the selected limit cannot exceed the hard maximum; reduce the request with repeatable --module PATH"
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {HARD_MAX_REQUEST_BYTES}-byte hard maximum. You can {raise_limit}, but the selected limit cannot exceed the hard maximum; the configuration key is `quoin.matrix_max_request_bytes`; reduce the request with repeatable --module PATH"
         )
     }
 }
@@ -365,5 +365,6 @@ mod tests {
 
         let dossier_error = request_size_error(observed, HARD_MAX_REQUEST_BYTES, false);
         assert!(!dossier_error.contains("--max-request-bytes"));
+        assert!(dossier_error.contains("quoin.matrix_max_request_bytes"));
     }
 }

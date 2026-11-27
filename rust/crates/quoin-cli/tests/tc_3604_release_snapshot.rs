@@ -2377,9 +2377,25 @@ fn a_vulnerability_without_an_id_is_not_silently_dropped_outside_its_usual_direc
 }
 
 fn security_module() -> String {
-    let checkout = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map_or_else(
-        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-security"),
-        PathBuf::from,
-    );
-    checkout.join("spec_objects_security").display().to_string()
+    let configured = std::env::var_os("SPEC_OBJECTS_SECURITY_DIR").map(PathBuf::from);
+    let module = configured
+        .and_then(|path| {
+            if path.join("manifest.yaml").is_file() {
+                Some(path)
+            } else {
+                let nested = path.join("spec_objects_security");
+                nested.join("manifest.yaml").is_file().then_some(nested)
+            }
+        })
+        .or_else(|| {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .ancestors()
+                .map(|ancestor| ancestor.join("spec-objects-security/spec_objects_security"))
+                .find(|candidate| candidate.join("manifest.yaml").is_file())
+        })
+        .unwrap_or_else(|| {
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../../spec-objects-security/spec_objects_security")
+        });
+    module.display().to_string()
 }
