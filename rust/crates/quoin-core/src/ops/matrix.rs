@@ -78,6 +78,12 @@ fn check_request_size(size: usize) -> Result<(), CoreError> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(
+        clippy::expect_used,
+        clippy::indexing_slicing,
+        reason = "the boundary test uses failures as its report"
+    )]
+
     use super::{MAX_MATRIX_BUILD_BYTES, check_request_size};
     use ix_trace_rs::trace;
 
