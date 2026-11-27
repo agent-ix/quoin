@@ -21,8 +21,9 @@ relationships:
 > ([quoin#524](https://github.com/agent-ix/quoin/pull/524)), and its retained output
 > is deleted by quoin#654. Nothing in quoin produces or reads the audit any more.
 >
-> The text below is retained unchanged. It describes what was required, not what
-> is required.
+> The criterion text below is retained for provenance. Its verification cells are
+> marked `Withdrawn` so the computed matrix does not treat historical obligations
+> as active. It describes what was required, not what is required.
 
 ## Description
 
@@ -39,11 +40,11 @@ would create the inconsistency the semantic-data program is intended to remove.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-055-AC-1 | Every conflict and missing-type row cites the applicable data plane, authority-by-concern entry, subsystem owner, and governing or provisional decision. | Test |
-| FR-055-AC-2 | Every overlapping concept in the `filament-core-data#10` census is linked and classified as reuse, extension, mapping, conflict, or unrelated; the audit creates no shadow core contract. | Test |
-| FR-055-AC-3 | Every Quire parsing, identity, addressing, validation, extraction, or splicing implication cites the `quire-rs#385` evidence and preserves Quire's recorded boundary. | Test |
-| FR-055-AC-4 | Proposed follow-up boundaries distinguish analysis from compiler, code-generation, module-schema, migration, database, API, publication, enforcement, and retirement work, and mark every major-interference boundary as gated. | Test |
-| FR-055-AC-5 | Acceptance uses a fresh census of `default-modules.yaml` and all resolved module heads; drift after the recorded snapshot makes the review stale and blocks signoff. | Test |
+| FR-055-AC-1 | Every conflict and missing-type row cites the applicable data plane, authority-by-concern entry, subsystem owner, and governing or provisional decision. | Withdrawn |
+| FR-055-AC-2 | Every overlapping concept in the `filament-core-data#10` census is linked and classified as reuse, extension, mapping, conflict, or unrelated; the audit creates no shadow core contract. | Withdrawn |
+| FR-055-AC-3 | Every Quire parsing, identity, addressing, validation, extraction, or splicing implication cites the `quire-rs#385` evidence and preserves Quire's recorded boundary. | Withdrawn |
+| FR-055-AC-4 | Proposed follow-up boundaries distinguish analysis from compiler, code-generation, module-schema, migration, database, API, publication, enforcement, and retirement work, and mark every major-interference boundary as gated. | Withdrawn |
+| FR-055-AC-5 | Acceptance uses a fresh census of `default-modules.yaml` and all resolved module heads; drift after the recorded snapshot makes the review stale and blocks signoff. | Withdrawn |
 
 ## Constraints
 
