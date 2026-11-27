@@ -4,6 +4,7 @@
 //! Run the self-test cases embedded in the installed binary (FR-235, PLAT-1639).
 
 use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_core::error::{CoreError, CoreErrorCode};
 use quoin_core::protocol::Response;
 use std::collections::BTreeSet;
@@ -544,6 +545,7 @@ fn embedded_file<'a>(case: &'a EmbeddedCase, path: &str) -> Option<&'a [u8]> {
         .map(|file| file.bytes)
 }
 
+#[implements("FR-235-AC-7")]
 fn execute_script(
     script: &Path,
     quoin_binary: &Path,
@@ -1194,6 +1196,7 @@ mod tests {
     }
 
     #[cfg(target_os = "linux")]
+    #[trace("FR-235-AC-7")]
     #[test]
     fn tc_229_timeout_cleanup_preserves_an_unrelated_child_process() {
         let mut unrelated = ProcessCommand::new("/bin/sh")
