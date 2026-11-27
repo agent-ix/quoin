@@ -121,7 +121,7 @@ struct Approved {
     signed_at: Option<String>,
     signed_at_source: Option<String>,
     signed_at_missing: Option<String>,
-    trusted_at_missing: Option<String>,
+    trusted_at_missing: String,
     #[serde(rename = "tag_object_id")]
     _tag_object_id: Option<IgnoredAny>,
     #[serde(rename = "gesture")]
@@ -269,12 +269,7 @@ impl Approved {
             (None, None, Some("tagger_date_unreadable")) => true,
             _ => false,
         };
-        if !valid_time
-            || self
-                .trusted_at_missing
-                .as_deref()
-                .is_some_and(|value| value != "ssh_signature")
-        {
+        if !valid_time || self.trusted_at_missing != "ssh_signature" {
             return Err(
                 "EA status approved but the offline SSH signing-time fields are invalid".to_owned(),
             );
@@ -291,7 +286,7 @@ impl Approved {
             signed_at: self.signed_at,
             signed_at_source: self.signed_at_source,
             signed_at_missing: self.signed_at_missing,
-            trusted_at_missing: "ssh_signature".to_owned(),
+            trusted_at_missing: self.trusted_at_missing,
         })
     }
 }

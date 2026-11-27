@@ -509,6 +509,19 @@ fn sacm_case_approval_uses_dedicated_inputs_and_preserves_missing_claimed_time()
         &exe,
         &format!("#!/bin/sh\ncat >/dev/null\ncat <<'APPROVAL'\n{result}\nAPPROVAL\n"),
     );
+    let missing_trusted_time = fixture.verified("--gsn", "selected", &exe, &fixture.trust_path());
+    assert_eq!(
+        serde_json::from_str::<Value>(&success(&missing_trusted_time)).unwrap(),
+        unsigned,
+        "an EA approval without trusted_at_missing is malformed and must not be accepted"
+    );
+
+    let mut result = result;
+    result["trusted_at_missing"] = json!("ssh_signature");
+    executable(
+        &exe,
+        &format!("#!/bin/sh\ncat >/dev/null\ncat <<'APPROVAL'\n{result}\nAPPROVAL\n"),
+    );
     let output = fixture.verified("--gsn", "selected", &exe, &fixture.trust_path());
     let approved: Value = serde_json::from_str(&success(&output)).unwrap();
     let accepted = &approved["signed_acceptance"];

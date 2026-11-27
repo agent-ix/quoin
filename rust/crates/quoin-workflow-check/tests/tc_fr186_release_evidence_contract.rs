@@ -210,3 +210,44 @@ fn release_provenance_binds_present_run_bytes_and_signed_null_for_absent_runs() 
         "the digest is checked against the exact run-record bytes"
     );
 }
+
+#[trace("FR-186-AC-8")]
+#[test]
+fn release_provenance_encodes_present_digest_as_a_string_and_absent_digest_as_null() {
+    let native = workflow("native-release-build.yml");
+    let run = evidence_script(evidence_steps(&native));
+
+    assert!(
+        run.contains("run_sha_json=$(jq -cn --arg sha \"$run_sha256\" 'if $sha == \"null\" then null else $sha end')"),
+        "the digest is JSON-encoded before it is passed to jq as JSON"
+    );
+    assert!(
+        run.contains("--argjson sha \"$run_sha_json\""),
+        "the encoded digest is used in the signed run record"
+    );
+
+    for (digest, expected) in [
+        (
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\"",
+        ),
+        ("null", "null"),
+    ] {
+        let output = Command::new("jq")
+            .args([
+                "-cn",
+                "--arg",
+                "sha",
+                digest,
+                "if $sha == \"null\" then null else $sha end",
+            ])
+            .output()
+            .expect("jq encodes execution provenance digests");
+        assert!(
+            output.status.success(),
+            "jq: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert_eq!(String::from_utf8(output.stdout).unwrap().trim(), expected);
+    }
+}

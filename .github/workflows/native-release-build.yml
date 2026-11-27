@@ -408,7 +408,8 @@ jobs:
             exit 1
           }
           suite_declarations_sha256=$(sha256sum spec/evidence/suites.md | cut -d ' ' -f 1)
-          runs_json=$(jq -cn --arg path "$record_path" --argjson sha "$run_sha256" \
+          run_sha_json=$(jq -cn --arg sha "$run_sha256" 'if $sha == "null" then null else $sha end')
+          runs_json=$(jq -cn --arg path "$record_path" --argjson sha "$run_sha_json" \
             '[{suite:"SUITE-001",recordPath:$path,sha256:$sha}]')
           payload_file="$RUNNER_TEMP/execution-provenance.payload.json"
           jq -S -c -n \
