@@ -43,22 +43,16 @@ impl From<String> for LaunchFailure {
     }
 }
 
+#[implements("FR-020-AC-3")]
 fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure> {
     if !FLOWS.contains(&name) {
         return Err("an unknown flow command reached dispatch".to_owned().into());
     }
     let path = skill_path(name, arguments)?;
     let home = absolute_home()?;
-    let version = execute(ProcessCommand::new(runner_program()).arg("--version"))?;
-    let parsed = semver::Version::parse(version.trim().trim_start_matches('v'))
-        .map_err(|_| "ix-flow did not report a supported semantic version".to_owned())?;
-    if parsed < semver::Version::new(0, 3, 1) {
-        return Err(
-            "ix-flow >=0.3.1 is required; run npm install -g @agent-ix/ix-flow@latest"
-                .to_owned()
-                .into(),
-        );
-    }
+    supported_runner_version(execute(
+        ProcessCommand::new(runner_program()).arg("--version"),
+    ))?;
     let host_entry = if name == "design-gate" {
         let host_entry = host_entrypoint()?;
         preflight_host_api(&host_entry)?;
@@ -132,6 +126,33 @@ fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure>
         )
     };
     Ok(Response::ok(serde_json::json!({"rendered":rendered})))
+}
+
+#[implements("FR-020-AC-3")]
+fn supported_runner_version(
+    output: Result<String, LaunchFailure>,
+) -> Result<semver::Version, LaunchFailure> {
+    const INSTALL: &str =
+        "install a supported runner with `npm install -g @agent-ix/ix-flow@latest`";
+    let output = output.map_err(|error| {
+        let detail = match error {
+            LaunchFailure::Local(message) | LaunchFailure::Child(_, message) => message,
+        };
+        LaunchFailure::Local(format!(
+            "ix-flow is unavailable or incompatible ({detail}); {INSTALL}"
+        ))
+    })?;
+    let parsed = semver::Version::parse(output.trim().trim_start_matches('v')).map_err(|_| {
+        LaunchFailure::Local(format!(
+            "ix-flow did not report a supported semantic version; {INSTALL}"
+        ))
+    })?;
+    if parsed < semver::Version::new(0, 3, 1) {
+        return Err(LaunchFailure::Local(format!(
+            "ix-flow >=0.3.1 is required; {INSTALL}"
+        )));
+    }
+    Ok(parsed)
 }
 
 fn record_context(
@@ -524,9 +545,23 @@ fn node_program() -> &'static str {
 mod tests {
     use super::{
         LaunchFailure, ProcessCommand, command, executable_path_in, execute, instance_id, run,
-        skill_path,
+        skill_path, supported_runner_version,
     };
     use ix_trace_rs::trace;
+
+    #[trace("FR-020-AC-3")]
+    #[test]
+    fn missing_and_incompatible_ix_flow_report_the_supported_install_command() {
+        let missing = supported_runner_version(Err(LaunchFailure::Local(
+            "could not resolve ix-flow executable on PATH".to_owned(),
+        )));
+        assert!(matches!(missing, Err(LaunchFailure::Local(message))
+            if message.contains("npm install -g @agent-ix/ix-flow@latest")));
+
+        let old = supported_runner_version(Ok("0.3.0".to_owned()));
+        assert!(matches!(old, Err(LaunchFailure::Local(message))
+            if message.contains("npm install -g @agent-ix/ix-flow@latest")));
+    }
 
     /// Provenance: PLAT-1249
     #[trace("FR-021-AC-2")]
