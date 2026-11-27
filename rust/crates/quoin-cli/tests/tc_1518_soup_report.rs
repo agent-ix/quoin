@@ -327,6 +327,50 @@ fn keys(value: &Value, found: &mut Vec<String>) {
     }
 }
 
+fn numeric_leaves(value: &Value, path: &str, found: &mut Vec<(String, String)>) {
+    match value {
+        Value::Object(map) => {
+            for (key, inner) in map {
+                let child = if path.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{path}.{key}")
+                };
+                numeric_leaves(inner, &child, found);
+            }
+        }
+        Value::Array(items) => {
+            for (index, inner) in items.iter().enumerate() {
+                numeric_leaves(inner, &format!("{path}[{index}]"), found);
+            }
+        }
+        Value::Number(number) => found.push((path.to_owned(), number.to_string())),
+        _ => {}
+    }
+}
+
+fn assert_no_scoring_terms(text: &str, context: &str) {
+    let tokens = text
+        .split(|character: char| !character.is_ascii_alphanumeric())
+        .map(str::to_ascii_lowercase)
+        .collect::<Vec<_>>();
+    for term in [
+        "score",
+        "scores",
+        "rank",
+        "ranks",
+        "class",
+        "classes",
+        "percentage",
+        "percent",
+    ] {
+        assert!(
+            !tokens.iter().any(|token| token == term),
+            "{context} contains scoring term {term:?}: {text}"
+        );
+    }
+}
+
 #[trace("FR-144-AC-1", "FR-144-AC-3", "FR-144-AC-11")]
 #[test]
 fn rows_carry_every_column_and_sort_unresolved_then_past_support_then_the_rest() {
@@ -564,10 +608,12 @@ fn the_same_inputs_give_the_same_bytes_without_the_sbom_and_write_nothing() {
 
 #[trace("FR-144-AC-10", "NFR-030-AC-3")]
 #[test]
+#[trace("NFR-030-M-2")]
 fn the_json_has_no_score_rank_class_or_percentage_key() {
     let (repo, binding) = standard();
     let mut found = Vec::new();
-    keys(&report_json(&repo, &binding, &[]), &mut found);
+    let report = report_json(&repo, &binding, &[]);
+    keys(&report, &mut found);
     assert!(!found.is_empty());
     // The report has a closed set of keys. A new field cannot emit a score,
     // rank, or class under a less obvious name and slip past fragment checks.
@@ -647,6 +693,19 @@ fn the_json_has_no_score_rank_class_or_percentage_key() {
             assert!(!key.to_lowercase().contains(banned), "{key}");
         }
     }
+    let mut numbers = Vec::new();
+    numeric_leaves(&report, "", &mut numbers);
+    assert_eq!(
+        numbers,
+        vec![
+            ("scans[0].advisories".to_owned(), "3".to_owned()),
+            ("scans[0].diagnostics_not_read".to_owned(), "0".to_owned()),
+        ],
+        "the report emits only the fixture's declared count fields; a numeric score/rank/class under an allowed key must fail"
+    );
+    assert_no_scoring_terms(&report.to_string(), "report JSON keys and values");
+    let markdown = text(&repo.report(&binding, &[]).stdout);
+    assert_no_scoring_terms(&markdown, "report Markdown prose");
 }
 
 #[trace("FR-144-AC-12")]
@@ -1491,6 +1550,106 @@ fn a_matching_vex_statement_is_authored_row_data_separate_from_resolution() {
         "{markdown}"
     );
     assert!(markdown.contains("VEX: no statement"), "{markdown}");
+}
+
+#[test]
+fn authored_vex_statuses_are_copied_without_derivation_from_resolution() {
+    let repo = Repo::new();
+    let authored = [
+        ("not_affected", "pkg:cargo/vex-not-affected@1.0.0"),
+        ("affected", "pkg:cargo/vex-affected@1.0.0"),
+        ("fixed", "pkg:cargo/vex-fixed@1.0.0"),
+        (
+            "under_investigation",
+            "pkg:cargo/vex-under-investigation@1.0.0",
+        ),
+    ];
+    for (index, (status, purl)) in authored.iter().enumerate() {
+        let advisory = format!("RUSTSEC-VEX-STATUS-{index}");
+        repo.record(
+            &format!("vex-{index}"),
+            purl,
+            &[
+                "disposition_clause: \"C-DISP\"",
+                "vex_statements:",
+                &format!("  - advisory: {advisory}"),
+                &format!("    status: {status}"),
+                "    assessed_by: human author",
+                "    assessed_at: '2026-08-02'",
+            ],
+        );
+    }
+    repo.record(
+        "vex-absent",
+        "pkg:cargo/vex-absent@1.0.0",
+        &["disposition_clause: \"C-DISP\""],
+    );
+    repo.record(
+        "vex-mismatch",
+        "pkg:cargo/vex-mismatch@1.0.0",
+        &[
+            "disposition_clause: \"C-DISP\"",
+            "vex_statements:",
+            "  - advisory: RUSTSEC-VEX-STATUS-OTHER",
+            "    status: not_affected",
+            "    assessed_by: human author",
+            "    assessed_at: '2026-08-02'",
+        ],
+    );
+    let findings = authored
+        .iter()
+        .enumerate()
+        .map(|(index, (_, purl))| {
+            (
+                format!("RUSTSEC-VEX-STATUS-{index}"),
+                purl.strip_prefix("pkg:cargo/")
+                    .and_then(|name| name.split('@').next())
+                    .expect("Cargo package name in purl")
+                    .to_owned(),
+                "1.0.0".to_owned(),
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut findings = findings;
+    findings.extend([
+        (
+            "RUSTSEC-VEX-STATUS-ABSENT".to_owned(),
+            "vex-absent".to_owned(),
+            "1.0.0".to_owned(),
+        ),
+        (
+            "RUSTSEC-VEX-STATUS-MISMATCH".to_owned(),
+            "vex-mismatch".to_owned(),
+            "1.0.0".to_owned(),
+        ),
+    ]);
+    let findings = findings
+        .iter()
+        .map(|(advisory, name, version)| (advisory.as_str(), name.as_str(), version.as_str()))
+        .collect::<Vec<_>>();
+    repo.audit(&findings);
+    let binding = repo.binding(&["C-DISP"]);
+    let report = report_json(&repo, &binding, &[]);
+    let mut resolution_states = Vec::new();
+    for (status, purl) in authored {
+        let advisory = &row(&report, purl)["advisories"][0];
+        assert_eq!(advisory["vex_statement"]["status"], status);
+        resolution_states.push(advisory["resolution"]["state"].clone());
+    }
+    assert_eq!(
+        row(&report, "pkg:cargo/vex-absent@1.0.0")["advisories"][0]["vex_statement"],
+        "no statement"
+    );
+    assert_eq!(
+        row(&report, "pkg:cargo/vex-mismatch@1.0.0")["advisories"][0]["vex_statement"],
+        "no statement"
+    );
+    assert!(
+        resolution_states
+            .iter()
+            .all(|state| state == &resolution_states[0]),
+        "resolution remains a separate fact while authored VEX statuses vary: {resolution_states:?}"
+    );
 }
 
 #[trace("FR-144-AC-23")]

@@ -78,7 +78,10 @@ struct Env {
 }
 
 fn env() -> Env {
-    let root = scratch();
+    env_with_root(scratch())
+}
+
+fn env_with_root(root: tempfile::TempDir) -> Env {
     let base = root.path().canonicalize().unwrap();
     let (home, cwd) = (base.join("ix-home"), base.join("cwd"));
     std::fs::create_dir_all(&cwd).unwrap();
@@ -636,6 +639,46 @@ fn a_run_with_no_network_namespace_gives_the_same_output() {
         .unwrap();
     assert!(isolated.status.success(), "{}", text(&isolated));
     assert_eq!(with_network.stdout, isolated.stdout);
+}
+
+#[cfg(target_os = "linux")]
+#[trace("NFR-037-M-2")]
+#[test]
+fn profile_evaluation_makes_no_network_requests() {
+    let env = env_with_root(tempfile::tempdir().unwrap());
+    env.select("profile: p\n");
+    let trace_path = env.base.join("network.trace");
+    let output = std::process::Command::new("strace")
+        .args([
+            "-f",
+            "-qq",
+            "-e",
+            "trace=%network",
+            "-e",
+            "signal=none",
+            "-o",
+        ])
+        .arg(&trace_path)
+        .arg("--")
+        .arg(env!("CARGO_BIN_EXE_quoin"))
+        .args(["profile", "evaluate"])
+        .current_dir(&env.cwd)
+        .env("IX_HOME", &env.home)
+        .env(
+            "QUOIN_SEMANTIC_ROOT",
+            pack_support::semantic_root(&env.home),
+        )
+        .output()
+        .unwrap();
+
+    assert!(output.status.success(), "{}", text(&output));
+    let trace = std::fs::read_to_string(&trace_path).expect("strace creates its syscall log");
+    assert!(
+        trace.is_empty(),
+        "profile evaluation made network requests:\n{trace}"
+    );
+    let report: Value = serde_json::from_slice(&output.stdout).expect("profile report JSON");
+    assert_eq!(report["profile"], "p");
 }
 
 fn install_pack(env: &Env) {

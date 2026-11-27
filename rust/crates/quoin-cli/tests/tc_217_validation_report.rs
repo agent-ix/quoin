@@ -64,6 +64,24 @@ fn write_run(root: &Path, status: &str, include_missing_tool: bool) -> std::path
             },
             "externalTools": [],
             "retainedLocation": "spec/evidence/runs/SELFTEST/run.json",
+            "runEnvironment": {
+                "checkouts": [
+                    {
+                        "identity": "agent-ix/spec-objects-safety",
+                        "revision": "safety-revision",
+                        "resolvedPath": "/workspace/spec-objects-safety"
+                    },
+                    {
+                        "identity": "agent-ix/spec-objects-security",
+                        "revision": "security-revision",
+                        "resolvedPath": "/workspace/spec-objects-security"
+                    }
+                ],
+                "temporaryDirectory": {
+                    "resolvedPath": "/tmp/quoin-suite",
+                    "writable": true
+                }
+            },
         }))
         .expect("run record serializes"),
     )
@@ -129,6 +147,73 @@ fn command_writes_deterministic_markdown_and_json_for_complete_validation() {
     assert!(!serialized.to_ascii_lowercase().contains("accepted"));
 }
 
+#[trace("FR-217-AC-13", "FR-217-AC-14")]
+#[test]
+fn report_preserves_captured_environment_and_keeps_it_separate_from_test_results() {
+    let temp = tempfile::tempdir().expect("temporary fixture directory");
+    let result = write_run(temp.path(), "fail", false);
+    let mut record: Value =
+        serde_json::from_slice(&std::fs::read(&result).expect("run record reads"))
+            .expect("run record parses");
+    record["runEnvironment"] = json!({
+        "checkouts": [
+            {
+                "identity": "agent-ix/spec-objects-safety",
+                "revision": "safety-capture-123",
+                "resolvedPath": "/workspace/spec-objects-safety"
+            },
+            {
+                "identity": "agent-ix/spec-objects-security",
+                "revision": null,
+                "resolvedPath": null
+            }
+        ],
+        "temporaryDirectory": {
+            "resolvedPath": "/tmp/unwritable-suite-dir",
+            "writable": false
+        }
+    });
+    std::fs::write(
+        &result,
+        serde_json::to_vec(&record).expect("run serializes"),
+    )
+    .expect("run record writes");
+
+    let output_directory = temp.path().join("report");
+    let output = invoke(&result, &output_directory);
+    assert_eq!(output.status.code(), Some(1));
+    let report: Value = serde_json::from_slice(
+        &std::fs::read(output_directory.join("validation-report.json"))
+            .expect("JSON report is written"),
+    )
+    .expect("report JSON parses");
+    assert_eq!(report["status"], "incomplete");
+    assert_eq!(
+        report["tools"][0]["runEnvironment"]["checkouts"][0]["identity"],
+        "agent-ix/spec-objects-safety"
+    );
+    assert_eq!(
+        report["tools"][0]["runEnvironment"]["checkouts"][0]["revision"],
+        "safety-capture-123"
+    );
+    assert_eq!(
+        report["tools"][0]["runEnvironment"]["checkouts"][1]["identity"],
+        "agent-ix/spec-objects-security"
+    );
+    assert!(report["tools"][0]["runEnvironment"]["checkouts"][1]["revision"].is_null());
+    assert_eq!(
+        report["tools"][0]["runEnvironment"]["temporaryDirectory"]["writable"],
+        false
+    );
+    assert_eq!(report["results"][0]["result"], "fail");
+    assert_eq!(report["coverage"][0]["result"], "uncovered");
+    let markdown = std::fs::read_to_string(output_directory.join("validation-report.md"))
+        .expect("Markdown report is written");
+    assert!(markdown.contains("agent-ix/spec-objects-security | unavailable | unavailable"));
+    assert!(markdown.contains("writable when suite began: `false`"));
+    assert!(markdown.contains("| fixture-case | quoin | FR-001-AC-1 | fail |"));
+}
+
 #[trace("FR-217-AC-2", "FR-218-AC-2")]
 #[test]
 fn incomplete_command_still_writes_the_report_and_names_each_gap() {
@@ -185,7 +270,25 @@ fn complete_report_keeps_failed_and_errored_results_and_uncovered_requirements()
             "documents": []
         },
         "externalTools": [],
-        "retainedLocation": "spec/evidence/runs/NORMAL/run.json"
+        "retainedLocation": "spec/evidence/runs/NORMAL/run.json",
+        "runEnvironment": {
+            "checkouts": [
+                {
+                    "identity": "agent-ix/spec-objects-safety",
+                    "revision": "safety-revision",
+                    "resolvedPath": "/workspace/spec-objects-safety"
+                },
+                {
+                    "identity": "agent-ix/spec-objects-security",
+                    "revision": "security-revision",
+                    "resolvedPath": "/workspace/spec-objects-security"
+                }
+            ],
+            "temporaryDirectory": {
+                "resolvedPath": "/tmp/quoin-suite",
+                "writable": true
+            }
+        }
     });
     std::fs::write(
         &quire_cli,

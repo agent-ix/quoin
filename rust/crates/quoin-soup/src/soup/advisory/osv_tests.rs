@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Agent-IX
 
-//! Synthetic join cases and an opt-in replay of an external authentic report.
+//! Synthetic join cases and replay of an authentic external report.
 
 #![allow(
     clippy::unwrap_used,
@@ -84,13 +84,17 @@ fn minimal_debian_contract_fixture_keeps_reported_purl_and_id_through_the_join()
 
 /// Replay one caller-supplied authentic report without copying or normalizing
 /// its bytes into this repository. See `tests/fixtures/evidence/README.md`.
+/// The checked-in bytes were captured 2026-11-27 with OSV-Scanner 2.7.1
+/// (Linux amd64 release asset SHA-256
+/// `fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8`):
+/// `osv-scanner scan source --sbom probe.cdx.json --format json --all-packages
+/// --output report.json`. The CycloneDX probe contains the exact npm, PyPI,
+/// Go and Debian package coordinates asserted below.
 #[trace("FR-142-AC-19", "FR-149-AC-10")]
-#[ignore = "requires an external authentic report at QUOIN_TEST_OSV_REPORT"]
 #[test]
 fn tc_osv_scanner_authentic_ecosystem_report_is_parsed_and_joined() {
-    let path = std::env::var_os("QUOIN_TEST_OSV_REPORT")
-        .map(PathBuf::from)
-        .expect("set QUOIN_TEST_OSV_REPORT to an absolute OSV-Scanner report path");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/evidence/osv-scanner-2.7.1-authentic.json");
     assert!(
         path.is_absolute(),
         "report path must be absolute: {}",

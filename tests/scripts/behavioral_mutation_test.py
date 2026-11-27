@@ -34,36 +34,74 @@ def adjacent_checkout(env: dict[str, str], variable: str, checkout: str, marker:
             return
 
 
-def raw_counts(path: Path) -> tuple[dict[str, int], bool]:
+def raw_outcomes(path: Path) -> list[dict]:
     document = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(document, dict):
+        raise ValueError("cargo-mutants outcomes.json root is not an object")
+    outcomes = document.get("outcomes")
+    if not isinstance(outcomes, list) or not outcomes:
+        raise ValueError("cargo-mutants outcomes.json has no outcome rows")
+    for index, outcome in enumerate(outcomes):
+        if not isinstance(outcome, dict):
+            raise ValueError(f"cargo-mutants outcome row {index} is not an object")
+        if not isinstance(outcome.get("summary"), str):
+            raise ValueError(f"cargo-mutants outcome row {index} summary is not a string")
+    return outcomes
+
+
+def raw_counts(path: Path) -> tuple[dict[str, int], bool]:
+    outcomes = raw_outcomes(path)
     counts = {"killed": 0, "survived": 0, "unviable": 0}
     baseline_failed = False
-    for outcome in document.get("outcomes", []):
+    for index, outcome in enumerate(outcomes):
         summary = outcome.get("summary")
+        if outcome.get("scenario") == "Baseline":
+            if summary != "Success":
+                baseline_failed = True
+            continue
         if summary == "CaughtMutant":
             counts["killed"] += 1
         elif summary in {"MissedMutant", "Timeout"}:
             counts["survived"] += 1
         elif summary == "Unviable":
             counts["unviable"] += 1
-        elif outcome.get("scenario") == "Baseline" and summary != "Success":
-            baseline_failed = True
+        elif summary == "Success":
+            raise ValueError(f"cargo-mutants outcome row {index} reports Success outside Baseline")
+        else:
+            raise ValueError(f"cargo-mutants outcome row {index} has unrecognized summary {summary!r}")
     return counts, baseline_failed
 
 
 def raw_survivors(path: Path) -> list[dict]:
-    document = json.loads(path.read_text(encoding="utf-8"))
     survivors = []
-    for outcome in document.get("outcomes", []):
+    for outcome in raw_outcomes(path):
         if outcome.get("summary") not in {"MissedMutant", "Timeout"}:
             continue
-        mutant = outcome.get("scenario", {}).get("Mutant", {})
-        span = mutant.get("span", {}).get("start", {})
-        survivor = {"mutation": mutant.get("name") or outcome.get("summary")}
-        if span.get("line") is not None:
-            survivor["line"] = span["line"]
+        details = mutant_details(outcome)
+        survivor = {"mutation": details["mutation"] or outcome.get("summary")}
+        if details["line"] is not None:
+            survivor["line"] = details["line"]
         survivors.append(survivor)
     return survivors
+
+
+def mutant_details(outcome: dict) -> dict:
+    """Project optional cargo-mutants metadata without assuming nested objects."""
+    scenario = outcome.get("scenario")
+    mutant = scenario.get("Mutant") if isinstance(scenario, dict) else None
+    if not isinstance(mutant, dict):
+        mutant = {}
+    function = mutant.get("function")
+    function_name = function.get("function_name") if isinstance(function, dict) else None
+    span = mutant.get("span")
+    start = span.get("start") if isinstance(span, dict) else None
+    line = start.get("line") if isinstance(start, dict) else None
+    return {
+        "file": mutant.get("file"),
+        "function": function_name,
+        "line": line,
+        "mutation": mutant.get("name"),
+    }
 
 
 def main() -> int:
@@ -83,6 +121,8 @@ def main() -> int:
         if test_args:
             command.extend(["--", "--", *test_args])
         env = os.environ.copy()
+        env.setdefault("CARGO_BUILD_JOBS", "4")
+        env.setdefault("RUST_TEST_THREADS", "4")
         env.pop("CARGO_MUTANTS_JOBS", None)
         adjacent_checkout(env, "SPEC_OBJECTS_SAFETY_DIR", "spec-objects-safety", "spec_objects_safety")
         if name == "risk-completeness":
@@ -105,7 +145,13 @@ def main() -> int:
             entries.append(evidence.entry(name, "error", config))
             failed = True
             continue
-        counts, baseline_failed = raw_counts(outcomes)
+        try:
+            counts, baseline_failed = raw_counts(outcomes)
+        except (OSError, json.JSONDecodeError, ValueError) as error:
+            config.update({"execution_state": "executed", "reason": f"invalid retained outcomes: {error}"})
+            entries.append(evidence.entry(name, "fail", config))
+            failed = True
+            continue
         summaries[name] = {"package": package, "source": source, **counts,
                            "cargo_mutants_exit": status, "baseline_failed": baseline_failed,
                            "raw_outcomes": str(outcomes)}
@@ -126,15 +172,12 @@ def main() -> int:
             record_entry["survivors"] = survivors[:25]
         entries.append(record_entry)
         failed |= run_failed
-        raw = json.loads(outcomes.read_text(encoding="utf-8"))
-        for item in raw.get("outcomes", []):
+        for item in raw_outcomes(outcomes):
             if item.get("summary") not in {"MissedMutant", "Timeout"}:
                 continue
-            mutant = item.get("scenario", {}).get("Mutant", {})
-            disposition.append({"kernel": name, "file": mutant.get("file"),
-                                "function": mutant.get("function", {}).get("function_name"),
-                                "line": mutant.get("span", {}).get("start", {}).get("line"),
-                                "mutation": mutant.get("name"), "raw_outcome": item.get("summary"),
+            details = mutant_details(item)
+            disposition.append({"kernel": name, **details,
+                                "raw_outcome": item.get("summary"),
                                 "human_review_disposition": None})
 
     summary_path = evidence.ARTIFACTS / "mutation-summary.json"

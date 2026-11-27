@@ -1,0 +1,20 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:26e20a3c-a019-4ffc-89e8-69d41696bc02",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-27T00:00:00Z",
+    "component": { "type": "application", "name": "osv-authentic-probe", "version": "1.0.0", "bom-ref": "osv-authentic-probe@1.0.0", "purl": "pkg:generic/osv-authentic-probe@1.0.0" }
+  },
+  "components": [
+    { "type": "library", "name": "lodash", "version": "4.17.20", "purl": "pkg:npm/lodash@4.17.20" },
+    { "type": "library", "name": "hoek", "group": "@hapi", "version": "8.3.2", "purl": "pkg:npm/%40hapi/hoek@8.3.2" },
+    { "type": "library", "name": "redis", "version": "3.0.0", "purl": "pkg:npm/redis@3.0.0" },
+    { "type": "library", "name": "Django", "version": "2.2.24", "purl": "pkg:pypi/django@2.2.24" },
+    { "type": "library", "name": "redis", "version": "4.4.1", "purl": "pkg:pypi/redis@4.4.1" },
+    { "type": "library", "name": "github.com/gin-gonic/gin", "version": "v1.7.0", "purl": "pkg:golang/github.com/gin-gonic/gin@v1.7.0" },
+    { "type": "library", "name": "libwebp", "version": "0.6.1-2.1+deb11u1", "purl": "pkg:deb/debian/libwebp@0.6.1-2.1%2Bdeb11u1?arch=amd64&distro=debian-11" }
+  ]
+}

@@ -180,7 +180,7 @@ pub struct Participant {
 /// This is the asymmetry `Option<T>` erases. The retained source reads them
 /// through different mechanisms:
 ///
-/// ```ignore
+/// ```typescript
 /// const expiresAt = optionalStringAt(row, "expires_at");
 /// //  -> `if (!(key in object)) return undefined;` then a string check
 /// const resolutionRefs = row.resolution_refs ? nonEmptyStrings(...) : undefined;

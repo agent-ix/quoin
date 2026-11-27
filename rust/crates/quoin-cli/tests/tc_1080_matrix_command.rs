@@ -601,7 +601,6 @@ fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
 #[cfg(target_os = "linux")]
 #[trace("NFR-045-M-1")]
 #[test]
-#[ignore = "Linux offline assurance lane requires strace with network syscall fault injection"]
 fn sacm_and_gsn_derived_cli_make_no_network_syscalls() {
     let fixture = populated();
     let trace_path = fixture.home.path().join("network.trace");
