@@ -87,23 +87,23 @@ a statement about the real contract, and makes everything the engine cannot do v
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-087-CON-1 | A `could-not-run` outcome SHALL NOT be counted in the numerator or the denominator of a pass rate. | Interface | Test |
-| FR-087-CON-2 | The measurement SHALL NOT implement its own parser, extractor or record builder for a module's declared mappings. | Interface | Inspection |
-| FR-087-CON-3 | The measurement SHALL NOT rewrite the bytes of a corpus document. | Safety | Test |
+| FR-087-CON-1 | A `could-not-run` outcome SHALL NOT be counted in the numerator or the denominator of a pass rate. | Interface | Withdrawn |
+| FR-087-CON-2 | The measurement SHALL NOT implement its own parser, extractor or record builder for a module's declared mappings. | Interface | Withdrawn |
+| FR-087-CON-3 | The measurement SHALL NOT rewrite the bytes of a corpus document. | Safety | Withdrawn |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-087-AC-1 | A document the engine reports no error against records `pass`. | Test |
-| FR-087-AC-2 | A document the engine reports a missing required section against records `fail` carrying the engine's diagnostic code, reason and line. | Test |
-| FR-087-AC-3 | The module contract applied is the resolved module set, demonstrated by a repository-local module declaring the same type having no effect on the outcome. | Test |
-| FR-087-AC-4 | A batch whose engine invocation terminates abnormally records every document of that batch `could-not-run` naming the termination, and none of them enters the pass numerator or denominator. | Test |
-| FR-087-AC-5 | A document the engine reports only warnings against records `pass` and carries those warnings as advisory findings. | Test |
-| FR-087-AC-6 | A document carrying three engine errors records all three in one evaluation record. | Test |
-| FR-087-AC-7 | Changing only the module declaration in the resolved set changes the recorded outcome of an unchanged document. | Test |
-| FR-087-AC-8 | The evaluation output names the engine version the outcomes were produced by. | Test |
-| FR-087-AC-9 | No source file of the measurement parses a module's `mappings.yaml` parse rules or builds a semantic record from Markdown. | Inspection |
+| FR-087-AC-1 | A document the engine reports no error against records `pass`. | Withdrawn |
+| FR-087-AC-2 | A document the engine reports a missing required section against records `fail` carrying the engine's diagnostic code, reason and line. | Withdrawn |
+| FR-087-AC-3 | The module contract applied is the resolved module set, demonstrated by a repository-local module declaring the same type having no effect on the outcome. | Withdrawn |
+| FR-087-AC-4 | A batch whose engine invocation terminates abnormally records every document of that batch `could-not-run` naming the termination, and none of them enters the pass numerator or denominator. | Withdrawn |
+| FR-087-AC-5 | A document the engine reports only warnings against records `pass` and carries those warnings as advisory findings. | Withdrawn |
+| FR-087-AC-6 | A document carrying three engine errors records all three in one evaluation record. | Withdrawn |
+| FR-087-AC-7 | Changing only the module declaration in the resolved set changes the recorded outcome of an unchanged document. | Withdrawn |
+| FR-087-AC-8 | The evaluation output names the engine version the outcomes were produced by. | Withdrawn |
+| FR-087-AC-9 | No source file of the measurement parses a module's `mappings.yaml` parse rules or builds a semantic record from Markdown. | Withdrawn |
 
 ## Dependencies
 

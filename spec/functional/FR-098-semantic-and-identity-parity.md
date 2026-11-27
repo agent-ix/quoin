@@ -105,7 +105,7 @@ differential run whose compared population is empty each block cutover.
 | FR-098-AC-3 | Withdrawn: the replay of captured records through the retained implementation is gone; records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn |
 | FR-098-AC-4 | JCS canonicalization produces identical bytes for adversarial Unicode, number-format and key-order inputs in both implementations. | Property |
 | FR-098-AC-5 | Each ported refusal path returns the same non-success classification from the Rust implementation as from the retained one. | Property |
-| FR-098-AC-6 | Every `tests/props` property has a `proptest` counterpart asserting the same property, and a property holding in TypeScript and violated in Rust fails the run. | Test |
+| FR-098-AC-6 | Withdrawn: the retained TypeScript tests/props population was absent at native cutover, leaving no enumerable property set to port or compare; this identifier is not reused. | Withdrawn |
 | FR-098-AC-7 | Withdrawn: there is no differential run whose population could be zero, and no cutover gate it could satisfy (id not reused). | Withdrawn |
 | FR-098-AC-8 | Validation asserts no `format` keyword in either implementation, and the compared diagnostic set excludes schema-authoring strict-mode diagnostics. | Test |
 | FR-098-AC-9 | A document the retained strict JSON parser refuses — byte-order mark, non-fatal UTF-8, trailing content — is refused by the Rust implementation with the same classification, before canonicalization runs. | Test |

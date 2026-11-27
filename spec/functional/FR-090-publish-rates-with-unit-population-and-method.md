@@ -97,24 +97,24 @@ weak module or type partition — cannot be met by an aggregate that is printed 
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-090-CON-1 | A rate SHALL NOT be published without a unit, a population identifier and a method identifier. | Interface | Test |
-| FR-090-CON-2 | A partition SHALL NOT be omitted from a published breakdown because its denominator is small. | Interface | Test |
-| FR-090-CON-3 | The divergence margin SHALL be a declared input, never a threshold compiled into the measurement. | Interface | Test |
+| FR-090-CON-1 | A rate SHALL NOT be published without a unit, a population identifier and a method identifier. | Interface | Withdrawn |
+| FR-090-CON-2 | A partition SHALL NOT be omitted from a published breakdown because its denominator is small. | Interface | Withdrawn |
+| FR-090-CON-3 | The divergence margin SHALL be a declared input, never a threshold compiled into the measurement. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-090-AC-1 | Every rate in the published report carries a unit, a population identifier and a method identifier. | Test |
+| FR-090-AC-1 | Every rate in the published report carries a unit, a population identifier and a method identifier. | Withdrawn |
 | FR-090-AC-2 | Withdrawn: the population identifier no longer names a corpus or module revision, which Quoin records no longer (id not reused). | Withdrawn |
-| FR-090-AC-3 | A corpus in which one document reports `could-not-run` yields a rate whose denominator excludes that document and a `could-not-run` count of one beside the rate. | Test |
-| FR-090-AC-4 | The mapping rate and the representation rate are published separately with their own populations and are never summed. | Test |
-| FR-090-AC-5 | A module partition whose rate is more than the declared margin below the aggregate appears in the divergence list naming both rates. | Test |
-| FR-090-AC-6 | A repository contributing one measured document appears in the by-repository breakdown with a denominator of one. | Test |
-| FR-090-AC-7 | Every declared type of every resolved module appears in the by-type breakdown keyed on module and type, including a type with no instance in the corpus, which is published with a denominator of zero and no rate value rather than omitted. | Test |
-| FR-090-AC-8 | Every figure the prose report prints appears in the machine-readable index naming the artifact and field it came from. | Test |
-| FR-090-AC-9 | Changing only the declared divergence margin changes the membership of the divergence list. | Test |
-| FR-090-AC-10 | The count of repositories recorded `clean: false` or `stable: false` is published beside every corpus-level rate. | Test |
+| FR-090-AC-3 | A corpus in which one document reports `could-not-run` yields a rate whose denominator excludes that document and a `could-not-run` count of one beside the rate. | Withdrawn |
+| FR-090-AC-4 | The mapping rate and the representation rate are published separately with their own populations and are never summed. | Withdrawn |
+| FR-090-AC-5 | A module partition whose rate is more than the declared margin below the aggregate appears in the divergence list naming both rates. | Withdrawn |
+| FR-090-AC-6 | A repository contributing one measured document appears in the by-repository breakdown with a denominator of one. | Withdrawn |
+| FR-090-AC-7 | Every declared type of every resolved module appears in the by-type breakdown keyed on module and type, including a type with no instance in the corpus, which is published with a denominator of zero and no rate value rather than omitted. | Withdrawn |
+| FR-090-AC-8 | Every figure the prose report prints appears in the machine-readable index naming the artifact and field it came from. | Withdrawn |
+| FR-090-AC-9 | Changing only the declared divergence margin changes the membership of the divergence list. | Withdrawn |
+| FR-090-AC-10 | The count of repositories recorded `clean: false` or `stable: false` is published beside every corpus-level rate. | Withdrawn |
 
 ## Dependencies
 

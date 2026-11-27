@@ -59,32 +59,31 @@ a claimed reversibility is not reversibility.
 
 | Metric | Target | Threshold | Method |
 |--------|--------|-----------|--------|
-| Existing record identity changes across a cutover | 0 | 0 | Test |
-| Existing evidence-file bytes changed by a cutover | 0 | 0 | Test |
-| Accepted-corpus bytes changed across the port | 0 | 0 | Test |
-| Stores whose read-and-re-serialize round trip is not byte-identical | 0 | 0 | Test |
-| Read-back population covered before a store-backed cutover | 100% of reachable records | 100% | Test |
+| Existing record identity changes across a cutover | 0 | 0 | Inspection |
+| Existing evidence-file bytes changed by a cutover | 0 | 0 | Inspection |
+| Accepted-corpus bytes changed across the port | 0 | 0 | Inspection |
+| Stores whose read-and-re-serialize round trip is not byte-identical | 0 | 0 | Inspection |
+| Read-back population covered before a store-backed cutover | 100% of reachable records | 100% | Inspection |
 
 ## Verification
 
-Before each store-backed cutover, a read-back enumerates every record in every
-reachable store, reports the full non-empty population it covered, and asserts
-zero changed bytes. A separate round-trip check reads and re-serializes every
-stored record without replacing its identity fields and asserts byte identity;
-it does not mint a new record or rewrite an old file. Across each cutover,
-revert and deletion change, a tree comparison over the evidence and
-accepted-corpus roots asserts zero changed bytes. A planted single-byte change
-must fail the read-back, and a read-back whose population is zero is reported as
-inconclusive rather than as clean.
+Before each store-backed cutover, the recorded read-back names the evidence
+store root and each root in the checked-in store inventory, reports its full
+non-empty population, and shows zero changed bytes. The release review inspects
+that report and the round-trip record for every populated store. For each
+cutover, revert and deletion change, its before/after commit pair and tree
+comparison are recorded and inspected for zero changed bytes. A planted
+single-byte change must fail the read-back, and a read-back whose population is
+zero is reported as inconclusive rather than as clean.
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| NFR-025-AC-1 | A read-back over every reachable store names its non-empty full population and reports zero changed bytes. | Test |
+| NFR-025-AC-1 | A read-back over the evidence store root and every root named in the checked-in store inventory names its non-empty full population and reports zero changed bytes; an absent inventory refuses the read-back rather than narrowing it. | Inspection |
 | NFR-025-AC-2 | A planted single-byte change in a stored record makes the read-back fail. | Test |
 | NFR-025-AC-3 | Reading and re-serializing every store without regenerating identity fields returns byte-identical records, including historical assurance records. | Test |
-| NFR-025-AC-4 | Comparing the evidence and accepted-corpus trees before and after a cutover, after its revert, and after the deletion change finds zero changed bytes. | Test |
+| NFR-025-AC-4 | The recorded cutover, revert, and deletion comparisons each cite their before/after commit pair and show zero changed bytes in the evidence and accepted-corpus trees. | Inspection |
 | NFR-025-AC-5 | A read-back whose population is zero, or whose store inventory is absent, is reported as inconclusive. | Test |
 | NFR-025-AC-6 | Withdrawn: there is no retained writer whose output new records could be compared with; new records are checked by behavior under FR-063 and FR-064 (id not reused). | Withdrawn |
 

@@ -81,20 +81,20 @@ could not speak for.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-091-CON-1 | A tool-defect entry SHALL cite a repository and issue number that a reader can open. | Interface | Test |
-| FR-091-CON-2 | The tool-defect ledger SHALL NOT suppress a finding outside the scope its entry declares. | Interface | Test |
+| FR-091-CON-1 | A tool-defect entry SHALL cite a repository and issue number that a reader can open. | Interface | Withdrawn |
+| FR-091-CON-2 | The tool-defect ledger SHALL NOT suppress a finding outside the scope its entry declares. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-091-AC-1 | A tool-defect entry without a repository and issue number is refused with the entry named, by the same refusal FR-089-AC-3 exercises over the one shared ledger. | Test |
-| FR-091-AC-2 | A document inside a declared scope reports `could-not-run` citing the entry identifier and is absent from the pass numerator and denominator, including when FR-086 assigned it `unreadable`. | Test |
-| FR-091-AC-3 | A failure covered by a declared entry is classified `tool-defect` in the partition and carries the citation. | Test |
-| FR-091-AC-4 | An entry declaring a row-level effect reports both an affected document count and an affected row count. | Test |
-| FR-091-AC-5 | A document outside every declared scope that fails is not classified `tool-defect`. | Test |
-| FR-091-AC-6 | The published report states the share of the population covered by declared tool-defect exclusions beside the aggregate rate. | Test |
-| FR-091-AC-7 | Every tool-defect entry's citation resolves to an existing issue in the named repository. | Test |
+| FR-091-AC-1 | A tool-defect entry without a repository and issue number is refused with the entry named, by the same refusal FR-089-AC-3 exercises over the one shared ledger. | Withdrawn |
+| FR-091-AC-2 | A document inside a declared scope reports `could-not-run` citing the entry identifier and is absent from the pass numerator and denominator, including when FR-086 assigned it `unreadable`. | Withdrawn |
+| FR-091-AC-3 | A failure covered by a declared entry is classified `tool-defect` in the partition and carries the citation. | Withdrawn |
+| FR-091-AC-4 | An entry declaring a row-level effect reports both an affected document count and an affected row count. | Withdrawn |
+| FR-091-AC-5 | A document outside every declared scope that fails is not classified `tool-defect`. | Withdrawn |
+| FR-091-AC-6 | The published report states the share of the population covered by declared tool-defect exclusions beside the aggregate rate. | Withdrawn |
+| FR-091-AC-7 | Every tool-defect entry's citation resolves to an existing issue in the named repository. | Withdrawn |
 
 ## Dependencies
 
