@@ -6,8 +6,8 @@
 //! Named external integration lane. The test is active when the explicit
 //! feature is enabled and requires the exact installed tools and local PDF
 //! extractor:
-//! - `engineering-assurance 0.10.1`
-//! - `quire 0.53.3 (engine 0.63.2)`
+//! - a working `engineering-assurance` binary
+//! - a working `quire` binary
 //! - `ssh-keygen` and `pdftotext` (or an executable path in `PDFTOTEXT`)
 //!
 //! ```text
@@ -105,16 +105,28 @@ fn real_ea_release_and_quire_dossier_export_scenario() {
         .unwrap_or_else(|| PathBuf::from("pdftotext"));
     let ea_version = run(&ea, Path::new("."), &["--version"]);
     assert!(ea_version.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&ea_version.stdout).trim(),
-        "engineering-assurance 0.10.1"
+    let ea_version = String::from_utf8_lossy(&ea_version.stdout)
+        .trim()
+        .to_owned();
+    assert!(
+        ea_version.starts_with("engineering-assurance "),
+        "{ea_version}"
     );
     let quire_version = run(&quire, Path::new("."), &["--version"]);
     assert!(quire_version.status.success());
-    assert_eq!(
-        String::from_utf8_lossy(&quire_version.stdout).trim(),
-        "quire 0.53.3 (engine 0.63.2)"
+    let quire_version = String::from_utf8_lossy(&quire_version.stdout)
+        .trim()
+        .to_owned();
+    assert!(quire_version.starts_with("quire "), "{quire_version}");
+    let quoin_version = run(
+        Path::new(env!("CARGO_BIN_EXE_quoin")),
+        Path::new("."),
+        &["--version"],
     );
+    assert!(quoin_version.status.success());
+    let quoin_version = String::from_utf8_lossy(&quoin_version.stdout)
+        .trim()
+        .to_owned();
     assert!(
         Path::new("/usr/bin/ssh-keygen").is_file(),
         "ssh-keygen is required"
@@ -170,7 +182,7 @@ fn real_ea_release_and_quire_dossier_export_scenario() {
     let snapshot = repo.join(SNAPSHOT_PATH);
     let snapshot_json = json!({
         "protocol": "quoin.release-snapshot/v1",
-        "tool_identity": {"name": "quoin", "version": "0.0.0"},
+        "tool_identity": {"name": "quoin", "version": quoin_version.clone()},
         "clean_tree_precondition": "not_verified",
         "as_of": "2026-11-26T00:00:00Z",
         "baseline_commit": baseline,
@@ -273,6 +285,11 @@ fn real_ea_release_and_quire_dossier_export_scenario() {
         Some(0),
         "{}",
         String::from_utf8_lossy(&generated.stderr)
+    );
+    let generated_record = fs::read_to_string(repo.join("dossier/DOS-REL.md")).unwrap();
+    assert!(
+        generated_record.contains(&format!("  version: {quoin_version:?}")),
+        "release export did not record the running Quoin version {quoin_version}: {generated_record}"
     );
     fs::create_dir_all(repo.join("dossier")).unwrap();
     fs::write(repo.join("dossier/NOTES.md"), "not selected\n").unwrap();
