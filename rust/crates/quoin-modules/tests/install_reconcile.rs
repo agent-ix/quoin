@@ -292,7 +292,13 @@ fn git_manifest(name: &str, r#ref: &str) -> MarketplaceManifest {
     }
 }
 
-#[trace("FR-019-AC-2", "NFR-001-M-1", "FR-099-AC-4", "FR-099-CON-3")]
+#[trace(
+    "FR-019-AC-2",
+    "NFR-001-M-1",
+    "NFR-001-M-2",
+    "FR-099-AC-4",
+    "FR-099-CON-3"
+)]
 #[test]
 fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     let h = home();
@@ -334,6 +340,7 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
     assert_eq!(first_catalog.entries.len(), 1);
     assert_eq!(first_catalog.entries[0].name, "FR");
 
+    let store_before_second = module_store_snapshot(&h.paths.target_root);
     let second = ensure_defaults(&manifest, &installer).expect("second reconcile");
     assert_eq!(
         second.unchanged,
@@ -351,6 +358,50 @@ fn tc_381_283_a_settled_lazy_reconcile_performs_no_network_io() {
         first_catalog,
         "a second reconcile preserves the non-empty catalog from the materialized module root"
     );
+    assert_eq!(
+        module_store_snapshot(&h.paths.target_root),
+        store_before_second,
+        "settled reconcile causes no module-store file, content, or timestamp mutation"
+    );
+}
+
+fn module_store_snapshot(root: &Path) -> Vec<(PathBuf, Vec<u8>, std::time::SystemTime)> {
+    fn collect(
+        root: &Path,
+        current: &Path,
+        files: &mut Vec<(PathBuf, Vec<u8>, std::time::SystemTime)>,
+    ) {
+        let mut entries = fs::read_dir(current)
+            .expect("module store directory is readable")
+            .map(|entry| entry.expect("module store entry is readable").path())
+            .collect::<Vec<_>>();
+        entries.sort();
+        for path in entries {
+            let metadata = fs::metadata(&path).expect("module store metadata is readable");
+            if metadata.is_dir() {
+                files.push((
+                    path.strip_prefix(root)
+                        .expect("path is under store root")
+                        .to_path_buf(),
+                    Vec::new(),
+                    metadata.modified().expect("modification time is available"),
+                ));
+                collect(root, &path, files);
+            } else {
+                files.push((
+                    path.strip_prefix(root)
+                        .expect("path is under store root")
+                        .to_path_buf(),
+                    fs::read(&path).expect("module-store file is readable"),
+                    metadata.modified().expect("modification time is available"),
+                ));
+            }
+        }
+    }
+
+    let mut files = Vec::new();
+    collect(root, root, &mut files);
+    files
 }
 
 #[trace("FR-212-AC-8")]

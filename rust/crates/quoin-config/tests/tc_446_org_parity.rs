@@ -214,6 +214,17 @@ fn tc_446_026_the_document_path_answers_what_the_filesystem_path_answers() {
     assert_eq!(resolved.source, OrgSource::Config);
 }
 
+#[trace("FR-023-AC-5")]
+#[test]
+fn tc_446_029_stored_config_org_precedes_git_remote() {
+    let configured = tree()
+        .user_config("org: stored-org\n")
+        .origin("git@github.com:remote-org/repo.git");
+    let resolved = configured.agreed(None);
+    assert_eq!(org_of(&resolved), Some("stored-org"));
+    assert_eq!(resolved.source, OrgSource::Config);
+}
+
 /// Provenance: quoin#446
 #[trace("FR-027-AC-5", "FR-096")]
 #[test]
