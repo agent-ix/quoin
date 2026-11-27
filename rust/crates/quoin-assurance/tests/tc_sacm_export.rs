@@ -246,6 +246,95 @@ fn signed_acceptance_is_one_contained_artifact_and_unsigned_export_is_unchanged(
     assert!(resolve_references(&signed).is_ok());
 }
 
+#[trace("FR-047-AC-10")]
+#[test]
+fn authored_open_challenge_stays_open_with_or_without_signed_acceptance() {
+    let authored = json!({
+        "topClaim": {
+            "id": "TC-1",
+            "statement": "The claim remains open.",
+            "status": "open",
+            "reasons": ["challenge open"]
+        },
+        "reasoning": [],
+        "assumptions": [],
+        "participants": [],
+        "challenges": [{
+            "id": "CH-1",
+            "target": "TC-1",
+            "statement": "An unresolved objection.",
+            "owner": "auditor",
+            "status": "open",
+            "declaredStatus": "open",
+            "resolutionRefs": [],
+            "reason": "unresolved"
+        }],
+        "relationships": []
+    });
+    let unsigned_case = quoin_assurance::gsn::from_authored(&authored)
+        .expect("authored open challenge maps to a counter-claim");
+    let root_id = unsigned_case.roots.first().expect("authored root exists");
+    let challenge_id = unsigned_case
+        .nodes
+        .iter()
+        .find(|node| node.source == "CH-1")
+        .expect("authored challenge exists")
+        .id
+        .as_str();
+    let mut signed_case = quoin_assurance::gsn::from_authored(&authored)
+        .expect("same authored challenge maps before acceptance metadata");
+    signed_case.signed_acceptance = Some(
+        serde_json::from_value(json!({
+            "label": "Human acceptance of case content",
+            "record_id": "quoin.gsn-case/v1",
+            "record_digest": format!("sha256:{SECOND_DIGEST}"),
+            "tag": "case/review",
+            "approver": "case-reviewer@example.invalid",
+            "meaning": ["assurance-case-accepted"],
+            "signer_source": "allowed_signers",
+            "signed_at_missing": "tagger_date_unreadable",
+            "trusted_at_missing": "ssh_signature"
+        }))
+        .expect("signed acceptance metadata is valid"),
+    );
+    let repo = disk_repo();
+    let unsigned = export(&unsigned_case, &DiskEvidence::new(repo.path()))
+        .expect("unsigned authored challenge exports");
+    let signed = export(&signed_case, &DiskEvidence::new(repo.path()))
+        .expect("signed authored challenge exports");
+
+    for result in [&unsigned, &signed] {
+        let parsed = parse_xml(&result.xmi);
+        let argument = parsed.child("argumentPackage");
+        assert_eq!(
+            argument.by_id(root_id).attr("assertionDeclaration"),
+            "needsSupport"
+        );
+        assert_eq!(
+            argument.by_id(challenge_id).attr("assertionDeclaration"),
+            "needsSupport"
+        );
+        assert!(argument.children.iter().any(|element| {
+            element.attr("xmi:type") == "sacm:AssertedInference"
+                && element.attr("source") == challenge_id
+                && element.attr("target") == root_id
+                && element.attr("isCounter") == "true"
+        }));
+    }
+    assert!(
+        !unsigned
+            .xmi
+            .windows(22)
+            .any(|window| window == b"case-signed-acceptance")
+    );
+    assert!(
+        signed
+            .xmi
+            .windows(22)
+            .any(|window| window == b"case-signed-acceptance")
+    );
+}
+
 #[trace("FR-226-AC-1", "FR-226-AC-2", "FR-226-AC-3", "FR-226-AC-4")]
 #[test]
 fn sacm_maps_every_node_kind_and_retains_counter_claims() {
