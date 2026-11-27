@@ -101,7 +101,7 @@ refusal and are never reported as an empty but successful catalog.
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-099-CON-1 | Quoin SHALL NOT create a second catalog, registry or module resolver. | Architecture | Test |
+| FR-099-CON-1 | An architecture inspection of Quoin's module-loading and validation paths records their owning crates and public entry points, and confirms that catalog, registry and module-resolution responsibilities are not reimplemented across boundaries. | Architecture | Inspection |
 | FR-099-CON-2 | `quoin-quire` SHALL NOT re-implement Quire parsing, extraction or validation semantics. | Responsibility | Inspection |
 | FR-099-CON-3 | Reconcile SHALL NOT perform network access when the declared modules are already materialized. | Behavior | Test |
 
