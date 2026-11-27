@@ -157,6 +157,12 @@ e2e-signing:
 	@test -n "$$QUOIN_E2E_EA" || { echo "e2e-signing: set QUOIN_E2E_EA to an engineering-assurance executable" >&2; exit 1; }
 	cd $(RUST_DIR) && cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-cli --test tc_plat_1789_signed_approval_chain -- --ignored
 
+# Published Quoin runner asset against an empty home and network-denied scratch cwd.
+.PHONY: e2e-release-selftest
+e2e-release-selftest:
+	@test -n "$$QUOIN_BINARY" || { echo "e2e-release-selftest: set QUOIN_BINARY to the matching published Quoin release binary" >&2; exit 1; }
+	cd $(RUST_DIR) && cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-cli --features e2e-published-binary --test tc_235_044_offline_selftest -- --test-threads=4
+
 .PHONY: skill-test
 skill-test:
 	python3 tests/scripts/check_gap_analysis.py
