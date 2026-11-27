@@ -75,7 +75,7 @@ fn text(bytes: &[u8]) -> String {
 /// and human listing shapes without mutating migration evidence in place. This
 /// fixture is copied before invocation, so its contract is the listed modules
 /// with no artifact entries.
-#[trace("FR-102")]
+#[trace("FR-102-AC-1")]
 #[test]
 fn tc_1650_catalog_list_replays_the_retained_fixture_in_json_and_human_forms() {
     let scratch = tempfile::tempdir().expect("scratch directory is created");
