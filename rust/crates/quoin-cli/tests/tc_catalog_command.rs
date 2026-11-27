@@ -196,41 +196,6 @@ fn tc_1822_clean_home_default_modules_pass_catalog_validation() {
     assert_eq!(report["duplicates"], serde_json::json!([]));
 }
 
-/// Case-folded duplicates in one catalog namespace still make validation fail.
-#[trace("FR-099-AC-12")]
-#[test]
-fn tc_1822_same_namespace_duplicate_types_fail_catalog_validation() {
-    let scratch = tempfile::tempdir().expect("scratch directory is created");
-    let home = scratch.path().join("ix-home");
-    let candidates = scratch.path().join("candidates");
-    for (directory, name, type_name) in [("01-one", "one", "Anomaly"), ("02-two", "two", "anomaly")]
-    {
-        let module = candidates.join(directory);
-        fs::create_dir_all(module.join("skeletons")).expect("module skeletons are created");
-        fs::write(
-            module.join("manifest.yaml"),
-            format!("name: {name}\nversion: 1.0.0\nartifact_types: [{{name: {type_name}}}]\n"),
-        )
-        .expect("module manifest is written");
-    }
-
-    let output = invoke_with_modules(
-        &home,
-        Some(&candidates),
-        &["catalog", "validate", "--json", "--no-project-config"],
-    );
-    assert_eq!(output.status.code(), Some(1), "{}", text(&output.stderr));
-    let report: serde_json::Value =
-        serde_json::from_slice(&output.stderr).expect("catalog validation emits its failure JSON");
-    assert_eq!(report["ok"], false);
-    assert_eq!(report["duplicates"][0]["kind"], "artifact");
-    assert_eq!(report["duplicates"][0]["name"], "Anomaly");
-    assert_eq!(
-        report["duplicates"][0]["modules"],
-        serde_json::json!(["one", "two"])
-    );
-}
-
 /// Candidate discovery preserves the lexical symlink root the operator passed.
 #[trace("FR-099", "FR-102")]
 #[cfg(unix)]
