@@ -12,7 +12,7 @@
 use std::collections::BTreeMap;
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
-use ix_trace_rs::{implements, trace};
+use ix_trace_rs::implements;
 use quoin_config::{ConfigService, IncidentLog, ProcessEnvironment, QuoinConfig};
 use quoin_core::protocol::{Response, canonical_json};
 
@@ -66,12 +66,14 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let run_observations = crate::run_observation::read_run_observations(&run_observation_paths)?;
     let signature_verifier = crate::analysis_evidence::signature_verifier(arguments)?;
     let repo = required(arguments, "repo")?;
+    let request_limit = selected_request_limit(arguments)?;
     let options = AuditOptions::from_arguments(arguments);
-    let built = match build(
+    let built = match build_with_limit(
         &options,
         &repo,
         &run_observations,
         signature_verifier.as_ref(),
+        request_limit,
     )? {
         Built::Matrix(built) => built,
         Built::Declined(response) => return Ok(response),
@@ -119,12 +121,28 @@ pub(crate) enum Built {
 ///
 /// The one path `quoin matrix` and `quoin release snapshot` share (FR-115).
 #[implements("FR-165-AC-21")]
-#[implements("FR-115-AC-27")]
 pub(crate) fn build(
     options: &AuditOptions,
     repo: &str,
     run_observations: &[crate::run_observation::RunObservationFile],
     signature_verifier: Option<&crate::analysis_evidence::SignatureVerifier>,
+) -> Result<Built, String> {
+    build_with_limit(
+        options,
+        repo,
+        run_observations,
+        signature_verifier,
+        DEFAULT_MAX_REQUEST_BYTES,
+    )
+}
+
+#[implements("FR-165-AC-21", "FR-115-AC-27")]
+fn build_with_limit(
+    options: &AuditOptions,
+    repo: &str,
+    run_observations: &[crate::run_observation::RunObservationFile],
+    signature_verifier: Option<&crate::analysis_evidence::SignatureVerifier>,
+    request_limit: usize,
 ) -> Result<Built, String> {
     let audited = match assemble_for_matrix_with(options, repo)? {
         Assembly::Audited(audited) => audited,
@@ -189,8 +207,7 @@ pub(crate) fn build(
             .map_err(|error| format!("the retained runs are malformed: {error}"))?,
     );
     let request = serde_json::Value::Object(request);
-    let limit = selected_request_limit(arguments)?;
-    ensure_request_size(&request, limit)?;
+    ensure_request_size(&request, request_limit)?;
     let response = invoke("matrix.build", &request)?;
     let mut diagnostics = audited.response.diagnostics;
     diagnostics.extend(design_errors.into_iter().map(|error| {

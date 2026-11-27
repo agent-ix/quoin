@@ -55,7 +55,15 @@ fn get(key: &str) -> Result<Response, String> {
                 service.file_path().display()
             )
         },
-        |value| format!("quoin.{key}: {value}"),
+        |value| {
+            let value = value
+                .as_str()
+                .map(str::to_owned)
+                .or_else(|| value.as_u64().map(|number| number.to_string()))
+                .or_else(|| value.as_bool().map(|boolean| boolean.to_string()))
+                .unwrap_or_default();
+            format!("quoin.{key}: {value}")
+        },
     );
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
 }
