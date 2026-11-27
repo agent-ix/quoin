@@ -531,7 +531,7 @@ fn populated() -> Fixture {
             "--suite",
             suite,
             "--tool",
-            "fixture",
+            "fixture 1.0.0",
             "--adapter",
             "junit",
             "--results",
@@ -898,7 +898,7 @@ fn tc_1080_211_the_matrix_carries_the_run_identity_the_store_retains() {
     let bound = bindings_of(&matrix, "FR-001-AC-1");
     let run = &bound[0]["run"];
     assert_eq!(bound[0]["suite"], "unit");
-    assert_eq!(run["tool"], "fixture");
+    assert_eq!(run["tool"], "fixture 1.0.0");
     assert_eq!(run["timestamp"], "2026-01-01T00:00:00Z");
     assert_eq!(
         run["outcomes"],
