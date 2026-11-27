@@ -301,7 +301,6 @@ fn assert_acceptance_artifact(xmi: &str, accepted: &Value, unsigned_xmi: &str) {
 
 #[trace("FR-225-AC-1", "FR-225-AC-4", "FR-226-AC-9")]
 #[test]
-#[ignore = "real case-approval lane requires QUOIN_E2E_EA, Git, ssh-keygen and sha256sum"]
 fn sacm_and_gsn_share_the_real_verified_approval_for_both_case_modes() {
     let ea = verifier();
     for case in [Case::Derived, Case::Authored] {
@@ -386,7 +385,6 @@ fn sacm_and_gsn_share_the_real_verified_approval_for_both_case_modes() {
 
 #[trace("FR-225-AC-2")]
 #[test]
-#[ignore = "real refusal lane requires QUOIN_E2E_EA and Git SSH verification"]
 fn sacm_case_approval_refuses_wrong_bindings_expired_keys_and_non_acceptance_meanings() {
     let ea = verifier();
     let fixture = Fixture::new(Case::Derived);
@@ -534,7 +532,6 @@ fn sacm_case_approval_uses_dedicated_inputs_and_preserves_missing_claimed_time()
 
 #[trace("FR-225-AC-5")]
 #[test]
-#[ignore = "offline verifier lane requires QUOIN_E2E_EA, Git, strace and ssh-keygen"]
 fn sacm_case_approval_does_not_start_gitsign_or_fetch_a_missing_promisor_blob() {
     let ea = verifier();
     let fixture = Fixture::new(Case::Derived);
