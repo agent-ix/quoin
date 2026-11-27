@@ -496,7 +496,7 @@ fn sacm_case_approval_uses_dedicated_inputs_and_preserves_missing_claimed_time()
         "trust": {"allowed_signers": trust},
         "signature": {"status": "signed_valid", "kind": "tag", "signature_kind": "ssh",
             "signer": {"source": "allowed_signers", "mapping": "mapped", "principal": PRINCIPAL}},
-        "signed_at_missing": "tagger_date_unreadable", "trusted_at_missing": "ssh_signature",
+        "signed_at_missing": "tagger_date_unreadable",
     });
     executable(
         &exe,

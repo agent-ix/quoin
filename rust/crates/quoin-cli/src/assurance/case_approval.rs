@@ -7,6 +7,7 @@ use std::path::{self, Path};
 use std::process::Output;
 
 use clap::{Arg, ArgMatches};
+use ix_trace_rs::implements;
 use quoin_assurance::gsn::{GsnCase, SignedAcceptance};
 use quoin_core::protocol::canonical_json;
 use quoin_core::runtime::engineering_assurance_call_offline;
@@ -120,7 +121,7 @@ struct Approved {
     signed_at: Option<String>,
     signed_at_source: Option<String>,
     signed_at_missing: Option<String>,
-    trusted_at_missing: String,
+    trusted_at_missing: Option<String>,
     #[serde(rename = "tag_object_id")]
     _tag_object_id: Option<IgnoredAny>,
     #[serde(rename = "gesture")]
@@ -212,6 +213,7 @@ fn approved(output: &Output, request: &Request<'_>) -> Result<SignedAcceptance, 
 }
 
 impl Approved {
+    #[implements("FR-225-AC-1", "FR-225-AC-2", "FR-225-AC-5")]
     fn accept(self, request: &Request<'_>) -> Result<SignedAcceptance, String> {
         let expected_tag = request
             .tag
@@ -267,7 +269,12 @@ impl Approved {
             (None, None, Some("tagger_date_unreadable")) => true,
             _ => false,
         };
-        if !valid_time || self.trusted_at_missing != "ssh_signature" {
+        if !valid_time
+            || self
+                .trusted_at_missing
+                .as_deref()
+                .is_some_and(|value| value != "ssh_signature")
+        {
             return Err(
                 "EA status approved but the offline SSH signing-time fields are invalid".to_owned(),
             );
@@ -284,7 +291,7 @@ impl Approved {
             signed_at: self.signed_at,
             signed_at_source: self.signed_at_source,
             signed_at_missing: self.signed_at_missing,
-            trusted_at_missing: self.trusted_at_missing,
+            trusted_at_missing: "ssh_signature".to_owned(),
         })
     }
 }
