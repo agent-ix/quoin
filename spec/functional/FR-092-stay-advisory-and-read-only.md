@@ -73,13 +73,13 @@ measurement that can write is a measurement that can destroy the evidence it was
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-092-AC-1 | A run over a corpus in which every document fails exits with status `0`. | Test |
-| FR-092-AC-2 | The Git status of every enumerated corpus repository is byte-identical before and after a run. | Test |
-| FR-092-AC-3 | Every file written by a run is under the declared output directory. | Test |
-| FR-092-AC-4 | A declared output directory inside another enumerated corpus repository is refused before any file is read. | Test |
+| FR-092-AC-1 | A run over a corpus in which every document fails exits with status `0`. | Withdrawn |
+| FR-092-AC-2 | The Git status of every enumerated corpus repository is byte-identical before and after a run. | Withdrawn |
+| FR-092-AC-3 | Every file written by a run is under the declared output directory. | Withdrawn |
+| FR-092-AC-4 | A declared output directory inside another enumerated corpus repository is refused before any file is read. | Withdrawn |
 | FR-092-AC-5 | Withdrawn: required a digest of every artifact in the run manifest (id not reused). | Withdrawn |
-| FR-092-AC-6 | A measurement that cannot resolve a module of its declared required module set exits non-zero before reading a corpus document, distinguishing a tool failure from a measured failure. | Test |
-| FR-092-AC-7 | The refs, index and working tree of every enumerated corpus repository and every module repository compare equal before and after a run. | Test |
+| FR-092-AC-6 | A measurement that cannot resolve a module of its declared required module set exits non-zero before reading a corpus document, distinguishing a tool failure from a measured failure. | Withdrawn |
+| FR-092-AC-7 | The refs, index and working tree of every enumerated corpus repository and every module repository compare equal before and after a run. | Withdrawn |
 
 ## Dependencies
 

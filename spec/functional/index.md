@@ -86,7 +86,7 @@ description: "Index of functional requirements (FR) for quoin."
 - [FR-084: Enumerate the governed corpus](./FR-084-enumerate-the-governed-corpus.md) — ⛔ **Withdrawn** (#388)
 - [FR-085: Resolve the completed module set and its contract surfaces](./FR-085-resolve-the-completed-module-set.md) — ⛔ **Withdrawn** (#388)
 - [FR-086: Assign exactly one measurement state to every corpus document](./FR-086-assign-one-measurement-state-per-document.md) — ⛔ **Withdrawn** (#388)
-- [FR-087: Evaluate declared Markdown mappings and validate the extracted record](./FR-087-evaluate-declared-markdown-mappings.md) — ⛔ **Withdrawn** (#388)
+- [FR-087: Measure structural conformance through the Quire engine](./FR-087-measure-structural-conformance-through-the-engine.md) — ⛔ **Withdrawn** (#388)
 - [FR-088: Measure the L3 Properties representation of every measured document](./FR-088-measure-the-l3-properties-representation.md) — ⛔ **Withdrawn** (#388)
 - [FR-089: Partition every failure with an owner and a disposition](./FR-089-partition-every-failure.md) — ⛔ **Withdrawn** (#388)
 - [FR-090: Publish every rate with its unit, population and method](./FR-090-publish-rates-with-unit-population-and-method.md) — ⛔ **Withdrawn** (#388)

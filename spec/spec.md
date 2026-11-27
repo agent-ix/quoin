@@ -318,7 +318,7 @@ index; the files are authoritative.
 - [FR-084](./functional/FR-084-enumerate-the-governed-corpus.md) — enumerate the governed corpus. ⛔ **Withdrawn** (#388)
 - [FR-085](./functional/FR-085-resolve-the-completed-module-set.md) — resolve the completed module set and its contract surfaces. ⛔ **Withdrawn** (#388)
 - [FR-086](./functional/FR-086-assign-one-measurement-state-per-document.md) — assign exactly one measurement state to every corpus document. ⛔ **Withdrawn** (#388)
-- [FR-087](./functional/FR-087-evaluate-declared-markdown-mappings.md) — evaluate declared Markdown mappings and validate the extracted record. ⛔ **Withdrawn** (#388)
+- [FR-087](./functional/FR-087-measure-structural-conformance-through-the-engine.md) — measure structural conformance through the Quire engine. ⛔ **Withdrawn** (#388)
 - [FR-088](./functional/FR-088-measure-the-l3-properties-representation.md) — measure the L3 Properties representation of every measured document. ⛔ **Withdrawn** (#388)
 - [FR-089](./functional/FR-089-partition-every-failure.md) — partition every failure with an owner and a disposition. ⛔ **Withdrawn** (#388)
 - [FR-090](./functional/FR-090-publish-rates-with-unit-population-and-method.md) — publish every rate with its unit, population and method. ⛔ **Withdrawn** (#388)
