@@ -515,24 +515,52 @@ fn tc_480_040_availability_is_separate_from_state_and_from_numeric_zero() {
 #[trace("FR-067-CON-4")]
 #[test]
 fn tc_480_054_legacy_fr044_collection_and_non_graph_rows_remain_readable() {
-    let legacy = collection_with("legacy-044", "2026-02-01T00:00:00Z", |value| {
+    // Captured from the pre-migration FR-044 graph portfolio fixture at
+    // quoin commit d2b81a88; schemaVersion 1 still carries corpusRevision and
+    // configDigest, which later schemas removed.
+    let legacy_value: Value =
+        serde_json::from_str(include_str!("fixtures/historical-fr044-collection-v1.json"))
+            .expect("the historical FR-044 payload is JSON");
+    let legacy = admit(&legacy_value);
+    let non_graph = collection_with("legacy-non-graph", "2026-02-01T00:00:00Z", |value| {
         value["observations"][0]["metric"] = json!("legacy_duration");
         value["observations"][1]["metric"] = json!("legacy_count");
     });
     let root = tempfile::tempdir().expect("a readable legacy repository");
     let root_path = root.path().to_string_lossy().into_owned();
-    let report = build(&[one(&root_path, vec![legacy])]);
+    let mut input = repository(
+        &root_path,
+        vec![legacy.clone(), non_graph],
+        Vec::new(),
+        no_graph(),
+    );
+    input.collections[0] = GraphCollectionRead::read(
+        format!("{root_path}/spec/evidence/measurements/a-2026-01.json"),
+        legacy,
+    );
+    let report = build(&[input]);
     let repository = &report.repositories[0];
     let latest = repository
         .base
         .latest_collection
         .as_ref()
         .expect("the legacy FR-044 collection remains readable");
-    assert_eq!(latest.id, "legacy-044");
+    assert_eq!(latest.id, "legacy-non-graph");
     assert_eq!(latest.timestamp, "2026-02-01T00:00:00Z");
     assert_eq!(latest.tool_identity, "agent-ix/quire-code-rs");
+    let quality = repository
+        .graph_quality
+        .current
+        .as_ref()
+        .expect("the historical FR-044 graph collection remains in the projection");
+    assert_eq!(quality.id, "a-2026-01");
+    assert_eq!(repository.graph_quality.history.len(), 1);
     assert!(
-        repository.graph_quality.current.is_none(),
+        repository
+            .graph_quality
+            .history
+            .iter()
+            .all(|row| row.id != "legacy-non-graph"),
         "non-graph metrics are not reinterpreted as graph-quality rows"
     );
 }

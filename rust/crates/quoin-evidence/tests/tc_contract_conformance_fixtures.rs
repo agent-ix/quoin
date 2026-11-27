@@ -163,9 +163,10 @@ fn adapter_entries_keep_the_existing_run_entry_storage_shape() {
 #[trace("FR-069-CON-4")]
 fn added_adapter_inventory_identifies_its_producer_and_real_sample() {
     let inventory = include_str!("../../../../docs/campaign-native-result-inventory.md");
-    let _real_differential_sample = include_str!(
+    let real_differential_sample = include_str!(
         "../../../../tests/fixtures/evidence/differential-report-v2/agreement-satisfied.json"
     );
+    assert!(!real_differential_sample.is_empty());
     assert!(inventory.contains("### `contract-conformance`"));
     assert!(inventory.contains(
         "`filament-contract-conformance run --corpus corpus/contract-v0.1 --schemas schemas`"
@@ -173,5 +174,8 @@ fn added_adapter_inventory_identifies_its_producer_and_real_sample() {
     assert!(inventory.contains("`tests/fixtures/evidence/contract-conformance-real.jsonl`"));
     assert!(inventory.contains("### `differential-report`"));
     assert!(inventory.contains("`quire-analyze run-package`"));
-    assert!(inventory.contains("`tests/fixtures/evidence/`"));
+    assert!(
+        inventory
+            .contains("`tests/fixtures/evidence/differential-report-v2/agreement-satisfied.json`")
+    );
 }

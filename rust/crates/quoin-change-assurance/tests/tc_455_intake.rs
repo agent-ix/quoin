@@ -33,7 +33,8 @@ use quoin_change_assurance::{
 use quoin_store::{JsonValue, canonical_bytes};
 
 use crate::common::{
-    OUTPUT, attestation_text, base_input, history, json, record_text, replacing, sealed,
+    OUTPUT, attestation_text, base_input, history, json, member, record_text, replacing, sealed,
+    without,
 };
 
 /// The scenario attestation's canonical bytes and the output it attests to.
@@ -71,7 +72,7 @@ fn over_both_stores(rule: impl Fn(&str, &mut dyn EvidenceStore)) {
 /// absent and extra bytes are each tried, because a store that wrote the
 /// attestation first and checked the output second would pass a test that
 /// only tried one.
-#[trace("FR-064-AC-3", "FR-064-CON-2")]
+#[trace("FR-064-AC-3")]
 #[test]
 fn tc_455_only_output_of_the_declared_size_is_retained() {
     let (attestation, output) = pair();
@@ -114,6 +115,62 @@ fn tc_455_only_output_of_the_declared_size_is_retained() {
             "{store_name}: the output is retained whole"
         );
     });
+}
+
+/// Intake refuses an incomplete producer attestation instead of filling in
+/// producer-owned fields from the candidate or the host.
+#[trace("FR-064-CON-2")]
+#[test]
+fn tc_455_intake_does_not_infer_missing_attestation_fields() {
+    let valid = json(&attestation_text());
+    let missing = [
+        ("candidate_revision", without(&valid, "candidate_revision")),
+        ("proof_id", without(&valid, "proof_id")),
+        ("command", without(&valid, "command")),
+        ("tool", without(&valid, "tool")),
+        ("environment", without(&valid, "environment")),
+        ("result", without(&valid, "result")),
+        (
+            "retained_output.size_bytes",
+            replacing(
+                &valid,
+                "retained_output",
+                without(member(&valid, "retained_output"), "size_bytes"),
+            ),
+        ),
+        (
+            "tool.configuration_ref",
+            replacing(
+                &valid,
+                "tool",
+                without(member(&valid, "tool"), "configuration_ref"),
+            ),
+        ),
+        (
+            "tool.identity",
+            replacing(&valid, "tool", without(member(&valid, "tool"), "identity")),
+        ),
+        (
+            "tool.version",
+            replacing(&valid, "tool", without(member(&valid, "tool"), "version")),
+        ),
+    ];
+    for (field, attestation) in missing {
+        let bytes = canonical_bytes(&attestation).unwrap();
+        over_both_stores(|store_name, store| {
+            let refusal = intake_attestation(store, &bytes, OUTPUT);
+            assert!(
+                refusal.is_err(),
+                "{store_name}: intake must not infer missing {field}"
+            );
+            assert!(
+                read_attestation(store, &attestation_id())
+                    .unwrap()
+                    .is_none(),
+                "{store_name}: refused {field} must leave no retained attestation"
+            );
+        });
+    }
 }
 
 /// Repeated identical intake preserves byte identity and reports that the
