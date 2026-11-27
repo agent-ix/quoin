@@ -156,6 +156,7 @@ pub(crate) fn context() -> Result<RuntimeContext, String> {
     context_for_repo(&cwd)
 }
 
+#[implements("FR-027-AC-10")]
 pub(crate) fn context_for_repo(repo: &Path) -> Result<RuntimeContext, String> {
     let invocation = invocation::current();
     let context = RuntimeContext::for_cwd(repo, invocation.no_project_config());

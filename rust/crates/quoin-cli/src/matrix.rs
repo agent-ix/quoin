@@ -56,7 +56,7 @@ pub(crate) fn command() -> Command {
         .args(policy_args())
 }
 
-#[implements("FR-115-AC-27", "FR-115-AC-28")]
+#[implements("FR-027-AC-10", "FR-115-AC-27", "FR-115-AC-28")]
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     eprintln!("Building evidence-backed matrix...");
     let run_observation_paths = arguments
@@ -121,7 +121,7 @@ pub(crate) enum Built {
 /// Assemble the audit over `repo` and join it into the evidence-backed matrix.
 ///
 /// The one path `quoin matrix` and `quoin release snapshot` share (FR-115).
-#[implements("FR-165-AC-21")]
+#[implements("FR-027-AC-10", "FR-165-AC-21")]
 pub(crate) fn build(
     options: &AuditOptions,
     repo: &str,
@@ -138,7 +138,7 @@ pub(crate) fn build(
     )
 }
 
-#[implements("FR-165-AC-21", "FR-115-AC-27")]
+#[implements("FR-027-AC-10", "FR-165-AC-21", "FR-115-AC-27")]
 fn build_with_limit(
     options: &AuditOptions,
     repo: &str,
@@ -226,7 +226,7 @@ fn build_with_limit(
     }))
 }
 
-#[implements("FR-115-AC-27")]
+#[implements("FR-027-AC-10", "FR-115-AC-27")]
 fn selected_request_limit(arguments: &ArgMatches, repo: &str) -> Result<usize, String> {
     let configured = if arguments.get_one::<usize>("max-request-bytes").is_none() {
         configured_request_limit(repo)?
@@ -239,6 +239,7 @@ fn selected_request_limit(arguments: &ArgMatches, repo: &str) -> Result<usize, S
     )
 }
 
+#[implements("FR-027-AC-10")]
 fn configured_request_limit(repo: &str) -> Result<Option<usize>, String> {
     let environment = ProcessEnvironment;
     let context = crate::config::context_for_repo(std::path::Path::new(repo))?;
