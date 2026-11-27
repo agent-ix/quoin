@@ -123,10 +123,11 @@ fn failure(error: &DeliveryError) -> Response {
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
     use ix_trace_rs::trace;
+    use std::cell::RefCell;
     use std::path::Path;
 
     use quoin_core::protocol::Response;
-    use quoin_delivery::{DeliveryError, Transport};
+    use quoin_delivery::{DEFAULT_MANIFEST_URL, DeliveryError, Transport};
     use url::Url;
 
     use super::{command, run_with};
@@ -137,6 +138,19 @@ mod tests {
     impl Transport for Unreachable {
         fn get(&self, _url: &Url, _limit: usize) -> Result<Vec<u8>, DeliveryError> {
             Err(DeliveryError::Manifest("transport reached".to_owned()))
+        }
+    }
+
+    struct RecordingTransport {
+        requested: RefCell<Vec<String>>,
+    }
+
+    impl Transport for RecordingTransport {
+        fn get(&self, url: &Url, _limit: usize) -> Result<Vec<u8>, DeliveryError> {
+            self.requested.borrow_mut().push(url.as_str().to_owned());
+            Err(DeliveryError::Manifest(
+                "stop after endpoint capture".to_owned(),
+            ))
         }
     }
 
@@ -188,6 +202,28 @@ mod tests {
         assert_eq!(
             matches.get_one::<String>("registry").map(String::as_str),
             Some("http://localhost/manifest.json")
+        );
+    }
+
+    #[trace("FR-022-AC-3")]
+    #[test]
+    fn tc_373_752_update_without_registry_selects_stable_github_manifest() {
+        let matches = command()
+            .try_get_matches_from(["update"])
+            .expect("grammar parses without an override");
+        let transport = RecordingTransport {
+            requested: RefCell::new(Vec::new()),
+        };
+        let _response = run_with(&matches, Path::new("/usr/local/bin/quoin"), &transport)
+            .expect("update reaches its injected transport");
+        assert_eq!(
+            *transport.requested.borrow(),
+            [DEFAULT_MANIFEST_URL],
+            "omitting --registry requests the stable manifest endpoint"
+        );
+        assert_eq!(
+            "https://github.com/agent-ix/quoin/releases/latest/download/quoin-update-manifest.json",
+            DEFAULT_MANIFEST_URL
         );
     }
 }

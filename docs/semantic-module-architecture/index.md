@@ -22,9 +22,9 @@ maintainer review required by [NFR-014](../../spec/non-functional/NFR-014-non-di
 
 | Record                                                                                       | Status             | Purpose                                                                                     |
 | -------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
-| [Planes and authority](planes-and-authority.md)                                              | proposed normative | Four data planes, concern-specific authority, projections, provenance, and conflicts.       |
-| [Ownership and boundaries](ownership-and-boundaries.md)                                      | proposed normative | Positive and negative ownership for Quire, Quoin, the compiler, modules, and consumers.     |
-| [Dynamic and generated modules](dynamic-and-generated.md)                                    | proposed normative | Compatibility between open runtime modules and finite generated packages.                   |
+| [Planes and authority](planes-and-authority.md)                                              | proposed normative | FR-117, FR-119: Four data planes, concern-specific authority, projections, provenance, and conflicts.       |
+| [Ownership and boundaries](ownership-and-boundaries.md)                                      | proposed normative | FR-118, FR-050: Positive and negative ownership for Quire, Quoin, the compiler, modules, and consumers.     |
+| [Dynamic and generated modules](dynamic-and-generated.md)                                    | proposed normative | FR-049: Compatibility between open runtime modules and finite generated packages.                   |
 | [External decision ledger](decision-ledger.md)                                               | normative evidence | Exact external status and the local compatibility disposition for every relied-on decision. |
 | [ADR index](adr/index.md)                                                                    | proposed           | Local decisions and their promotion gate.                                                   |
 | [ADR-0001: Authority by concern](adr/0001-authority-by-concern.md)                           | proposed           | Reject one universally canonical representation.                                            |
