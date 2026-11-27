@@ -159,6 +159,65 @@ fn signed_shape_export() -> Export {
     export(&fixture, &DiskEvidence::new(repo.path())).expect("signed fixture exports")
 }
 
+fn open_challenge_export(signed_acceptance: bool) -> Export {
+    let mut fixture = shape_fixture();
+    for id in ["G1", "CC1"] {
+        let node = fixture
+            .nodes
+            .iter_mut()
+            .find(|node| node.id == id)
+            .expect("challenge and top-claim nodes are in the fixture");
+        node.status = "open".to_owned();
+        node.open_reason = Some("Open authored challenge".to_owned());
+    }
+    if signed_acceptance {
+        fixture.signed_acceptance = Some(
+            serde_json::from_value(json!({
+                "label": "Human acceptance of case content", "record_id": "quoin.gsn-case/v1",
+                "record_digest": format!("sha256:{SECOND_DIGEST}"),
+                "tag": "case/review", "approver": "case-reviewer@example.invalid",
+                "meaning": ["assurance-case-accepted"], "signer_source": "allowed_signers",
+                "signed_at_missing": "tagger_date_unreadable", "trusted_at_missing": "ssh_signature"
+            }))
+            .expect("signed acceptance shape"),
+        );
+    }
+    let repo = disk_repo();
+    export(&fixture, &DiskEvidence::new(repo.path())).expect("open challenge exports")
+}
+
+#[trace("FR-047-AC-10")]
+#[test]
+fn sacm_keeps_an_open_challenge_and_top_claim_open_with_or_without_acceptance() {
+    for signed_acceptance in [false, true] {
+        let result = open_challenge_export(signed_acceptance);
+        let xmi = String::from_utf8(result.xmi).expect("XMI is UTF-8");
+        let elements = parse_xml(xmi.as_bytes());
+        let mut argument = Vec::new();
+        elements.child("argumentPackage").walk(&mut argument);
+
+        for id in ["G1", "CC1"] {
+            assert!(
+                argument.iter().any(|item| {
+                    item.attr("xmi:type") == "sacm:Claim"
+                        && item.attr("xmi:id") == id
+                        && item.attr("assertionDeclaration") == "needsSupport"
+                }),
+                "{id} remains an open claim with signed_acceptance={signed_acceptance}: {xmi}"
+            );
+        }
+        assert!(
+            argument.iter().any(|item| {
+                item.attr("xmi:type") == "sacm:AssertedInference"
+                    && item.attr("source") == "CC1"
+                    && item.attr("target") == "G3"
+                    && item.attr("isCounter") == "true"
+            }),
+            "the challenge remains a counter inference with signed_acceptance={signed_acceptance}: {xmi}"
+        );
+    }
+}
+
 #[trace("FR-226-AC-9")]
 #[test]
 fn signed_acceptance_is_one_contained_artifact_and_unsigned_export_is_unchanged() {

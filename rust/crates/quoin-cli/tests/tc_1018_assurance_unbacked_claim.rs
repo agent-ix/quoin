@@ -245,6 +245,46 @@ fn explicit_gsn_export_is_supported_and_conflicts_with_json() {
     assert!(refused.stdout.is_empty());
 }
 
+#[trace("FR-047-AC-9")]
+#[test]
+fn an_open_authored_challenge_is_a_counter_claim_with_a_challenges_edge() {
+    let root = repo_with_argument("argument-unresolved-ref.md");
+    let document = String::from_utf8(read_fixture("argument-unresolved-ref.md")).unwrap();
+    let additions = "  - id: CH-OPEN-TOP\n    target: CLAIM-1018-B\n    statement: The top claim needs review.\n    status: open\n    owner: release-owner\n";
+    write(
+        root.path(),
+        "spec/argument.md",
+        document
+            .replace("relationships:\n", &format!("{additions}relationships:\n"))
+            .as_bytes(),
+    );
+    let args = authored_export_args(root.path(), "AA-10181");
+    let output = run_authored_args(&args, &["--gsn"]);
+    let model: serde_json::Value =
+        serde_json::from_str(&successful_text(&output)).expect("GSN model is JSON");
+    let nodes = model["nodes"].as_array().expect("GSN nodes");
+    let challenge = nodes
+        .iter()
+        .find(|node| node["source"] == "CH-OPEN-TOP")
+        .expect("authored challenge is retained");
+    assert_eq!(challenge["kind"], "counter_claim");
+    assert_eq!(challenge["status"], "open");
+    let top = nodes
+        .iter()
+        .find(|node| node["source"] == "CLAIM-1018-B")
+        .expect("top claim is retained");
+    assert_eq!(top["status"], "open", "the unresolved top claim stays open");
+    let edges = model["edges"].as_array().expect("GSN edges");
+    assert!(edges.iter().any(|edge| {
+        edge["kind"] == "challenges" && edge["from"] == challenge["id"] && edge["to"] == top["id"]
+    }));
+    assert!(
+        !edges
+            .iter()
+            .any(|edge| { edge["kind"] == "in_context_of" && edge["from"] == challenge["id"] })
+    );
+}
+
 #[trace("FR-226-AC-5")]
 #[test]
 fn sacm_output_flags_are_exclusive() {
