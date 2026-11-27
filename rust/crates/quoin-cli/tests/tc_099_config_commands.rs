@@ -87,3 +87,35 @@ fn tc_099_native_config_commands_read_write_validate_and_edit() {
     );
     assert!(String::from_utf8_lossy(&read.stdout).contains("quoin.org: edited"));
 }
+
+#[trace("FR-027-AC-10")]
+#[test]
+fn tc_367_config_get_renders_numeric_matrix_request_limit() {
+    let root = tempfile::tempdir().expect("config root exists");
+    let set = invoke(
+        root.path(),
+        &["config", "set", "matrix_max_request_bytes", "123456"],
+        None,
+    );
+    assert!(
+        set.status.success(),
+        "{}",
+        String::from_utf8_lossy(&set.stderr)
+    );
+
+    let read = invoke(
+        root.path(),
+        &["config", "get", "matrix_max_request_bytes"],
+        None,
+    );
+    assert!(
+        read.status.success(),
+        "{}",
+        String::from_utf8_lossy(&read.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&read.stdout).contains("quoin.matrix_max_request_bytes: 123456"),
+        "{}",
+        String::from_utf8_lossy(&read.stdout)
+    );
+}
