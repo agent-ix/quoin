@@ -151,6 +151,21 @@ fn another_ignored_test() {}
                 with self.assertRaisesRegex(ValueError, "summary is not a string"):
                     behavioral_mutation_test.raw_counts(path)
 
+    @pytest.mark.trace("NFR-042-M-1")
+    def test_all_mutation_kernel_entries_bind_their_criterion(self) -> None:
+        entries = [
+            behavioral_mutation_test.mutation_entry(name, "pass", {})
+            for name, _package, _source, _test_args in behavioral_mutation_test.KERNELS
+        ]
+        self.assertEqual(len(entries), 5)
+        self.assertEqual(
+            {entry["symbol"] for entry in entries},
+            {kernel[0] for kernel in behavioral_mutation_test.KERNELS},
+        )
+        self.assertTrue(
+            all(entry["traceIds"] == ["NFR-042-M-1"] for entry in entries),
+        )
+
     def test_record_failure_keeps_the_real_tool_lane_failed(self) -> None:
         captured: list[list[dict]] = []
         with (
