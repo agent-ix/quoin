@@ -104,14 +104,22 @@ fn tc_379_121_missing_fields_closed_enums_and_additive_fields_follow_engine_cont
     assert!(message.contains("shape"), "{message}");
     assert!(message.contains("future-shape"), "{message}");
 
-    let additive = payload::from_slice::<properties::Report>(
-        "properties",
-        "PropertiesReport",
-        br#"{"documents":[],"future_engine_field":true}"#,
+    let coverage = quoin_quire::coverage::compute(&quoin_quire::coverage::Request {
+        scope: ScopeRoot::open(&root).expect("fixture scope exists"),
+        modules: fixture_modules(&root),
+    })
+    .expect("fixture coverage computes");
+    let mut additive = serde_json::to_value(CoveragePayload::from_report(coverage.report))
+        .expect("coverage report serializes");
+    additive["future_engine_field"] = serde_json::json!(true);
+    let additive = serde_json::to_vec(&additive).expect("the additive engine field serializes");
+    payload::from_slice::<CoveragePayload>(
+        "coverage",
+        "CoverageReport",
+        &additive,
         PayloadLimit::DEFAULT,
     )
-    .expect("an additive engine field remains consumable");
-    assert!(additive.documents.is_empty());
+    .expect("an additive field on the linked engine report remains consumable");
 }
 
 #[trace("FR-029-AC-4")]
