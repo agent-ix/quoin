@@ -30,8 +30,8 @@ relationships:
 > still open. If its resolution shows a capability genuinely needs restating, it
 > is restated then, against a surface that exists.
 >
-> The text below is retained unchanged for provenance. It describes what was
-> required, not what is required.
+> The requirement text below is retained for provenance. Criterion verification cells
+> are marked `Withdrawn` so the computed matrix matches this disposition.
 
 
 ## Description
@@ -78,21 +78,21 @@ resolved one module from satisfying every criterion.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-085-CON-1 | Module resolution SHALL NOT check out, fetch or otherwise mutate a module repository. | Safety | Test |
-| FR-085-CON-2 | An unresolved required module SHALL NOT be treated as a module declaring no types. | Interface | Test |
-| FR-085-CON-3 | The required module set SHALL be a declared input naming every module whose schema this campaign completed. | Interface | Test |
+| FR-085-CON-1 | Module resolution SHALL NOT check out, fetch or otherwise mutate a module repository. | Safety | Withdrawn|
+| FR-085-CON-2 | An unresolved required module SHALL NOT be treated as a module declaring no types. | Interface | Withdrawn|
+| FR-085-CON-3 | The required module set SHALL be a declared input naming every module whose schema this campaign completed. | Interface | Withdrawn|
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-085-AC-1 | Each declared module resolves to a commit and records its manifest version, declared artifact types and declared object types. | Test |
-| FR-085-AC-3 | Content read for a module is byte-identical to that module's content at the declared revision when the repository working tree carries an unrelated uncommitted edit, and no Git ref, index or object of that repository changes during the run. | Test |
-| FR-085-AC-4 | An unresolvable required revision exits non-zero before any corpus document is read, naming the module and the revision. | Test |
-| FR-085-AC-5 | A module publishing no mappings declaration records `mappings: absent` and still contributes its declared object types. | Test |
-| FR-085-AC-6 | Each module record states whether the measured resolved commit equals the commit its `default-modules.yaml` ref resolves to, and the report names every module where it does not. | Test |
-| FR-085-AC-9 | A module-load diagnostic, such as one name declared as both an archetype and an artifact type, is recorded as a module finding and fails no corpus document. | Test |
-| FR-085-AC-10 | A required module set missing one of the campaign's completed modules is refused before any corpus document is read. | Test |
+| FR-085-AC-1 | Each declared module resolves to a commit and records its manifest version, declared artifact types and declared object types. | Withdrawn|
+| FR-085-AC-3 | Content read for a module is byte-identical to that module's content at the declared revision when the repository working tree carries an unrelated uncommitted edit, and no Git ref, index or object of that repository changes during the run. | Withdrawn|
+| FR-085-AC-4 | An unresolvable required revision exits non-zero before any corpus document is read, naming the module and the revision. | Withdrawn|
+| FR-085-AC-5 | A module publishing no mappings declaration records `mappings: absent` and still contributes its declared object types. | Withdrawn|
+| FR-085-AC-6 | Each module record states whether the measured resolved commit equals the commit its `default-modules.yaml` ref resolves to, and the report names every module where it does not. | Withdrawn|
+| FR-085-AC-9 | A module-load diagnostic, such as one name declared as both an archetype and an artifact type, is recorded as a module finding and fails no corpus document. | Withdrawn|
+| FR-085-AC-10 | A required module set missing one of the campaign's completed modules is refused before any corpus document is read. | Withdrawn|
 
 ## Dependencies
 
