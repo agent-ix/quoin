@@ -407,6 +407,7 @@ fn model_incomplete(error: &quoin_quire::Error) -> StatusStop {
     }
 }
 
+#[implements("FR-188-CON-3")]
 fn status(args: &ArgMatches, module_paths: &[String]) -> Result<Value, StatusStop> {
     let repo = PathBuf::from(
         args.get_one::<String>("repo")
@@ -1591,6 +1592,112 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[trace("FR-188-CON-3", "NFR-039-M-1")]
+    #[test]
+    fn status_verifies_only_commits_with_a_formal_rule_trailer() {
+        let (repo, _ea, allowed) = command_fixture();
+        committed_sources(
+            repo.path(),
+            &[(
+                "a.native",
+                "language qsl\nprofile core\n// formalizes: FR-001\nrule P1 {}\n// formalizes: FR-002\nrule P2 {}\n",
+            )],
+        );
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "not a candidate",
+                "-m",
+                "Notes: Formal-rule: qsl:a.native::P1",
+            ],
+        );
+        let non_candidate = git(repo.path(), &["rev-parse", "HEAD"]);
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "malformed trailer prefix",
+                "-m",
+                "Formal-ruleish: qsl:a.native::P1",
+            ],
+        );
+        let second_non_candidate = git(repo.path(), &["rev-parse", "HEAD"]);
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "formal rule approval",
+                "-m",
+                "Formal-rule: qsl:a.native::P1",
+                "-m",
+                "Formal-rule: qsl:a.native::P2",
+            ],
+        );
+        let candidate = git(repo.path(), &["rev-parse", "HEAD"]);
+
+        let requests = repo.path().join("signature-verify-requests.jsonl");
+        let verifier = executable(
+            repo.path(),
+            "recording-ea",
+            &format!(
+                "cat >> '{}'\nprintf '%s\\n' '{}'\n",
+                requests.display(),
+                json!({
+                    "protocol": RESULT_PROTOCOL,
+                    "kind": "commit",
+                    "status": "unsigned",
+                    "verified_commit_id": candidate.clone(),
+                    "trailers": {"Formal-rule": ["qsl:a.native::P1", "qsl:a.native::P2"]}
+                })
+            ),
+        );
+
+        let response = super::run(&status_matches(repo.path(), &verifier, &allowed))
+            .expect("status report succeeds with an unsigned candidate");
+        let report: Value = serde_json::from_str(
+            response.payload["rendered"]
+                .as_str()
+                .expect("rendered status report"),
+        )
+        .expect("status report JSON");
+        let rules = report["rules"].as_array().expect("formal rules");
+        assert_eq!(rules.len(), 2);
+        assert!(
+            rules
+                .iter()
+                .all(|rule| rule["reason"] == "approval_unsigned")
+        );
+
+        let requests = fs::read_to_string(requests).expect("recorded verifier requests");
+        let revisions = requests
+            .lines()
+            .map(|line| {
+                serde_json::from_str::<Value>(line)
+                    .expect("request JSON")
+                    .get("revision")
+                    .and_then(Value::as_str)
+                    .expect("requested revision")
+                    .to_owned()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            revisions,
+            vec![candidate],
+            "one verifier call covers both rules on a candidate commit; excluded {non_candidate} and {second_non_candidate}"
+        );
+    }
+
+    #[cfg(unix)]
     #[trace("FR-190-AC-2")]
     #[test]
     fn select_out_writes_an_empty_selection_when_no_rule_is_approved() {
@@ -1658,6 +1765,43 @@ mod tests {
         assert_eq!(span["start"], rule["declaration_range"]["start"]);
         assert_eq!(span["end"], rule["declaration_range"]["end"]);
         assert_eq!(&source.as_bytes()[start..end], b"rule P1 { check x }");
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-5")]
+    #[test]
+    fn select_out_orders_identities_by_utf8_bytes() {
+        let (repo, ea, allowed) = command_fixture();
+        let source =
+            "language qsl\nprofile core\n// formalizes: FR-001-AC-5\nrule P1 { check x }\n";
+        committed_sources(
+            repo.path(),
+            &[
+                ("rules/é.native", source),
+                ("rules/z.native", source),
+                ("rules/b.native", source),
+            ],
+        );
+        let symbols = [
+            formal_rule_symbol("rules/é.native", "P1"),
+            formal_rule_symbol("rules/z.native", "P1"),
+            formal_rule_symbol("rules/b.native", "P1"),
+        ];
+        approve_symbols(repo.path(), &ea, &symbols);
+        let output = repo.path().join("selection.json");
+
+        let (_, selection) = run_with_selection(repo.path(), &ea, &allowed, &output);
+
+        let identities = selection["spans"]
+            .as_array()
+            .expect("selection spans")
+            .iter()
+            .map(|span| span["identity"].as_str().expect("span identity").to_owned())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            identities,
+            vec!["rules/b.native", "rules/z.native", "rules/é.native"]
+        );
     }
 
     #[cfg(unix)]
