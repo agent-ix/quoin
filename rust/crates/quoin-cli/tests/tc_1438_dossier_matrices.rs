@@ -213,6 +213,7 @@ fn dossier_rows_equal_the_evidence_backed_matrix_command() {
 #[test]
 fn dossier_matrix_uses_repository_limit_without_advising_an_unavailable_flag() {
     let work = tempfile::tempdir().unwrap();
+    fs::create_dir_all(work.path().join("spec")).unwrap();
     let config = work.path().join(".ix/config.d");
     fs::create_dir_all(&config).unwrap();
     fs::write(config.join("quoin.yaml"), "matrix_max_request_bytes: 1\n").unwrap();
