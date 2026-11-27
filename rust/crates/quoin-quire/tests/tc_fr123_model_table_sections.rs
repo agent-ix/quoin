@@ -18,6 +18,9 @@ use quire_rs::semantic::{compile_documents, module_schema_documents};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
+const FR123_SPEC: &str =
+    include_str!("../../../../spec/functional/FR-123-model-table-sections-mapping.md");
+
 fn fixture_case(id: &str) -> (Value, Value, BTreeMap<String, Value>) {
     let fixtures = quire_fixtures::record_sections_json("cases.json");
     let case = fixtures["cases"]
@@ -189,6 +192,148 @@ fn record_source_count(output: &Value, key: &str) -> usize {
         .flatten()
         .filter(|source| source["key"] == key)
         .count()
+}
+
+#[trace("FR-123-AC-8")]
+#[test]
+fn every_local_optional_record_key_has_one_declared_owner_or_is_unmapped() {
+    let expected = [
+        (
+            "enumeration",
+            "values",
+            "FR-123",
+            "quire-rs FR-075",
+            "## Values",
+        ),
+        (
+            "state_machine",
+            "states",
+            "FR-123",
+            "quire-rs FR-075",
+            "## States",
+        ),
+        (
+            "state_machine",
+            "transitions",
+            "FR-123",
+            "quire-rs FR-075",
+            "## Transitions",
+        ),
+        (
+            "process",
+            "steps",
+            "FR-123",
+            "quire-rs FR-075",
+            "## Workflow",
+        ),
+        (
+            "aggregate_root",
+            "members",
+            "FR-123",
+            "quire-rs FR-075",
+            "## Members",
+        ),
+        (
+            "domain",
+            "vocabulary",
+            "FR-123",
+            "quire-rs FR-075",
+            "## Ubiquitous Language",
+        ),
+        (
+            "aggregate_root, process",
+            "emits",
+            "FR-104",
+            "quire-rs FR-076",
+            "## Relationships",
+        ),
+        (
+            "repository",
+            "persists",
+            "FR-104",
+            "quire-rs FR-076",
+            "## Relationships",
+        ),
+        (
+            "event",
+            "source",
+            "FR-121",
+            "Quire record-sections extractor",
+            "## Source",
+        ),
+        (
+            "nested_entity",
+            "owner",
+            "unmapped by FR-123",
+            "none",
+            "bundle-level ownership rule",
+        ),
+        (
+            "domain",
+            "ubiquitous_language",
+            "unmapped by FR-123",
+            "none",
+            "human-facing prose",
+        ),
+        (
+            "domain, population",
+            "members",
+            "unmapped by FR-123",
+            "none",
+            "no record mapping",
+        ),
+    ];
+    let table = FR123_SPEC
+        .split("### Record-key ownership table")
+        .nth(1)
+        .and_then(|section| section.split("\n## ").next())
+        .expect("FR-123 has a local record-key ownership table");
+    let rows = table
+        .lines()
+        .filter(|line| line.starts_with('|'))
+        .skip(2)
+        .map(|line| {
+            line.trim_matches('|')
+                .split('|')
+                .map(str::trim)
+                .map(|cell| cell.trim_matches('`'))
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        rows.len(),
+        expected.len(),
+        "all locally governed keys are listed once"
+    );
+
+    for (row, expected_row) in rows.iter().zip(expected) {
+        assert_eq!(
+            row.len(),
+            5,
+            "every ownership row has five columns: {row:?}"
+        );
+        assert_eq!(
+            (row[0], row[1], row[2], row[3]),
+            (
+                expected_row.0,
+                expected_row.1,
+                expected_row.2,
+                expected_row.3
+            )
+        );
+        assert!(
+            row[4].contains(expected_row.4),
+            "{} has the authored form {}",
+            row[1],
+            expected_row.4
+        );
+        if row[2].starts_with("unmapped") {
+            assert_eq!(row[3], "none");
+        } else {
+            assert_ne!(row[2], "none", "{} has exactly one mapping owner", row[1]);
+            assert_ne!(row[3], "none", "{} names its extractor", row[1]);
+        }
+    }
 }
 
 #[trace("FR-123-AC-1")]
