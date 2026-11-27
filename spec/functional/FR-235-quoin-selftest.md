@@ -162,7 +162,7 @@ without checking out the source repository.
 
 ## Provenance
 
-FR-235-AC-14 and FR-235-AC-15 provide Quoin-local criteria for [SWM-373](https://linear.app/agent-ix/issue/SWM-373), linked to Engineering Assurance FR-026-AC-3, and [SWM-393](https://linear.app/agent-ix/issue/SWM-393), linked to Engineering Assurance FR-026-AC-11. Local trace tags use these criteria because Quoin has a separate FR-026 for CLI dispatch.
+FR-235-AC-14 and FR-235-AC-15 provide Quoin-local criteria for [SWM-373](https://linear.app/agent-ix/issue/SWM-373), linked to spec-artifacts-process FR-026-AC-3, and [SWM-393](https://linear.app/agent-ix/issue/SWM-393), linked to spec-artifacts-process FR-026-AC-11. Local trace tags use these criteria because Quoin has a separate FR-026 for CLI dispatch.
 
 ## Dependencies
 
