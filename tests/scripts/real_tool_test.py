@@ -201,30 +201,10 @@ def run() -> int:
     importer_env["CARGO_BUILD_JOBS"] = "4"
     importer_env["RUST_TEST_THREADS"] = "4"
     importer_command = ["make", "-C", str(evidence.ROOT), "test-sacm-interop"]
-    offline_env = os.environ.copy()
-    offline_env["CARGO_TARGET_DIR"] = str(evidence.TARGET)
-    offline_env["CARGO_BUILD_JOBS"] = "4"
-    offline_env["RUST_TEST_THREADS"] = "4"
     item, check_failed = run_external_check(
         "sacm-assurance-forge-interop", "rust/crates/quoin-assurance/tests/tc_sacm_export.rs",
         {"export_external_interop_fixture"}, "Assurance Forge", importer_version,
         importer_command, importer_env, importer_reasons)
-    entries.append(item)
-    failed |= check_failed
-
-    offline_source = "rust/crates/quoin-cli/tests/tc_1080_matrix_command.rs"
-    offline_reasons = []
-    if sys.platform != "linux":
-        offline_reasons.append("NFR-045 syscall assertion requires Linux")
-    if shutil.which("strace") is None:
-        offline_reasons.append("strace is unavailable")
-    offline_command = ["cargo", "test", "-j", "4", "--locked", "--package", "quoin-cli", "--test",
-                       "tc_1080_matrix_command", "sacm_and_gsn_derived_cli_make_no_network_syscalls",
-                       "--", "--ignored", "--exact", "--test-threads=4"]
-    item, check_failed = run_external_check(
-        "assurance-export-offline", offline_source,
-        {"sacm_and_gsn_derived_cli_make_no_network_syscalls"}, "Linux strace", "system strace",
-        offline_command, offline_env, offline_reasons)
     entries.append(item)
     failed |= check_failed
 

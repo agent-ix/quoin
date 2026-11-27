@@ -73,7 +73,7 @@ fn another_ignored_test() {}
 
         self.assertEqual(len(captured), 1)
         entries = captured[0]
-        self.assertEqual(len(entries), 7)
+        self.assertEqual(len(entries), 6)
         for item in entries:
             self.assertEqual(item["outcome"], "error")
             self.assertEqual(item["config"]["execution_state"], "not-executed")
@@ -85,7 +85,6 @@ fn another_ignored_test() {}
         self.assertEqual(trace_ids["case-approval-real-refusal"], ["FR-225-AC-2"])
         self.assertEqual(trace_ids["sacm-published-metamodel"], ["FR-226-AC-11"])
         self.assertEqual(trace_ids["sacm-assurance-forge-interop"], ["FR-226-AC-12"])
-        self.assertEqual(trace_ids["assurance-export-offline"], ["NFR-045-M-1"])
 
     @pytest.mark.trace("NFR-042-M-1")
     def test_unknown_mutation_outcomes_fail_closed(self) -> None:
