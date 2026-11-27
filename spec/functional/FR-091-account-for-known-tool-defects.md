@@ -81,8 +81,8 @@ could not speak for.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-091-CON-1 | A tool-defect entry SHALL cite a repository and issue number that a reader can open. | Interface | Test |
-| FR-091-CON-2 | The tool-defect ledger SHALL NOT suppress a finding outside the scope its entry declares. | Interface | Test |
+| FR-091-CON-1 | A tool-defect entry SHALL cite a repository and issue number that a reader can open. | Interface | Withdrawn |
+| FR-091-CON-2 | The tool-defect ledger SHALL NOT suppress a finding outside the scope its entry declares. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 

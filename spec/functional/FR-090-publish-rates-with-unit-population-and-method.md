@@ -97,9 +97,9 @@ weak module or type partition — cannot be met by an aggregate that is printed 
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-090-CON-1 | A rate SHALL NOT be published without a unit, a population identifier and a method identifier. | Interface | Test |
-| FR-090-CON-2 | A partition SHALL NOT be omitted from a published breakdown because its denominator is small. | Interface | Test |
-| FR-090-CON-3 | The divergence margin SHALL be a declared input, never a threshold compiled into the measurement. | Interface | Test |
+| FR-090-CON-1 | A rate SHALL NOT be published without a unit, a population identifier and a method identifier. | Interface | Withdrawn |
+| FR-090-CON-2 | A partition SHALL NOT be omitted from a published breakdown because its denominator is small. | Interface | Withdrawn |
+| FR-090-CON-3 | The divergence margin SHALL be a declared input, never a threshold compiled into the measurement. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 

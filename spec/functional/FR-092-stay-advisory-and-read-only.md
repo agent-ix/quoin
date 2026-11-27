@@ -66,8 +66,8 @@ measurement that can write is a measurement that can destroy the evidence it was
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-092-CON-1 | No corpus repository's working tree SHALL differ before and after a measurement run. | Safety | Test |
-| FR-092-CON-2 | The measurement SHALL exit non-zero only when it fails to run, never for what it measured. | Interface | Test |
+| FR-092-CON-1 | No corpus repository's working tree SHALL differ before and after a measurement run. | Safety | Withdrawn |
+| FR-092-CON-2 | The measurement SHALL exit non-zero only when it fails to run, never for what it measured. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 

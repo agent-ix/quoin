@@ -94,9 +94,9 @@ check that never executed.
 
 | ID | Constraint | Type | Validation |
 | --- | --- | --- | --- |
-| FR-088-CON-1 | A `not-applicable` document SHALL be absent from this check's numerator and denominator. | Interface | Test |
+| FR-088-CON-1 | A `not-applicable` document SHALL be absent from this check's numerator and denominator. | Interface | Withdrawn |
 | FR-088-CON-2 | The measurement SHALL NOT resolve a `Type` token, a multiplicity or a constraint keyword itself. | Interface | Inspection |
-| FR-088-CON-3 | The form census and the corpus enumeration SHALL walk one population, never two. | Interface | Test |
+| FR-088-CON-3 | The form census and the corpus enumeration SHALL walk one population, never two. | Interface | Withdrawn |
 
 ## Acceptance Criteria
 
