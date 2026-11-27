@@ -81,7 +81,7 @@ organization, and a configuration file is the opposite of an invention.
 | FR-027-AC-7 | `ixSchema` is exported from the package main, carrying the plugin id, schema, and env binding       | Test (quoin-config/src/ids.rs, quoin-config/src/plugin_registry.rs, quoin-config/src/schema.rs) |
 | FR-027-AC-8 | `config get`, `set`, `edit`, and `doctor` delegate to the shared ix-cli-core handlers               | Test (quoin-config/src/lock.rs, quoin-config/src/plugin_registry.rs, quoin-config/tests/config_service.rs) |
 | FR-027-AC-9 | A project-local configuration overrides the user-level one, and is ignored where the invocation disables it | Test (quoin-config/src/paths.rs, quoin-config/tests/config_service.rs, quoin-config/tests/tc_446_org_parity.rs) |
-| FR-027-AC-10 | `matrix_max_request_bytes`, when set in the user or project Quoin configuration, is a positive integer byte limit consumed by `quoin matrix`; project configuration overrides user configuration, and `quoin config get/set` reads and writes the number. | Test (quoin-config/src/schema.rs, quoin-config/tests/config_service.rs) |
+| FR-027-AC-10 | `matrix_max_request_bytes`, when set in the user or project Quoin configuration, is a positive integer byte limit no greater than the `matrix.build` hard ceiling and is consumed by `quoin matrix` and matrix-backed `quoin dossier` documents; project configuration for the selected repository overrides user configuration, and `quoin config get/set` reads and writes the number while rejecting a value above the hard ceiling. | Test (quoin-config/src/schema.rs, quoin-config/tests/config_service.rs, quoin-cli/tests/tc_099_config_commands.rs, quoin-cli/tests/tc_1080_matrix_command.rs, quoin-cli/tests/tc_1438_dossier_matrices.rs) |
 
 ## Dependencies
 
