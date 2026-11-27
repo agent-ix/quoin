@@ -303,7 +303,7 @@ mod tests {
 
     use super::{command, org_environment, quote, types};
 
-    #[trace("FR-025", "FR-062")]
+    #[trace("FR-025", "FR-062", "FR-001-AC-2")]
     #[test]
     fn tc_373_743_write_preserves_positional_and_repeatable_type_grammar() {
         let matches = command()
