@@ -147,6 +147,55 @@ fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
     );
 }
 
+/// A released Quoin default set must install into an empty home and validate
+/// as one catalog with separate artifact and object namespaces.
+#[trace("FR-099-AC-12")]
+#[test]
+fn tc_1822_clean_home_default_modules_pass_catalog_validation() {
+    let scratch = tempfile::tempdir().expect("clean-home fixture is created");
+    let home = scratch.path().join("home");
+    fs::create_dir_all(&home).expect("clean home is created");
+    let ix_home = home.join(".ix");
+    let binary = env!("CARGO_BIN_EXE_quoin");
+
+    let installed = Command::new(binary)
+        .args(["module", "ensure-defaults"])
+        .env("HOME", &home)
+        .env("USERPROFILE", &home)
+        .env("IX_HOME", &ix_home)
+        .env_remove("QUOIN_MODULE_PATHS")
+        .current_dir(&home)
+        .output()
+        .expect("the native binary installs the pinned default modules");
+    assert_eq!(
+        installed.status.code(),
+        Some(0),
+        "{}",
+        text(&installed.stderr)
+    );
+
+    let validated = Command::new(binary)
+        .args(["catalog", "validate", "--json", "--no-project-config"])
+        .env("HOME", &home)
+        .env("USERPROFILE", &home)
+        .env("IX_HOME", &ix_home)
+        .env_remove("QUOIN_MODULE_PATHS")
+        .current_dir(&home)
+        .output()
+        .expect("the native binary validates the clean default catalog");
+    assert_eq!(
+        validated.status.code(),
+        Some(0),
+        "{}",
+        text(&validated.stderr)
+    );
+    let report: serde_json::Value =
+        serde_json::from_slice(&validated.stdout).expect("catalog validation emits JSON");
+    assert_eq!(report["modules"], 9);
+    assert_eq!(report["ok"], true);
+    assert_eq!(report["duplicates"], serde_json::json!([]));
+}
+
 /// Candidate discovery preserves the lexical symlink root the operator passed.
 #[trace("FR-099", "FR-102")]
 #[cfg(unix)]

@@ -120,7 +120,7 @@ refusal and are never reported as an empty but successful catalog.
 | FR-099-AC-9 | The gate enumerates files present under `skills/**/workflow-assets/**`, requires a recorded disposition for each, and fails when an asset is unclassified; it does not require dispositions for absent files. | Test |
 | FR-099-AC-10 | The ix-flow child process is spawned through one hardened path: real-path resolution, a resolution diagnostic when the executable cannot be resolved, a declared output ceiling, a timeout, and exit, signal and spawn-failure reported as three distinct outcomes. | Test |
 | FR-099-AC-11 | A partially materialized module root is refused rather than served, so an interrupted checkout cannot satisfy the already-materialized path. | Test |
-| FR-099-AC-12 | Duplicate type detection folds case under the same rule the resolver uses, so no two declarations are distinct to the duplicate gate and identical to the resolver. | Test |
+| FR-099-AC-12 | Duplicate type detection folds case within each catalog namespace: artifact types are compared with artifact types and object types with object types. A same-name artifact and object declaration are not duplicates. | Test |
 
 ## Dependencies
 
