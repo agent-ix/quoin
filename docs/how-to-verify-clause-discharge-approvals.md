@@ -10,7 +10,7 @@ Use this procedure when a clause set requires an approval before a direct fact c
 Use a Quoin build whose `quoin evidence record-discharge --help` and
 `quoin discharge --help` both list `--engineering-assurance` and
 `--allowed-signers`. The published Quoin 0.37.0 binary does not expose these
-flags. Install the Engineering Assurance verifier. Use a Quoin module that
+flags. Install Engineering Assurance 0.11.0 as the verifier. Use a Quoin module that
 declares the clause set and a binding report for its exact authority, set, and
 version. The approval-required clauses must declare `approvalRoles`.
 
