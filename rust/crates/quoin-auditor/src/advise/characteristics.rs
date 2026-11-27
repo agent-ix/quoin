@@ -34,6 +34,7 @@ static HIGH_CRITICALITY: LazyLock<Regex> = LazyLock::new(|| {
 /// Returned sorted and deduplicated — `[...new Set(matched)].sort()` — so the
 /// order the signals are gathered in is unobservable.
 #[must_use]
+#[implements("FR-031-AC-21")]
 pub fn characteristics_of(
     statement: &str,
     criticality: Option<&str>,
