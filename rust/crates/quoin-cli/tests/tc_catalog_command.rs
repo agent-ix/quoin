@@ -149,7 +149,7 @@ fn tc_521_catalog_list_discovers_a_nested_module_through_the_shipped_binary() {
 
 /// A released Quoin default set must install into an empty home and validate
 /// as one catalog with separate artifact and object namespaces.
-#[trace("FR-099-AC-3", "FR-099-AC-12")]
+#[trace("FR-099-AC-12")]
 #[test]
 fn tc_1822_clean_home_default_modules_pass_catalog_validation() {
     let scratch = tempfile::tempdir().expect("clean-home fixture is created");
@@ -221,7 +221,7 @@ fn tc_1822_same_namespace_duplicate_types_fail_catalog_validation() {
     );
     assert_eq!(output.status.code(), Some(1), "{}", text(&output.stderr));
     let report: serde_json::Value =
-        serde_json::from_slice(&output.stdout).expect("catalog validation emits JSON");
+        serde_json::from_slice(&output.stderr).expect("catalog validation emits its failure JSON");
     assert_eq!(report["ok"], false);
     assert_eq!(report["duplicates"][0]["kind"], "artifact");
     assert_eq!(report["duplicates"][0]["name"], "Anomaly");
