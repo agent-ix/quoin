@@ -1194,6 +1194,46 @@ mod tests {
         })
     }
 
+    #[cfg(unix)]
+    fn controlled_pair_verifier(
+        directory: &std::path::Path,
+        pair_commit: &str,
+    ) -> (SignatureVerifier, std::path::PathBuf) {
+        let allowed_signers = directory.join("controlled-allowed-signers");
+        fs::write(&allowed_signers, "alice@example.invalid\n").expect("allowed signers");
+        let request_log = directory.join("controlled-verifier-request.json");
+        let valid_result = serde_json::json!({
+            "protocol": "engineering-assurance.signature-verify-result/v1",
+            "kind": "commit",
+            "status": "signed_valid",
+            "verified_commit_id": pair_commit,
+            "signer": {"mapping": "mapped", "principal": "alice@example.invalid"},
+        });
+        let unexpected_result = serde_json::json!({
+            "protocol": "engineering-assurance.signature-verify-result/v1",
+            "kind": "commit",
+            "status": "signed_untrusted",
+            "verified_commit_id": pair_commit,
+            "signer": {"mapping": "unmapped"},
+        });
+        let body = format!(
+            "request=$(cat)\nprintf '%s\\n' \"$request\" > '{}'\ncase \"$request\" in *'{}'*) printf '%s\\n' '{}';; *) printf '%s\\n' '{}';; esac",
+            request_log.display(),
+            pair_commit,
+            valid_result,
+            unexpected_result,
+        );
+        let executable = executable(directory, "controlled-pair-ea", &body);
+        (
+            SignatureVerifier {
+                executable,
+                allowed_signers,
+                gitsign: None,
+            },
+            request_log,
+        )
+    }
+
     /// FR-153-AC-16: actor evidence is admitted only for the commit adding the
     /// exact run/projection pair and matching both currently read byte strings.
     #[trace("FR-153-AC-16")]
@@ -1259,6 +1299,100 @@ mod tests {
             actor.is_none(),
             "later tree-equivalent signature is not pair-bound"
         );
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-153-AC-16")]
+    #[test]
+    fn controlled_verifier_admits_only_the_exact_pair_introduction_commit() {
+        let (repo, commit) = pair_repo();
+        let retained = snapshot(repo.path());
+        let pair = retained.pair().expect("paired evidence");
+        assert_eq!(
+            first_pair_introduction(repo.path().to_str().expect("repo path"), pair),
+            Some(commit.clone()),
+            "the current commit is the first commit adding both exact evidence files"
+        );
+        let (verifier, request_log) = controlled_pair_verifier(repo.path(), &commit);
+
+        let (actor, rejection) = observe_actor(
+            repo.path(),
+            &observation(&signature(&commit)),
+            Some(&verifier),
+        );
+        let admitted = actor.expect("signed pair introduction admits its mapped actor");
+        assert_eq!(admitted.actor, "alice@example.invalid");
+        assert_eq!(admitted.admission_ref, "policy-7");
+        assert_eq!(admitted.authorized, ["FR-001-AC-1".to_owned()]);
+        assert_eq!(rejection, None);
+        let request = fs::read_to_string(&request_log).expect("controlled verifier request");
+        assert!(
+            request.contains(&commit),
+            "verifier must receive the exact pair-introduction commit: {request}"
+        );
+
+        let mut untrusted = signature(&commit);
+        untrusted["status"] = serde_json::json!("signed_untrusted");
+        let (actor, rejection) =
+            observe_actor(repo.path(), &observation(&untrusted), Some(&verifier));
+        assert!(
+            actor.is_none(),
+            "untrusted signature cannot admit actor authority"
+        );
+        assert_eq!(
+            rejection.as_deref(),
+            Some("the supplied signature result does not match host verification")
+        );
+
+        let untrusted_result = serde_json::json!({
+            "protocol": "engineering-assurance.signature-verify-result/v1",
+            "kind": "commit",
+            "status": "signed_untrusted",
+            "verified_commit_id": commit,
+            "signer": {"mapping": "unmapped"},
+        });
+        let untrusted_executable = executable(
+            repo.path(),
+            "controlled-untrusted-ea",
+            &format!("cat >/dev/null\nprintf '%s\\n' '{}'", untrusted_result),
+        );
+        let untrusted_verifier = SignatureVerifier {
+            executable: untrusted_executable,
+            allowed_signers: verifier.allowed_signers.clone(),
+            gitsign: None,
+        };
+        let (actor, rejection) = observe_actor(
+            repo.path(),
+            &observation(&signature(&commit)),
+            Some(&untrusted_verifier),
+        );
+        assert!(
+            actor.is_none(),
+            "an untrusted verifier result cannot admit actor authority"
+        );
+        assert_eq!(
+            rejection.as_deref(),
+            Some("the supplied signature result does not match host verification")
+        );
+
+        git(
+            repo.path(),
+            &["commit", "--allow-empty", "-q", "-m", "later commit"],
+        );
+        let later = git(repo.path(), &["rev-parse", "HEAD"]);
+        assert_ne!(later, commit);
+        assert_eq!(
+            first_pair_introduction(repo.path().to_str().expect("repo path"), pair),
+            Some(commit),
+            "a later commit that merely retains the pair is not its introduction"
+        );
+        let (actor, rejection) = observe_actor(
+            repo.path(),
+            &observation(&signature(&later)),
+            Some(&verifier),
+        );
+        assert!(actor.is_none(), "a later commit cannot admit the actor");
+        assert_eq!(rejection, None);
     }
 
     #[trace("FR-153-AC-16")]
