@@ -33,6 +33,8 @@ use std::fmt::Write as _;
 #[cfg(unix)]
 use std::fs;
 #[cfg(unix)]
+use std::io::Write as _;
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 #[cfg(unix)]
 use std::path::{Path, PathBuf};
@@ -107,7 +109,11 @@ fn failed_checks_are_ordered_provider_outcomes_and_not_infrastructure_success() 
 #[cfg(unix)]
 fn executable(directory: &Path, name: &str, body: &str) -> PathBuf {
     let path = directory.join(name);
-    fs::write(&path, format!("#!/bin/sh\n{body}\n")).expect("write executable");
+    let mut file = fs::File::create(&path).expect("create executable");
+    file.write_all(format!("#!/bin/sh\n{body}\n").as_bytes())
+        .expect("write executable");
+    file.sync_all().expect("sync executable");
+    drop(file);
     let mut permissions = fs::metadata(&path).expect("metadata").permissions();
     permissions.set_mode(0o755);
     fs::set_permissions(&path, permissions).expect("executable permissions");
