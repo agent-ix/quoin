@@ -549,7 +549,7 @@ fn class_rows(class: &serde_json::Value) -> Vec<String> {
 mod tests {
     use ix_trace_rs::trace;
 
-    use super::{command, trace_bindings, values};
+    use super::{command, mutation_floor, trace_bindings, values};
 
     /// Repeatable `--module` arguments reach the producer one by one and in the
     /// order supplied, so the catalog loader and native coverage read one array.
@@ -567,6 +567,15 @@ mod tests {
             .try_get_matches_from(["audit"])
             .expect("--module is optional");
         assert_eq!(values(&none, "module").len(), 0);
+    }
+
+    #[trace("FR-039-AC-9")]
+    #[test]
+    fn mutation_floor_rejects_malformed_pairs_and_ratios_outside_unit_interval() {
+        assert!(mutation_floor(&["P0".to_owned()]).is_err());
+        assert!(mutation_floor(&["P0=not-a-number".to_owned()]).is_err());
+        assert!(mutation_floor(&["P0=1.01".to_owned()]).is_err());
+        assert!(mutation_floor(&["P0=-0.01".to_owned()]).is_err());
     }
 
     #[trace("FR-115-AC-26")]

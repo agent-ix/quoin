@@ -104,7 +104,7 @@ header.
 | FR-038-AC-7 | The harness is chosen from the repository's manifest, never from the requirement's language. | agent-behaviour-eval (TC-EV-056) |
 | FR-038-AC-8 | Generated targets are reported as undischarged until a run is recorded. | agent-behaviour-eval (TC-EV-057) |
 | FR-038-AC-9 | The skill emits no verdict, grade or threshold, and never rewords a requirement. | agent-behaviour-eval (TC-EV-057) |
-| FR-038-AC-10 | The eval assertions that prove refusal are falsifiable: a scenario glob the harness cannot express (brace expansion) is rejected when the scenario loads, rather than compiling to a pattern that matches nothing — under which an `absentFiles` check passes whether or not the forbidden file exists. | Test |
+| FR-038-AC-10 | Withdrawn: this criterion verified the retired Node evaluation harness, which was removed in the native Quoin CLI cutover; its scenario-glob assertion code is no longer part of Quoin (id not reused). | Withdrawn |
 
 ## Constraints
 

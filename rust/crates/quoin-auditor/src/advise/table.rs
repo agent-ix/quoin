@@ -109,7 +109,7 @@ const ASCII_PATTERNS: &[(&str, &str)] = &[
     // itself: what is exported, what is internal, what may cross.
     (
         "module-boundary",
-        r"\b((module|crate) boundar(y|ies)|top-level (module|crate)s?|(remains?|stays?) absent from|public (api|interface|surface)|encapsulat|internal(s)? (of|to)|exported? (from|by))\b",
+        r"\b((module|crate) boundar(y|ies)|top-level (module|crate)s?|(remains?|stays?) absent from|public (api|interface|surface)|encapsulat(e|ed|ing|ion|ions)?|internal(s)? (of|to)|exported? (from|by))\b",
     ),
     (
         "user-visible",

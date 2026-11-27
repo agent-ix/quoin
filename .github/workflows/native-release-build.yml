@@ -147,6 +147,17 @@ jobs:
             exit 0
           fi
           exit "$SMOKE_STATUS"
+      - name: Assert the packaged native workflow lifecycle without credentials
+        shell: bash
+        env:
+          BINARY: ${{ matrix.binary }}
+        run: |
+          set -euo pipefail
+          QUOIN_BINARY="$GITHUB_WORKSPACE/release-smoke/$BINARY" \
+          IX_FLOW_RUNNER="$RUNNER_TEMP/quoin-workflow-runner/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" \
+          QUOIN_PLUGIN_ROOT="$GITHUB_WORKSPACE" \
+            cargo test --locked --manifest-path rust/Cargo.toml --target-dir rust/target -p quoin-workflow-check --features workflow-test smoke::tests::tc_fr021_packaged_install_runs_plugin_workflow_without_credentials -- --exact --test-threads=4
+
       - uses: actions/upload-artifact@v7
         with:
           name: quoin-${{ matrix.target }}

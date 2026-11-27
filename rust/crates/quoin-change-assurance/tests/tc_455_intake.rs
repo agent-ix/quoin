@@ -24,13 +24,16 @@ use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::{AttestationId, RecordId, Revision};
 use quoin_change_assurance::intake::disk::{DiskEvidenceStore, STAGING_PREFIX};
 use quoin_change_assurance::intake::memory::MemoryEvidenceStore;
+use quoin_change_assurance::model::decision::{DecisionHistory, ReviewDecision, read_review_event};
 use quoin_change_assurance::{
     EvidenceStore, Published, RetainedPair, intake_attestation, prepare_change_record,
     read_attestation, read_change_record, write_change_record,
 };
 use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{OUTPUT, attestation_text, json, record_text, replacing};
+use crate::common::{
+    OUTPUT, attestation_text, history, json, member, record_text, replacing, without,
+};
 
 /// The scenario attestation's canonical bytes and the output it attests to.
 fn pair() -> (Vec<u8>, Vec<u8>) {
@@ -112,6 +115,51 @@ fn tc_455_only_output_of_the_declared_size_is_retained() {
     });
 }
 
+/// Intake refuses absent producer premises instead of filling them from the
+/// record, tool defaults, or supplied output bytes.
+#[trace("FR-064-CON-2")]
+#[test]
+fn tc_455_intake_does_not_infer_proof_or_producer_fields() {
+    let attestation = json(&attestation_text());
+    let mut missing = vec![
+        (
+            "candidate_revision",
+            without(&attestation, "candidate_revision"),
+        ),
+        ("proof_id", without(&attestation, "proof_id")),
+        ("command", without(&attestation, "command")),
+        ("tool", without(&attestation, "tool")),
+        ("environment", without(&attestation, "environment")),
+        ("result", without(&attestation, "result")),
+    ];
+    let tool = without(member(&attestation, "tool"), "configuration_ref");
+    missing.push((
+        "tool.configuration_ref",
+        replacing(&attestation, "tool", tool),
+    ));
+    let output = without(member(&attestation, "retained_output"), "size_bytes");
+    missing.push((
+        "retained_output.size_bytes",
+        replacing(&attestation, "retained_output", output),
+    ));
+
+    for (field, candidate) in missing {
+        let bytes = canonical_bytes(&candidate).unwrap();
+        over_both_stores(|store_name, store| {
+            assert!(
+                intake_attestation(store, &bytes, OUTPUT).is_err(),
+                "{store_name}: missing `{field}` must not be inferred"
+            );
+            assert!(
+                read_attestation(store, &attestation_id())
+                    .unwrap()
+                    .is_none(),
+                "{store_name}: refusing `{field}` must leave no retained attestation"
+            );
+        });
+    }
+}
+
 /// Repeated identical intake preserves byte identity and reports that the
 /// evidence was already retained, while a different pair under the same id is
 /// a collision that leaves the first pair exactly as it was.
@@ -186,6 +234,50 @@ fn tc_455_writing_a_successor_leaves_every_parent_byte_untouched() {
             }
         }
         assert_eq!(retained.len(), 3);
+    });
+}
+
+/// A rejected or revision-requested decision keeps the addressed record
+/// revision available for later review and lineage checks.
+#[trace("FR-063-CON-2")]
+#[test]
+fn tc_455_rejected_and_revision_requested_records_remain_addressable() {
+    let id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
+    let decision = |id: &str, sequence: u8, revision: u8, status: &str| {
+        format!(
+            r#"{{"id":"{id}","ts":"2026-08-31T00:00:00.000Z","sequence":{sequence},"actor":{{"id":"reviewer-1","kind":"human"}},"kind":"change_assurance.review_decided","payload":{{"schema_version":2,"record_id":"change-1","revision":{revision},"decision":"{status}"}}}}"#
+        )
+    };
+    let decision_history = DecisionHistory::from_json(&history(&[
+        decision("event-1", 1, 1, "rejected"),
+        decision("event-2", 2, 2, "revise"),
+    ]))
+    .unwrap();
+
+    over_both_stores(|store_name, store| {
+        for number in 1..=2_u32 {
+            let record = prepare_change_record(&record_at(number)).unwrap();
+            write_change_record(store, &record).unwrap();
+        }
+
+        let ordered = decision_history
+            .in_sequence_order()
+            .expect("the retained decisions have contiguous sequence numbers");
+        assert_eq!(ordered.len(), 2);
+        for (event, expected) in ordered
+            .into_iter()
+            .zip([ReviewDecision::Rejected, ReviewDecision::Revise])
+        {
+            let event = read_review_event(event).expect("the decision event is retained");
+            assert_eq!(event.payload.decision, expected);
+            let revision =
+                Revision::new(event.payload.revision, Subject::Record, "revision").unwrap();
+            let retained = read_change_record(store, &id, revision)
+                .unwrap()
+                .unwrap_or_else(|| panic!("{store_name}: {expected:?} revision was not retained"));
+            assert_eq!(retained.revision, revision);
+            assert_eq!(retained.record_id, id);
+        }
     });
 }
 

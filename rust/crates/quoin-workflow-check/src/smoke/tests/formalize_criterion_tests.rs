@@ -17,7 +17,7 @@ fn a_scripted_valid_draft_reaches_awaiting_approval() {
     let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
     let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
     let plugin = std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-    let harness = Harness::new_for_formalize(&binary, &runner, &plugin, false)
+    let harness = Harness::new_for_workflow(&binary, &runner, &plugin, false)
         .expect("formalize smoke harness");
 
     formalize_analysis_scenario(
@@ -36,7 +36,7 @@ fn two_failures_then_a_valid_draft_reset_the_next_failure_count() {
     let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
     let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
     let plugin = std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-    let harness = Harness::new_for_formalize(&binary, &runner, &plugin, false)
+    let harness = Harness::new_for_workflow(&binary, &runner, &plugin, false)
         .expect("formalize smoke harness");
     let (package, engineering_assurance, allowed_signers, tools) =
         formalize_analysis_fixture(&harness).expect("formalize analysis fixture");

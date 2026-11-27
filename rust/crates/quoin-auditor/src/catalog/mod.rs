@@ -4,10 +4,15 @@
 //! The verification-method catalog: its shape, its one filesystem seam, and
 //! the first-wins merge between them.
 
+pub mod characteristics;
 pub mod load;
 pub mod method;
 pub mod source;
 
+pub use characteristics::{
+    UnjustifiedUnreachableMethod, UnreachableCharacteristic, unjustified_unreachable_methods,
+    unreachable_characteristics,
+};
 pub use load::{load_method_catalog, load_method_catalog_from};
 pub use method::{
     DuplicateMethod, MethodCatalog, UnreadableModule, VerificationMethod, method_classes,

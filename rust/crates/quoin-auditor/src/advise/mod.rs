@@ -211,6 +211,7 @@ mod tests {
                     )
                 })
                 .collect(),
+            unreachable_reason: None,
             tooling: Vec::new(),
             module_name: "m".to_owned(),
         }

@@ -143,8 +143,8 @@ impl Harness {
     fn new(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
         Self::new_with_plugin_version(binary, runner, plugin, crlf, false)
     }
-    #[cfg(test)]
-    fn new_for_formalize(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
+    #[cfg(all(test, feature = "workflow-test"))]
+    fn new_for_workflow(binary: &str, runner: &str, plugin: &str, crlf: bool) -> Result<Self> {
         Self::new_with_plugin_version(binary, runner, plugin, crlf, true)
     }
     fn new_with_plugin_version(
@@ -288,6 +288,17 @@ impl Harness {
             "NODE_AUTH_TOKEN",
             "NPM_TOKEN",
             "NPM_CONFIG_USERCONFIG",
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_AUTH_TOKEN",
+            "CLAUDE_CODE_OAUTH_TOKEN",
+            "CODEX_API_KEY",
+            "GEMINI_API_KEY",
+            "GOOGLE_API_KEY",
+            "AZURE_OPENAI_API_KEY",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "AWS_SESSION_TOKEN",
             "QUOIN_SEMANTIC_ROOT",
             "QUOIN_MODULE_PATHS",
             "IX_FILAMENT_MODULES_PATH",
@@ -534,7 +545,7 @@ fn review_base_lifecycle(h: &Harness) -> Result<Value> {
     Ok(started)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn design_gate_context_seeded(h: &Harness) -> Result<()> {
     let id = "smoke-design-gate-context";
     write(
@@ -565,7 +576,7 @@ fn design_gate_context_seeded(h: &Harness) -> Result<()> {
     assert_design_gate_empty_targets(h)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn validate_design_gate_context(
     h: &Harness,
     id: &str,
@@ -607,7 +618,7 @@ fn validate_design_gate_context(
     Ok(context.clone())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn design_gate_proposer_writes_refused(
     h: &Harness,
     id: &str,
@@ -659,7 +670,7 @@ fn design_gate_proposer_writes_refused(
     )
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn assert_design_gate_empty_targets(h: &Harness) -> Result<()> {
     let empty_id = "smoke-design-gate-empty-targets";
     launch_design_gate(h, empty_id, &[])?;
@@ -674,7 +685,7 @@ fn assert_design_gate_empty_targets(h: &Harness) -> Result<()> {
     )
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn launch_design_gate(h: &Harness, id: &str, targets: &[&str]) -> Result<Value> {
     let mut command = h.command(&h.binary)?;
     command
@@ -689,7 +700,7 @@ fn launch_design_gate(h: &Harness, id: &str, targets: &[&str]) -> Result<Value> 
     passed(&command.output().map_err(|error| error.to_string())?)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn design_gate_missing_host_refused(h: &Harness) -> Result<()> {
     let fake_package = h.scratch.path().join("ix-flow-without-host");
     let fake_bin = fake_package.join("bin");
@@ -727,7 +738,7 @@ fn design_gate_missing_host_refused(h: &Harness) -> Result<()> {
     )
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn design_gate_incompatible_host_refused(h: &Harness) -> Result<()> {
     let fake_package = h.scratch.path().join("ix-flow-incompatible-host");
     let fake_bin = fake_package.join("bin");
@@ -937,7 +948,7 @@ fn formalize_retry_scenario(
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn git(repo: &Path, args: &[&str]) -> Result<String> {
     let output = Command::new("git")
         .arg("-C")
@@ -955,7 +966,7 @@ fn git(repo: &Path, args: &[&str]) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_owned())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn formalize_analysis_fixture(h: &Harness) -> Result<(PathBuf, PathBuf, PathBuf, PathBuf)> {
     let module = json!({
         "name": "formalize-workflow-fixture",
@@ -1069,7 +1080,7 @@ fn formalize_analysis_fixture(h: &Harness) -> Result<(PathBuf, PathBuf, PathBuf,
     Ok((package_path, ea, allowed_signers, tools))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn analyzer_for_status(directory: &Path, status: &str) -> Result<PathBuf> {
     let body = format!(
         r#"while [ "$#" -gt 0 ]; do case "$1" in --output) output="$2"; shift 2 ;; --request) mode="$2"; shift 2 ;; *) shift ;; esac; done
@@ -1080,7 +1091,7 @@ exit {exit_code}"#,
     executable(directory, "filament-analyze", &body, "exit /b 99")
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 fn formalize_analysis_scenario(
     h: &Harness,
     id: &str,
@@ -1436,6 +1447,60 @@ fn runner_failures(h: &Harness) -> Result<()> {
     Ok(())
 }
 
+#[cfg(all(test, feature = "workflow-test"))]
+fn runner_unavailable_or_incompatible_refused(h: &Harness) -> Result<()> {
+    let empty_bin = h.scratch.path().join("empty runner search path");
+    fs::create_dir_all(&empty_bin).map_err(|error| error.to_string())?;
+    let id = "smoke-missing-ix-flow";
+    let missing = h
+        .command(&h.binary)?
+        .env("PATH", &empty_bin)
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["review", "--path"])
+        .arg(h.skill("review"))
+        .args(["--id", id, "--json"])
+        .output()
+        .map_err(|error| error.to_string())?;
+    let stderr = String::from_utf8_lossy(&missing.stderr);
+    require(
+        !missing.status.success() && stderr.contains("npm install -g @agent-ix/ix-flow@latest"),
+        format!("missing ix-flow must report its install command: {stderr}"),
+    )?;
+    require(
+        !h.config.join("flows").join(format!("{id}.json")).exists(),
+        "a missing ix-flow must not create a run",
+    )?;
+
+    let fake_bin = h.scratch.path().join("incompatible runner path");
+    let marker = h.scratch.path().join("incompatible runner invoked");
+    let body = "if [ \"$1\" = \"--version\" ]; then printf '0.3.0\\n'; exit 0; fi\nprintf 'invoked\\n' > \"$QUOIN_TEST_RUN_MARKER\"\nexit 7";
+    let windows_body = "@echo off\r\nif \"%~1\"==\"--version\" (echo 0.3.0& exit /b 0)\r\necho invoked > \"%QUOIN_TEST_RUN_MARKER%\"\r\nexit /b 7";
+    executable(&fake_bin, "ix-flow", body, windows_body)?;
+    let id = "smoke-incompatible-ix-flow";
+    let incompatible = h
+        .command(&h.binary)?
+        .env("PATH", &fake_bin)
+        .env("QUOIN_TEST_RUN_MARKER", &marker)
+        .arg("--config-root")
+        .arg(&h.config)
+        .args(["review", "--path"])
+        .arg(h.skill("review"))
+        .args(["--id", id, "--json"])
+        .output()
+        .map_err(|error| error.to_string())?;
+    let stderr = String::from_utf8_lossy(&incompatible.stderr);
+    require(
+        !incompatible.status.success()
+            && stderr.contains("npm install -g @agent-ix/ix-flow@latest"),
+        format!("incompatible ix-flow must report its install command: {stderr}"),
+    )?;
+    require(
+        !marker.exists() && !h.config.join("flows").join(format!("{id}.json")).exists(),
+        "an incompatible ix-flow must be refused before creating a run",
+    )
+}
+
 fn copy_tree(source: &Path, target: &Path) -> Result<()> {
     fs::create_dir_all(target).map_err(|e| e.to_string())?;
     for entry in fs::read_dir(source).map_err(|e| e.to_string())? {
@@ -1452,7 +1517,7 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "workflow-test"))]
 #[allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -1464,14 +1529,72 @@ mod tests {
     use super::{
         Harness, design_gate_context_seeded, design_gate_incompatible_host_refused,
         design_gate_missing_host_refused, formalize_analysis_scenario, formalize_scenarios,
+        runner_unavailable_or_incompatible_refused,
     };
     use ix_trace_rs::trace;
 
     #[cfg(feature = "workflow-test")]
     mod formalize_criterion_tests;
 
+    fn harness() -> Harness {
+        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
+        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
+        let plugin =
+            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
+        Harness::new_for_workflow(&binary, &runner, &plugin, false).expect("workflow smoke harness")
+    }
+
     #[cfg(feature = "workflow-test")]
-    use super::{review_base_lifecycle, review_scenarios};
+    #[trace("FR-020-AC-1")]
+    #[test]
+    fn tc_fr020_relocated_plugin_launch_resolves_no_workflow() {
+        let h = harness();
+        let started = h
+            .start("review", "fr020-relocated-plugin")
+            .expect("review launches from copied plugin skill");
+        let expected = h.skill("review");
+        assert_eq!(
+            started
+                .pointer("/data/skillPath/absolute")
+                .and_then(serde_json::Value::as_str),
+            expected.to_str(),
+            "ix-flow must use the copied plugin skill directly"
+        );
+        assert!(
+            !h.config.join("workflows").exists(),
+            "plugin installation must not extract a private workflow tree"
+        );
+    }
+
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-020-AC-3")]
+    #[test]
+    fn tc_fr020_missing_ix_flow_reports_supported_install_without_a_run() {
+        runner_unavailable_or_incompatible_refused(&harness())
+            .expect("missing and incompatible ix-flow are actionable and leave no run");
+    }
+
+    #[cfg(feature = "workflow-test")]
+    use super::{lifecycle, plan_scenario, review_base_lifecycle, review_scenarios};
+
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-021-AC-6")]
+    #[test]
+    fn tc_fr021_review_and_plan_require_human_acknowledgement() {
+        let h = harness();
+        review_base_lifecycle(&h)
+            .expect("review requires and records explicit human acknowledgement");
+        plan_scenario(&h).expect("plan acceptance remains deferred to a human");
+    }
+
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-021-AC-7")]
+    #[test]
+    fn tc_fr021_packaged_install_runs_plugin_workflow_without_credentials() {
+        let h = harness();
+        lifecycle(&h).expect("packaged executable runs the installed workflow lifecycle");
+        assert!(!h.config.join("workflows").exists());
+    }
 
     #[cfg(feature = "workflow-test")]
     #[trace(
@@ -1488,48 +1611,32 @@ mod tests {
     )]
     #[test]
     fn fr095_review_workflow_enforces_live_contracts() {
-        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
-        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
-        let plugin =
-            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("review smoke harness");
+        let harness = harness();
         let started = review_base_lifecycle(&harness).expect("base review lifecycle");
         review_scenarios(&harness, &started).expect("review contract scenarios");
     }
 
-    #[trace("FR-020-AC-6")]
+    #[cfg(feature = "workflow-test")]
+    #[trace("FR-020-AC-5", "FR-020-AC-6")]
     #[test]
-    #[ignore = "run by make workflow-test with the current ix-flow host package"]
-    fn design_gate_context_is_seeded_and_protected() {
-        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
-        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
-        let plugin =
-            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+    fn tc_fr020_relative_documents_resolve_under_subject_repo_with_spaces() {
+        let harness = harness();
         design_gate_context_seeded(&harness).expect("design-gate host seeding and protection");
     }
 
+    #[cfg(feature = "workflow-test")]
     #[trace("FR-020-AC-7")]
     #[test]
-    #[ignore = "run by make workflow-test"]
     fn design_gate_refuses_runner_without_host_api_before_run_creation() {
-        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
-        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
-        let plugin =
-            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        let harness = harness();
         design_gate_missing_host_refused(&harness).expect("missing host API is refused");
     }
 
+    #[cfg(feature = "workflow-test")]
     #[trace("FR-020-AC-7")]
     #[test]
-    #[ignore = "run by make workflow-test"]
     fn design_gate_refuses_incompatible_host_api_before_run_creation() {
-        let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
-        let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
-        let plugin =
-            std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        let harness = harness();
         design_gate_incompatible_host_refused(&harness).expect("incompatible host API is refused");
     }
 
@@ -1542,7 +1649,7 @@ mod tests {
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
         let harness =
-            Harness::new_for_formalize(&binary, &runner, &plugin, false).expect("smoke harness");
+            Harness::new_for_workflow(&binary, &runner, &plugin, false).expect("smoke harness");
         formalize_scenarios(&harness).expect("formalize ix-flow scenarios");
     }
 
@@ -1554,7 +1661,7 @@ mod tests {
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new_for_formalize(&binary, &runner, &plugin, false)
+        let harness = Harness::new_for_workflow(&binary, &runner, &plugin, false)
             .expect("formalize smoke harness");
         formalize_analysis_scenario(
             &harness,

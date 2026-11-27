@@ -702,6 +702,59 @@ fn tc_455_audit_findings_are_retained_verbatim_beside_their_mapped_reason() {
     assert!(proof.reasons.contains(&Reason::AuditFinding));
 }
 
+/// Verification retains every FR-032 finding, including findings whose
+/// obligation is also present in the auditor's healthy set.
+#[trace("FR-065-CON-2")]
+#[test]
+fn tc_455_verification_does_not_suppress_or_replace_auditor_findings() {
+    let findings = [
+        ReportFinding {
+            obligation: "FR-063-AC-1".to_owned(),
+            kind: "stale-evidence".to_owned(),
+        },
+        ReportFinding {
+            obligation: "FR-063-AC-1".to_owned(),
+            kind: "vacuous-evidence".to_owned(),
+        },
+        ReportFinding {
+            obligation: "FR-063-AC-1".to_owned(),
+            kind: "auditor-extension".to_owned(),
+        },
+    ];
+    let mut input = base_input();
+    input.audits[0].report = AuditReport {
+        findings: findings.to_vec(),
+        healthy: vec!["FR-063-AC-1".to_owned()],
+        unevaluated: Vec::new(),
+    };
+    let before = input.clone();
+
+    let receipt = verify(&input);
+
+    assert_eq!(
+        input, before,
+        "verification must leave the FR-032 verdict unchanged"
+    );
+    let retained = &receipt.proofs[0].audit_findings;
+    assert_eq!(retained.len(), findings.len());
+    let mut actual: Vec<_> = retained
+        .iter()
+        .map(|finding| {
+            (
+                finding.obligation_id.as_str().to_owned(),
+                finding.kind.as_str().to_owned(),
+            )
+        })
+        .collect();
+    let mut expected: Vec<_> = findings
+        .iter()
+        .map(|finding| (finding.obligation.clone(), finding.kind.clone()))
+        .collect();
+    actual.sort();
+    expected.sort();
+    assert_eq!(actual, expected);
+}
+
 /// Input and selection permutations emit byte-identical canonical receipts.
 #[trace("FR-065-AC-10")]
 #[test]
