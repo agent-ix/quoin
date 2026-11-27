@@ -356,14 +356,14 @@ fn find_duplicates(entries: &[SpecCatalogEntry]) -> Vec<Duplicate> {
     // TypeScript implementation used a `Map`, so duplicate groups were emitted
     // in the order their first type declaration appeared. Keep that observable
     // declaration order while sorting only the MODULE names, as it did.
-    // `find_entry` resolves by case-folded name alone, across artifact and
-    // object entries. The duplicate gate must use that same identity or it
-    // could miss a collision that resolution treats as one type.
+    // Artifact and object names belong to separate catalog namespaces. Preserve
+    // declaration order within each namespace while folding case-insensitively.
     let mut grouped: Vec<(EntryKind, String, Vec<String>, usize)> = Vec::new();
     for entry in entries {
-        if let Some((_, _, modules, declarations)) = grouped
-            .iter_mut()
-            .find(|(_, name, _, _)| name.to_lowercase() == entry.name.to_lowercase())
+        if let Some((_, _, modules, declarations)) =
+            grouped.iter_mut().find(|(kind, name, _, _)| {
+                *kind == entry.kind && name.to_lowercase() == entry.name.to_lowercase()
+            })
         {
             *declarations += 1;
             if !modules.contains(&entry.module_name) {
@@ -538,7 +538,7 @@ mod tests {
 
     #[trace("FR-099-AC-12")]
     #[test]
-    fn tc_1915_duplicate_types_use_the_resolvers_case_fold() {
+    fn tc_1915_duplicate_types_fold_case_within_namespaces() {
         let document = |root: &str, module: &str, type_name: &str| ModuleDocument {
             root: root.to_owned(),
             manifest: format!("name: {module}\nartifact_types: [{{name: {type_name}}}]\n"),
@@ -560,10 +560,11 @@ mod tests {
         .expect("both manifests are valid");
 
         let [duplicate] = catalog.duplicates.as_slice() else {
-            panic!("case-folded type declarations form one duplicate group");
+            panic!("the case-folded artifact declarations form one duplicate group");
         };
         assert_eq!(duplicate.name, "FR");
-        assert_eq!(duplicate.modules, ["one", "three", "two"]);
+        assert_eq!(duplicate.kind, EntryKind::Artifact);
+        assert_eq!(duplicate.modules, ["one", "two"]);
         assert_eq!(
             find_entry(&catalog, "FR").map(|entry| entry.module_name.as_str()),
             find_entry(&catalog, "fr").map(|entry| entry.module_name.as_str()),
@@ -580,11 +581,10 @@ mod tests {
             &[],
         )
         .expect("one module may declare both kinds");
-        let [duplicate] = same_module.duplicates.as_slice() else {
-            panic!("same-module cross-kind declarations are duplicates to the resolver");
-        };
-        assert_eq!(duplicate.name, "CollisionT");
-        assert_eq!(duplicate.modules, ["same"]);
+        assert!(
+            same_module.duplicates.is_empty(),
+            "one artifact and one object may share a name"
+        );
     }
 
     #[test]
