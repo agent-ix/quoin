@@ -19,11 +19,13 @@ verification_catalog:
   security-review:
     name: Security review
     class: Analysis
+    definition: Review the stated security characteristic.
     applicability:
       characteristics: [security]
   unit-testing:
     name: Unit testing
     class: Test
+    definition: Exercise the behavior under test.
 "#;
 
 const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: Advice fixture\n---\n\n\
