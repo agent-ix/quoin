@@ -362,7 +362,7 @@ fn untimed_document_selection_writes_no_evaluation_time() {
     }
 }
 
-#[trace("NFR-041-AC-3")]
+#[trace("NFR-041-AC-3", "NFR-041-M-3")]
 #[test]
 fn authored_requirement_bytes_are_preserved_and_change_only_the_srs_content() {
     let before = tempfile::tempdir().unwrap();
@@ -415,7 +415,7 @@ fn clause_binding(path: &Path, id: &str, clause: &str) {
     .unwrap();
 }
 
-#[trace("NFR-041-AC-1")]
+#[trace("NFR-041-AC-1", "NFR-041-M-1")]
 #[test]
 fn missing_values_remain_explicit_gaps_in_the_selected_m2_documents() {
     let work = tempfile::tempdir().unwrap();
