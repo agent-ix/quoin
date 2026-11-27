@@ -18,6 +18,8 @@
 
 use std::collections::BTreeSet;
 
+use ix_trace_rs::trace;
+
 use super::context::Context;
 use super::help_tree::CommandHelp;
 use super::{Probed, text};
