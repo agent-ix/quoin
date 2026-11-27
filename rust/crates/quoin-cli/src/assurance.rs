@@ -436,7 +436,7 @@ mod gsn_refusal_tests {
             let exit =
                 crate::emit_error_to(&crate::ShellError::command(error), &mut stdout, &mut stderr);
             assert_ne!(exit, std::process::ExitCode::SUCCESS);
-            assert!(stdout.is_empty());
+            assert_eq!(stdout, [] as [u8; 0]);
             let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");
             assert!(diagnostic.contains(rule), "{diagnostic}");
             assert!(diagnostic.contains(from), "{diagnostic}");
@@ -469,7 +469,7 @@ mod gsn_refusal_tests {
         let exit =
             crate::emit_error_to(&crate::ShellError::command(error), &mut stdout, &mut stderr);
         assert_ne!(exit, std::process::ExitCode::SUCCESS);
-        assert!(stdout.is_empty());
+        assert_eq!(stdout, [] as [u8; 0]);
         assert!(!report_path.exists());
         let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");
         assert!(
@@ -566,7 +566,7 @@ mod gsn_refusal_tests {
         let exit =
             crate::emit_error_to(&crate::ShellError::command(error), &mut stdout, &mut stderr);
         assert_ne!(exit, std::process::ExitCode::SUCCESS);
-        assert!(stdout.is_empty());
+        assert_eq!(stdout, [] as [u8; 0]);
         let diagnostic = String::from_utf8(stderr).expect("diagnostic is UTF-8");
         for rule in ["WF-4", "WF-5", "WF-6"] {
             assert!(diagnostic.contains(rule), "{diagnostic}");
@@ -677,8 +677,7 @@ fn read_run_observations(
 ) -> Result<Vec<crate::run_observation::RunObservationFile>, String> {
     let paths = arguments
         .get_many::<String>("run-observation")
-        .map(|paths| paths.cloned().collect::<Vec<_>>())
-        .unwrap_or_default();
+        .map_or_default(|paths| paths.cloned().collect::<Vec<_>>());
     crate::run_observation::read_run_observations(&paths)
 }
 
@@ -728,8 +727,7 @@ fn analysis_case_inputs(
         report
             .get("coverage_matrix")
             .and_then(serde_json::Value::as_array)
-            .map(Vec::as_slice)
-            .unwrap_or_default(),
+            .map_or_default(Vec::as_slice),
     )?;
     let items = serde_json::json!({
         "record_binders": report.get("record_binders").cloned().unwrap_or_else(|| serde_json::json!([])),

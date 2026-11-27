@@ -350,9 +350,7 @@ pub(crate) fn f1_probabilities(row: &Row, answered: &[Answered]) -> Option<[f64;
 }
 
 fn f1_derive(row: &Row, answered: &[Answered]) -> Predictions {
-    f1_probabilities(row, answered)
-        .map(|p| derive_checks(&p))
-        .unwrap_or_default()
+    f1_probabilities(row, answered).map_or_default(|p| derive_checks(&p))
 }
 
 /// F0's `P(well-formed)` on a row it answered.
@@ -361,9 +359,7 @@ pub(crate) fn f0_probability(row: &Row, answered: &[Answered]) -> Option<f64> {
 }
 
 fn f0_derive(row: &Row, answered: &[Answered]) -> Predictions {
-    f0_probability(row, answered)
-        .map(|p| holistic_predictions(SOUND, p))
-        .unwrap_or_default()
+    f0_probability(row, answered).map_or_default(|p| holistic_predictions(SOUND, p))
 }
 
 /// The holistic baseline.
@@ -528,8 +524,7 @@ pub(crate) fn dump(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> V
     let f0 = variants
         .iter()
         .find(|variant| variant.id == "F0")
-        .map(|variant| holistic_scores(rows, output, &variant.label(), f0_probability))
-        .unwrap_or_default();
+        .map_or_default(|variant| holistic_scores(rows, output, &variant.label(), f0_probability));
     let Some(f1) = variants.iter().find(|variant| variant.id == "F1") else {
         return Vec::new();
     };

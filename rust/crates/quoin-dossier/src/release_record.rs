@@ -250,9 +250,11 @@ fn render_decision(body: &mut String, verify: &Value, gaps: &mut Vec<Gap>) {
             "DOS-REL",
             format!(
                 "EA status is not_released: {}",
-                reasons
-                    .map(|values| values.iter().map(scalar).collect::<Vec<_>>().join("; "))
-                    .unwrap_or_default()
+                reasons.map_or_default(|values| values
+                    .iter()
+                    .map(scalar)
+                    .collect::<Vec<_>>()
+                    .join("; "))
             ),
         ));
     }
@@ -397,7 +399,10 @@ mod tests {
         )
         .unwrap();
 
-        assert!(snapshot.vulnerabilities.is_empty());
+        assert_eq!(
+            snapshot.vulnerabilities,
+            [] as [crate::release_snapshot::SnapshotVulnerability; 0]
+        );
         let invalid = json!({
             "protocol": "quoin.release-snapshot/v1",
             "tool_identity": {"name": "quoin", "version": "0.0.0"},
@@ -434,7 +439,7 @@ mod tests {
             "accepted_anomalies": ["ANOM-12"]
         });
         let generated = render(Some(&snapshot()), Some(&verify));
-        assert!(generated.gaps.is_empty());
+        assert_eq!(generated.gaps, [] as [crate::gap::Gap; 0]);
         assert_eq!(generated.document_version.as_deref(), Some("Release 12"));
         let first = generated.body.find("REC-2").unwrap();
         let second = generated.body.find("REC-1").unwrap();

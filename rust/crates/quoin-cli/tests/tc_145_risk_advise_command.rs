@@ -246,7 +246,7 @@ fn a_missing_scope_and_a_malformed_record_each_exit_2_naming_what_is_wrong() {
     .unwrap();
     let out = advise(dir.path(), module.as_path(), &[]);
     assert_eq!(out.status.code(), Some(2));
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(stderr.contains("RR-1"), "{stderr}");
     assert!(
@@ -427,7 +427,7 @@ fn risk_advice_rejects_a_signature_result_for_another_commit() {
     verifier.write_result("signed_valid", Some("Lee"), "another-commit");
     let out = verifier.run(repo.path(), module.path(), "0");
     assert_eq!(out.status.code(), Some(3));
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
     assert!(
         String::from_utf8_lossy(&out.stderr).contains("risk.signature_verification_result_invalid")
     );
@@ -447,7 +447,7 @@ fn risk_advice_reports_an_invalid_allowed_signers_input() {
     std::fs::write(&verifier.result_file, serde_json::to_vec(&refused).unwrap()).unwrap();
     let out = verifier.run(repo.path(), module.path(), "2");
     assert_eq!(out.status.code(), Some(2));
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
     assert!(String::from_utf8_lossy(&out.stderr).contains("risk.allowed_signers_invalid"));
 }
 
@@ -469,7 +469,7 @@ fn risk_advice_reports_signature_verifier_unavailability() {
     .unwrap();
     let out = verifier.run(repo.path(), module.path(), "1");
     assert_eq!(out.status.code(), Some(3));
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
     assert!(String::from_utf8_lossy(&out.stderr).contains("risk.signature_verification_failed"));
 }
 
@@ -484,6 +484,6 @@ fn risk_advice_requires_verification_options_as_a_pair() {
         &["--engineering-assurance", "/tmp/engineering-assurance"],
     );
     assert_eq!(out.status.code(), Some(2));
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
     assert!(String::from_utf8_lossy(&out.stderr).contains("risk.signature_options_incomplete"));
 }

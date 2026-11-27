@@ -276,14 +276,10 @@ fn control(document: &Document) -> Result<Control, String> {
                 .rows
                 .iter()
                 .map(|row| Mapping {
-                    set: row
-                        .get(set)
-                        .map(|cell| cell.trim().to_owned())
-                        .unwrap_or_default(),
+                    set: row.get(set).map_or_default(|cell| cell.trim().to_owned()),
                     clause: row
                         .get(clause)
-                        .map(|cell| cell.trim().to_owned())
-                        .unwrap_or_default(),
+                        .map_or_default(|cell| cell.trim().to_owned()),
                 })
                 .collect()
         }

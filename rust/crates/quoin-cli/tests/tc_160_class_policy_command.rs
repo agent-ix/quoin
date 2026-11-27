@@ -239,7 +239,10 @@ fn tc_160_300_without_a_policy_nothing_class_appears() {
     for key in ["classReport", "unclassified", "classIndependence"] {
         assert!(audit.get(key).is_none(), "{key} in {audit}");
     }
-    assert!(class_findings(&audit).is_empty());
+    assert_eq!(
+        class_findings(&audit),
+        [] as [(std::string::String, std::string::String); 0]
+    );
     let matrix: Value =
         serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
     assert!(matrix.get("unclassified").is_none(), "{matrix}");

@@ -53,7 +53,10 @@ fn records_out_of_order_are_ordered_by_id_then_numeric_revision_then_commit() {
 fn previous_release_is_copied_as_given_and_an_empty_list_is_not_a_refusal() {
     let first = parse(&history(&json!([]), &Value::Null)).unwrap();
     assert!(first.previous_release.is_none());
-    assert!(first.records.is_empty());
+    assert_eq!(
+        first.records,
+        [] as [quoin_dossier::release_snapshot::SnapshotChangeRecord; 0]
+    );
     let later = parse(&history(
         &json!([]),
         &json!({ "tag": "v1.0.0", "commit": "b".repeat(40) }),

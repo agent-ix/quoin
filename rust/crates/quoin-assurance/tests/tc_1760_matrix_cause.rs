@@ -130,7 +130,10 @@ fn tc_1760_bound_has_no_cause() {
 
     let criterion = &matrix.requirements[0].criteria[0];
     assert_eq!(criterion.evidence_status, EvidenceStatus::Bound);
-    assert!(criterion.evidence_detail.findings.is_empty());
+    assert_eq!(
+        criterion.evidence_detail.findings,
+        [] as [quoin_assurance::matrix::FindingDetail; 0]
+    );
 }
 
 /// A passing but uninspected suite (undischarged through unevaluated mock check)

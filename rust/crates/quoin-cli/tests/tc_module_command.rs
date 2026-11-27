@@ -221,8 +221,8 @@ fn tc_286_001_inspect_reports_dynamic_and_compiled_modules_together() {
         compiled["semantic"]["imports"]["agent-ix/spec-objects-fixture"],
         "0.1.0"
     );
-    assert!(errors(compiled).is_empty());
-    assert!(errors(dynamic).is_empty());
+    assert_eq!(errors(compiled), [] as [&serde_json::Value; 0]);
+    assert_eq!(errors(dynamic), [] as [&serde_json::Value; 0]);
 }
 
 /// A module with no `semantic` block is still listed, as such, and is not an
@@ -267,7 +267,10 @@ fn tc_286_003_an_import_lock_the_installed_set_no_longer_satisfies_is_reported()
 
     let (output, report) = inspect(&home);
     assert_eq!(output.status.code(), Some(1), "{output:?}");
-    assert!(errors(entry(&report, "spec-objects-fixture")).is_empty());
+    assert_eq!(
+        errors(entry(&report, "spec-objects-fixture")),
+        [] as [&serde_json::Value; 0]
+    );
     let stale = errors(entry(&report, "spec-objects-consumer"));
     assert_eq!(stale.len(), 1, "{stale:?}");
     let message = stale[0]["message"].as_str().unwrap();
@@ -415,7 +418,10 @@ fn tc_286_005_an_unreadable_installed_module_is_an_entry_not_a_failed_report() {
     let (output, report) = inspect(&home);
     assert_eq!(output.status.code(), Some(1), "{output:?}");
     assert_eq!(report["modules"].as_array().unwrap().len(), 2);
-    assert!(errors(entry(&report, "spec-objects-fixture")).is_empty());
+    assert_eq!(
+        errors(entry(&report, "spec-objects-fixture")),
+        [] as [&serde_json::Value; 0]
+    );
     let broken = entry(&report, "spec-objects-consumer");
     assert_eq!(broken["mode"], "unreadable");
     assert_eq!(errors(broken).len(), 1);

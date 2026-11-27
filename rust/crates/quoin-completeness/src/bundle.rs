@@ -242,8 +242,7 @@ pub fn claims_for(
         let excuses = declaration
             .justified_absence_field
             .as_deref()
-            .map(|field| strings_at(document.frontmatter.get(field)))
-            .unwrap_or_default();
+            .map_or_default(|field| strings_at(document.frontmatter.get(field)));
         if claims.is_empty() && excuses.is_empty() {
             continue;
         }

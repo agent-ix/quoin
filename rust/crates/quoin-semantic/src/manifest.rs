@@ -443,7 +443,7 @@ pub fn read_semantic_block(
         imports: raw_map
             .get("imports")
             .and_then(Value::as_object)
-            .map(|map| {
+            .map_or_default(|map| {
                 map.iter()
                     .map(|(k, v)| {
                         (
@@ -452,17 +452,15 @@ pub fn read_semantic_block(
                         )
                     })
                     .collect()
-            })
-            .unwrap_or_default(),
+            }),
         import_types: raw_map
             .get("import_types")
             .and_then(Value::as_object)
-            .map(|map| {
+            .map_or_default(|map| {
                 map.iter()
                     .map(|(k, v)| (PackageIdentity::new(k.clone()), string_array(Some(v))))
                     .collect()
-            })
-            .unwrap_or_default(),
+            }),
         targets: string_array(raw_map.get("targets")),
         mappings: string_array(raw_map.get("mappings"))
             .into_iter()
@@ -696,8 +694,7 @@ fn stringify(value: &Value) -> String {
 fn string_array(value: Option<&Value>) -> Vec<String> {
     value
         .and_then(Value::as_array)
-        .map(|items| items.iter().map(stringify).collect())
-        .unwrap_or_default()
+        .map_or_default(|items| items.iter().map(stringify).collect())
 }
 
 mod import_types;

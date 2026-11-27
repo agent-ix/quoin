@@ -108,7 +108,10 @@ fn tc_185_failures_and_missing_runs_never_pass() {
     assert_eq!(statement.predicate.result, TestResult::Failed);
     assert_eq!(statement.predicate.passed_tests, ["FR-1-AC-1"]);
     assert_eq!(statement.predicate.failed_tests, ["FR-1-AC-2", "FR-1-AC-3"]);
-    assert!(statement.predicate.warned_tests.is_empty());
+    assert_eq!(
+        statement.predicate.warned_tests,
+        [] as [std::string::String; 0]
+    );
 }
 
 #[trace("FR-185-AC-1", "FR-185-AC-8")]
@@ -128,7 +131,10 @@ fn tc_185_a_later_duplicate_failure_cannot_be_hidden_by_a_pass() {
     .expect("valid subject");
 
     assert_eq!(statement.predicate.result, TestResult::Failed);
-    assert!(statement.predicate.passed_tests.is_empty());
+    assert_eq!(
+        statement.predicate.passed_tests,
+        [] as [std::string::String; 0]
+    );
     assert_eq!(statement.predicate.failed_tests, ["FR-1-AC-1"]);
 }
 
@@ -157,8 +163,8 @@ fn tc_185_skip_warns_and_all_pass_passes() {
     )
     .expect("valid subject");
     assert_eq!(pass.predicate.result, TestResult::Passed);
-    assert!(pass.predicate.warned_tests.is_empty());
-    assert!(pass.predicate.failed_tests.is_empty());
+    assert_eq!(pass.predicate.warned_tests, [] as [std::string::String; 0]);
+    assert_eq!(pass.predicate.failed_tests, [] as [std::string::String; 0]);
 }
 
 #[trace("FR-185-AC-2")]
@@ -176,8 +182,14 @@ fn tc_185_absent_symbol_remains_warned() {
 
     assert_eq!(statement.predicate.result, TestResult::Warned);
     assert_eq!(statement.predicate.warned_tests, ["FR-2-AC-3"]);
-    assert!(statement.predicate.passed_tests.is_empty());
-    assert!(statement.predicate.failed_tests.is_empty());
+    assert_eq!(
+        statement.predicate.passed_tests,
+        [] as [std::string::String; 0]
+    );
+    assert_eq!(
+        statement.predicate.failed_tests,
+        [] as [std::string::String; 0]
+    );
 }
 
 #[trace("FR-185-AC-2")]
@@ -197,9 +209,15 @@ fn tc_185_a_later_duplicate_skip_is_not_hidden_by_a_pass() {
     .expect("valid subject");
 
     assert_eq!(statement.predicate.result, TestResult::Warned);
-    assert!(statement.predicate.passed_tests.is_empty());
+    assert_eq!(
+        statement.predicate.passed_tests,
+        [] as [std::string::String; 0]
+    );
     assert_eq!(statement.predicate.warned_tests, ["FR-2-AC-1"]);
-    assert!(statement.predicate.failed_tests.is_empty());
+    assert_eq!(
+        statement.predicate.failed_tests,
+        [] as [std::string::String; 0]
+    );
 }
 
 #[trace("FR-185-AC-9")]
@@ -213,8 +231,14 @@ fn tc_185_untraced_passing_symbol_is_stale() {
     .expect("valid subject");
 
     assert_eq!(statement.predicate.result, TestResult::Failed);
-    assert!(statement.predicate.passed_tests.is_empty());
-    assert!(statement.predicate.warned_tests.is_empty());
+    assert_eq!(
+        statement.predicate.passed_tests,
+        [] as [std::string::String; 0]
+    );
+    assert_eq!(
+        statement.predicate.warned_tests,
+        [] as [std::string::String; 0]
+    );
     assert_eq!(statement.predicate.failed_tests, ["FR-9-AC-1"]);
 }
 
@@ -231,8 +255,14 @@ fn tc_185_passing_symbol_traced_to_another_obligation_is_stale() {
     .expect("valid subject");
 
     assert_eq!(statement.predicate.result, TestResult::Failed);
-    assert!(statement.predicate.passed_tests.is_empty());
-    assert!(statement.predicate.warned_tests.is_empty());
+    assert_eq!(
+        statement.predicate.passed_tests,
+        [] as [std::string::String; 0]
+    );
+    assert_eq!(
+        statement.predicate.warned_tests,
+        [] as [std::string::String; 0]
+    );
     assert_eq!(statement.predicate.failed_tests, ["FR-9-AC-1"]);
 }
 
@@ -251,8 +281,14 @@ fn tc_185_matching_trace_id_allows_passing_symbol() {
 
     assert_eq!(statement.predicate.result, TestResult::Passed);
     assert_eq!(statement.predicate.passed_tests, ["FR-9-AC-1"]);
-    assert!(statement.predicate.warned_tests.is_empty());
-    assert!(statement.predicate.failed_tests.is_empty());
+    assert_eq!(
+        statement.predicate.warned_tests,
+        [] as [std::string::String; 0]
+    );
+    assert_eq!(
+        statement.predicate.failed_tests,
+        [] as [std::string::String; 0]
+    );
 }
 
 #[trace("FR-185-AC-3")]

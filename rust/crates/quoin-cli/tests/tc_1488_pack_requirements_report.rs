@@ -1402,7 +1402,10 @@ fn tc_1488_005_no_licensed_field_reaches_any_output_and_the_search_can_fail() {
         .arg(env.installed_file("alpha.yaml"))
         .output()
         .unwrap();
-    assert!(!leaked_from(&text(&control), &expected_sentinels).is_empty());
+    assert_ne!(
+        leaked_from(&text(&control), &expected_sentinels),
+        [] as [std::string::String; 0]
+    );
 }
 
 /// Everything under the sandbox, plus both repositories' porcelain status.
@@ -1442,7 +1445,7 @@ fn tc_1488_007_an_unknown_name_and_module_without_clause_sets_exit_two() {
     let env = env();
     let unknown = env.report_in(&env.repo, "no-such-pack", &[]);
     assert_eq!(unknown.status.code(), Some(2), "{}", text(&unknown));
-    assert!(unknown.stdout.is_empty());
+    assert_eq!(unknown.stdout, [] as [u8; 0]);
     assert!(
         stderr(&unknown).contains("no-such-pack"),
         "{}",
@@ -1460,7 +1463,7 @@ fn tc_1488_007_an_unknown_name_and_module_without_clause_sets_exit_two() {
     assert!(installed.status.success(), "{}", text(&installed));
     let no_sets = env.report_in(&env.repo, "empty-module", &[]);
     assert_eq!(no_sets.status.code(), Some(2), "{}", text(&no_sets));
-    assert!(no_sets.stdout.is_empty());
+    assert_eq!(no_sets.stdout, [] as [u8; 0]);
     let message = stderr(&no_sets);
     assert!(message.contains("empty-module"), "{message}");
     assert!(message.contains("declares no clause sets"), "{message}");
@@ -1544,7 +1547,7 @@ fn tc_1488_009_misused_flags_are_usage_errors_and_a_blank_rationale_refuses_the_
             "{arguments:?}: {}",
             text(&output)
         );
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         assert!(
             stderr(&output).contains(named),
             "{arguments:?}: {}",

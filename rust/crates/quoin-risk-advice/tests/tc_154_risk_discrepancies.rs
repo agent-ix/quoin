@@ -122,7 +122,13 @@ fn an_accepted_risk_outside_the_region_is_reported_until_a_covering_record_is_ac
     );
 
     benefit(&c, "BR-1", "accepted");
-    assert!(c.findings().is_empty());
+    assert_eq!(
+        c.findings(),
+        [] as [(
+            std::string::String,
+            std::option::Option<std::string::String>
+        ); 0]
+    );
 
     benefit(&c, "BR-1", "undecided");
     assert_eq!(c.tokens(), ["benefit-risk-undecided"]);
@@ -137,14 +143,26 @@ fn an_accepted_risk_outside_the_region_is_reported_until_a_covering_record_is_ac
     c.markdown();
 
     benefit(&c, "BR-2", "accepted");
-    assert!(c.findings().is_empty());
+    assert_eq!(
+        c.findings(),
+        [] as [(
+            std::string::String,
+            std::option::Option<std::string::String>
+        ); 0]
+    );
 }
 
 #[trace("FR-155-AC-5", "FR-155-AC-6", "FR-155-AC-7")]
 #[test]
 fn the_other_decisions_are_compared_with_the_flag_of_their_region() {
     // Outside the acceptable region: not_accepted agrees; accepted needs cover.
-    assert!(outside("not_accepted").findings().is_empty());
+    assert_eq!(
+        outside("not_accepted").findings(),
+        [] as [(
+            std::string::String,
+            std::option::Option<std::string::String>
+        ); 0]
+    );
 
     // Inside it: not_accepted disagrees, accepted agrees.
     let c = corpus();
@@ -154,7 +172,13 @@ fn the_other_decisions_are_compared_with_the_flag_of_their_region() {
     assert_eq!(c.tokens(), ["not-accepted-inside-acceptable-region"]);
     c.markdown();
     residual(&c, "RR-1", "EST-1", "POL-1", "accepted");
-    assert!(c.findings().is_empty());
+    assert_eq!(
+        c.findings(),
+        [] as [(
+            std::string::String,
+            std::option::Option<std::string::String>
+        ); 0]
+    );
 
     // Undecided is reported whatever the flag, and nothing is said accepted.
     for levels in [("Minor", "Rare"), ("Serious", "Likely")] {

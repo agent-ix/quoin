@@ -61,8 +61,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     eprintln!("Building evidence-backed matrix...");
     let run_observation_paths = arguments
         .get_many::<String>("run-observation")
-        .map(|paths| paths.cloned().collect::<Vec<_>>())
-        .unwrap_or_default();
+        .map_or_default(|paths| paths.cloned().collect::<Vec<_>>());
     let run_observations = crate::run_observation::read_run_observations(&run_observation_paths)?;
     let signature_verifier = crate::analysis_evidence::signature_verifier(arguments)?;
     let repo = required(arguments, "repo")?;

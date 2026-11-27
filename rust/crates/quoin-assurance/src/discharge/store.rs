@@ -652,7 +652,10 @@ mod tests {
         ));
         let report = report_of(&store, &binding(), AS_OF).unwrap();
         assert_eq!(report.binding.direct.len(), 1);
-        assert!(report.binding.dispositions.is_empty());
+        assert_eq!(
+            report.binding.dispositions,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
         assert_eq!(report.binding.direct[0].state, DischargeState::Direct);
         assert!(matches!(
             report.binding.direct[0].fact.as_ref(),
@@ -672,7 +675,10 @@ mod tests {
         ));
         let omitted_report = report_of(&omitted_store, &binding(), AS_OF).unwrap();
         assert_eq!(omitted_report.binding.direct.len(), 1);
-        assert!(omitted_report.binding.dispositions.is_empty());
+        assert_eq!(
+            omitted_report.binding.dispositions,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
         assert!(matches!(
             omitted_report.binding.direct[0].fact.as_ref(),
             Some(DischargeFact::Direct(direct)) if direct.approval_ref.is_none()
@@ -705,7 +711,10 @@ mod tests {
         .expect_err("a blank approvalRef on an approval-class clause is refused");
         assert!(error.to_string().contains("approval-missing"), "{error}");
         assert_eq!(files(&store), 0, "a refused list writes nothing");
-        assert!(read(&store).unwrap().is_empty());
+        assert_eq!(
+            read(&store).unwrap(),
+            [] as [crate::discharge::report::DischargeFact; 0]
+        );
     }
 
     #[trace("FR-133-AC-2")]
@@ -717,12 +726,18 @@ mod tests {
         record_discharge_facts(&mut store, &record(vec![direct()])).unwrap();
         let after = report_of(&store, &binding(), AS_OF).unwrap();
         assert_eq!(after.binding.direct.len(), 1);
-        assert!(after.binding.open.is_empty());
+        assert_eq!(
+            after.binding.open,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
 
         // Currency is decided at read time from the stored attestation.
         let expired = report_of(&store, &binding(), "2026-10-01T00:00:00Z").unwrap();
         assert_eq!(expired.binding.open.len(), 1);
-        assert!(expired.binding.direct.is_empty());
+        assert_eq!(
+            expired.binding.direct,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
     }
 
     #[trace("FR-133-AC-3")]

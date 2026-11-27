@@ -305,8 +305,7 @@ fn unprotected_movement(
         collection
             .verification_stack
             .as_ref()
-            .map(|stack| stack.artifacts.iter().cloned().collect())
-            .unwrap_or_default()
+            .map_or_default(|stack| stack.artifacts.iter().cloned().collect())
     };
     let (earlier, later) = (names(before), names(after));
     let stated_by_one: BTreeSet<&String> = earlier.symmetric_difference(&later).collect();

@@ -297,8 +297,7 @@ fn pack_report(arguments: &ArgMatches, pack: &str) -> Result<Response, String> {
     }
     let context = arguments
         .get_many::<String>("context")
-        .map(|entries| entries.cloned().collect::<Vec<_>>())
-        .unwrap_or_default();
+        .map_or_default(|entries| entries.cloned().collect::<Vec<_>>());
     view(
         &invoke_refusable(
             "evidence.pack_requirements_matrix",

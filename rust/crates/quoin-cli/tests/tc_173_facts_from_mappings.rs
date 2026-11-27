@@ -637,7 +637,7 @@ fn tc_173_a_clause_without_an_effective_control_yields_no_fact_and_an_open_line(
     ];
     let world = World::new(&two_clauses(), &files);
     let output = world.facts();
-    assert!(parsed(&output).is_empty());
+    assert_eq!(parsed(&output), [] as [serde_json::Value; 0]);
     let report = err(&output);
     assert!(report.contains("open C1 CTRL-A CTRL-B"), "{report}");
     assert!(report.contains("open C2 CTRL-C CTRL-D"), "{report}");
@@ -680,7 +680,7 @@ fn tc_173_mappings_to_non_binding_clauses_and_other_sets_are_unused() {
         )],
     );
     let output = world.facts();
-    assert!(parsed(&output).is_empty());
+    assert_eq!(parsed(&output), [] as [serde_json::Value; 0]);
     let report = err(&output);
     assert!(
         report.contains("unused CTRL-A example.invalid/std@1 C2"),
@@ -1037,7 +1037,7 @@ fn tc_173_every_refusal_exits_non_zero_with_empty_stdout_and_names_its_subject()
     let refusal = |world: &World, extra: &[&str], needles: &[&str]| {
         let output = world.facts_with(extra);
         assert!(!output.status.success(), "{needles:?} {output:?}");
-        assert!(out(&output).is_empty());
+        assert_eq!(out(&output), "");
         let message = err(&output);
         for needle in needles {
             assert!(message.contains(needle), "{needle} not in {message}");
@@ -1312,7 +1312,7 @@ fn tc_173_a_stored_direct_fact_whose_control_is_no_longer_effective_is_named_sta
     )
     .unwrap();
     let output = world.facts_with(&["--repo", world.dir.path().to_str().unwrap()]);
-    assert!(parsed(&output).is_empty());
+    assert_eq!(parsed(&output), [] as [serde_json::Value; 0]);
     assert!(err(&output).contains("stale C1"), "{}", err(&output));
 }
 
@@ -1591,7 +1591,7 @@ fn tc_211_a_bad_evidence_file_is_refused_naming_the_file_and_the_key() {
         None,
     );
     assert!(!missing.status.success());
-    assert!(out(&missing).is_empty());
+    assert_eq!(out(&missing), "");
 }
 
 /// The facts a run proposes are refused by `record-discharge` while a ref does
@@ -1612,5 +1612,5 @@ fn tc_211_record_discharge_refuses_facts_whose_ref_no_longer_resolves() {
         "{}",
         err(&refused)
     );
-    assert!(world.discharge_files().is_empty());
+    assert_eq!(world.discharge_files(), [] as [std::string::String; 0]);
 }

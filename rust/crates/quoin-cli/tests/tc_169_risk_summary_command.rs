@@ -164,7 +164,7 @@ fn an_unknown_format_exits_2_with_no_report() {
     chain(dir.path());
     let out = summary(dir.path(), &["--format", "xml"]);
     assert_eq!(out.status.code(), Some(2));
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
 }
 
 #[trace("FR-169-AC-10")]
@@ -191,7 +191,7 @@ fn each_failure_exits_2_with_the_diagnostic_code_of_risk_advise_and_an_unreadabl
     let absent = dir.path().join("absent");
     let (a, s) = (run("advise", &absent, &[]), summary(&absent, &[]));
     assert_eq!(s.status.code(), Some(2));
-    assert!(s.stdout.is_empty());
+    assert_eq!(s.stdout, [] as [u8; 0]);
     assert!(stderr(&s).contains("risk.scope_missing"), "{}", stderr(&s));
     assert!(stderr(&a).contains("risk.scope_missing"));
 
@@ -234,7 +234,7 @@ fn each_failure_exits_2_with_the_diagnostic_code_of_risk_advise_and_an_unreadabl
 
     let out = summary(dir.path(), &[]);
     assert_eq!(out.status.code(), Some(2));
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
     assert!(
         stderr(&out).contains("risk.record_invalid"),
         "{}",

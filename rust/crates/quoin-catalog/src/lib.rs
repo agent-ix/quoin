@@ -286,7 +286,7 @@ fn string_field(object: &serde_json::Map<String, Value>, name: &str) -> Option<S
 }
 
 fn entry_name(entry: &serde_json::Map<String, Value>) -> String {
-    entry.get("name").map(js_string).unwrap_or_default()
+    entry.get("name").map_or_default(js_string)
 }
 
 fn js_string(value: &Value) -> String {

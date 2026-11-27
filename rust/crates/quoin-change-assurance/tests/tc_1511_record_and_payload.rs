@@ -351,12 +351,9 @@ fn tc_1511_the_policy_is_part_of_the_digest_and_written_sorted() {
 fn tc_1511_a_v2_record_requires_its_signed_approval_policy() {
     let record = read_change_record_json(&json(&record_text())).unwrap();
     assert!(!record.review_workflow.signed_approval.required);
-    assert!(
-        record
-            .review_workflow
-            .signed_approval
-            .signature_kinds
-            .is_empty()
+    assert_eq!(
+        record.review_workflow.signed_approval.signature_kinds,
+        [] as [quoin_change_assurance::model::SignatureKind; 0]
     );
     let digestful = replacing(&json(&record_text()), "digest", JsonValue::string("x"));
     assert!(prepare_change_record(&digestful).is_err());

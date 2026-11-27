@@ -940,9 +940,12 @@ fn no_survivor_findings_unless_the_floor_is_missed() {
         Some(floor(&[("P0", 0.8)])),
         "P0",
     );
-    assert!(survivors(&met).is_empty());
+    assert_eq!(survivors(&met), [] as [&quoin_finding_types::Finding; 0]);
     let undeclared = mutation_audit(vec![with_survivors("src/a.rs::f", 0.1, 1)], None, "P0");
-    assert!(survivors(&undeclared).is_empty());
+    assert_eq!(
+        survivors(&undeclared),
+        [] as [&quoin_finding_types::Finding; 0]
+    );
     let skipped = RunEntry {
         outcome: Outcome::Skip,
         ..with_survivors("src/s.rs::s", 0.0, 1)
@@ -989,7 +992,10 @@ fn survivors_come_only_from_failing_symbols_of_bound_suites() {
         of_kind(&unmeasured, "unmeasured-mutation-score", "FR-9-AC-1").len(),
         1
     );
-    assert!(survivors(&unmeasured).is_empty());
+    assert_eq!(
+        survivors(&unmeasured),
+        [] as [&quoin_finding_types::Finding; 0]
+    );
 
     let mut audited = input(
         vec![ob_with("FR-9-AC-1", None, Some("P0"))],

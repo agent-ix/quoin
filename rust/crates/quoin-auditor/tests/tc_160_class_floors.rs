@@ -227,7 +227,10 @@ fn a_required_method_needs_bound_evidence_of_its_catalog_kind() {
         vec![bind(OBLIGATION, "fuzz", None)],
         vec![run("fuzz", "mutation-run", None)],
     ));
-    assert!(of_kind(&cleared, "class-method-missing").is_empty());
+    assert_eq!(
+        of_kind(&cleared, "class-method-missing"),
+        [] as [&quoin_finding_types::Finding; 0]
+    );
 }
 
 /// An obligation with no evidence at all is missing the class's methods too.
@@ -763,7 +766,10 @@ fn an_unknown_policy_key_is_refused() {
 fn obligations_entries_are_accepted_unread() {
     let classes = json!({ "class-2": { "obligations": [{ "id": "x", "kind": "design-trace" }], "rationale": RATIONALE } });
     let out = report(&scene(Some("class-2"), policy(&classes), vec![], vec![]));
-    assert!(of_kind(&out, "class-unconfigured").is_empty());
+    assert_eq!(
+        of_kind(&out, "class-unconfigured"),
+        [] as [&quoin_finding_types::Finding; 0]
+    );
 }
 
 /// A scanner-only suite satisfies a required method of its evidence kind.
@@ -790,7 +796,10 @@ fn a_bound_scan_record_of_the_kind_satisfies_a_required_method() {
         evaluated: None,
     };
     input.scans = Some(vec![scan("mutation-run")]);
-    assert!(of_kind(&report(&input), "class-method-missing").is_empty());
+    assert_eq!(
+        of_kind(&report(&input), "class-method-missing"),
+        [] as [&quoin_finding_types::Finding; 0]
+    );
     input.scans = Some(vec![scan("test-run")]);
     assert_eq!(of_kind(&report(&input), "class-method-missing").len(), 1);
 }
@@ -955,6 +964,6 @@ fn findings_the_class_did_not_cause_carry_no_class_member() {
     // The ladder's own undischarged finding.
     let classes = json!({ "class-2": { "rationale": RATIONALE } });
     let none = report(&scene(None, policy(&classes), vec![], vec![]));
-    assert!(!none.findings.is_empty());
+    assert_ne!(none.findings, [] as [quoin_finding_types::Finding; 0]);
     assert!(none.findings.iter().all(|f| class_member(f).is_none()));
 }

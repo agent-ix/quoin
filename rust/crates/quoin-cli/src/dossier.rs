@@ -406,8 +406,7 @@ fn run_with(
 fn strings(arguments: &ArgMatches, name: &str) -> Vec<String> {
     arguments
         .get_many::<String>(name)
-        .map(|values| values.cloned().collect())
-        .unwrap_or_default()
+        .map_or_default(|values| values.cloned().collect())
 }
 
 fn paths(arguments: &ArgMatches, name: &str) -> Vec<PathBuf> {

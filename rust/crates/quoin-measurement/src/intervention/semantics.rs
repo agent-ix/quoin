@@ -233,8 +233,7 @@ fn object(value: Option<&Value>) -> Option<&Map<String, Value>> {
 fn records(value: Option<&Value>) -> Vec<&Map<String, Value>> {
     value
         .and_then(Value::as_array)
-        .map(|items| items.iter().filter_map(Value::as_object).collect())
-        .unwrap_or_default()
+        .map_or_default(|items| items.iter().filter_map(Value::as_object).collect())
 }
 
 /// A member read as a string, the way `typeof x === "string"` reads it.

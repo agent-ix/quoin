@@ -194,7 +194,10 @@ fn checked(
 #[test]
 fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
     let missing = checked(direct(), Some(&Approves("alice")));
-    assert!(missing.binding.direct.is_empty());
+    assert_eq!(
+        missing.binding.direct,
+        [] as [crate::discharge::report::ClauseDischarge; 0]
+    );
     assert_eq!(missing.binding.open[0].clause_id, "SYN-001");
     assert!(
         missing.binding.open[0]
@@ -220,7 +223,10 @@ fn tc_208_002_clause_approval_requirement_keeps_missing_direct_fact_open() {
                 if direct.approval_ref.as_deref() == Some(blank_reference)
         ));
         let open = checked_partition(partition);
-        assert!(open.binding.direct.is_empty());
+        assert_eq!(
+            open.binding.direct,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
         let entry = open
             .binding
             .open
@@ -652,7 +658,10 @@ fn temporary_exception_is_current_before_its_expiry_and_open_at_and_after_it() {
 
     for as_of in ["2026-08-20T00:00:00.000Z", "2026-08-20T00:00:00.001Z"] {
         let (binding, report) = evaluate(as_of);
-        assert!(report.binding.dispositions.is_empty());
+        assert_eq!(
+            report.binding.dispositions,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
         let open = report
             .binding
             .open

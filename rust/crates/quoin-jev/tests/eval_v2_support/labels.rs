@@ -97,14 +97,11 @@ fn single_pass_truth(
             .as_str()
             .filter(|answer| ["yes", "no"].contains(answer))
             .ok_or_else(|| format!("{id}: {key} has no yes/no answer"))?;
-        let alternatives: Vec<String> = label["alternatives"]
-            .as_array()
-            .map(|alts| {
-                alts.iter()
-                    .filter_map(|a| a.as_str().map(str::to_owned))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let alternatives: Vec<String> = label["alternatives"].as_array().map_or_default(|alts| {
+            alts.iter()
+                .filter_map(|a| a.as_str().map(str::to_owned))
+                .collect()
+        });
         let why = label["why"].as_str().unwrap_or("");
         out.insert(
             key.to_owned(),

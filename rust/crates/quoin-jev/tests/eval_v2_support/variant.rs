@@ -413,8 +413,7 @@ pub(crate) fn whole_row(answered: &[Answered]) -> RawAnswers {
     answered
         .iter()
         .find(|answered| answered.unit.is_none())
-        .map(|answered| answered.answers.clone())
-        .unwrap_or_default()
+        .map_or_default(|answered| answered.answers.clone())
 }
 
 // ---------------------------------------------------------------------------
@@ -426,8 +425,7 @@ pub(crate) fn whole_row(answered: &[Answered]) -> RawAnswers {
 pub(crate) fn code_units(row: &Row) -> Vec<Unit> {
     row.code
         .as_ref()
-        .map(|code| split_units(&code.path, &code.body))
-        .unwrap_or_default()
+        .map_or_default(|code| split_units(&code.path, &code.body))
 }
 
 /// One ask per code unit. Each unit's state is the row's [`state`] with

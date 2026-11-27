@@ -108,9 +108,15 @@ fn tc_1671_020_each_licence_policy_finding_attaches_to_its_own_record() {
         ["licence-unknown", "package-banned"]
     );
     let lumen = of(&joined, &records, "pkg:npm/fx-lumen@1.2.0");
-    assert!(lumen.findings.is_empty());
+    assert_eq!(
+        lumen.findings,
+        [] as [crate::soup::policy::PolicyFinding; 0]
+    );
     assert!(matches!(lumen.status, PolicyStatus::NoFindings { .. }));
-    assert!(joined.unmatched.is_empty());
+    assert_eq!(
+        joined.unmatched,
+        [] as [crate::soup::policy::PolicyUnmatched; 0]
+    );
 }
 
 /// Not run, then a clean scan that lists the record, then a refused recording
@@ -310,7 +316,10 @@ fn tc_1671_024_vacuous_and_unordered_scans_clear_no_record() {
             .values()
             .all(|r| r.status == PolicyStatus::Unordered)
     );
-    assert!(joined.unmatched.is_empty());
+    assert_eq!(
+        joined.unmatched,
+        [] as [crate::soup::policy::PolicyUnmatched; 0]
+    );
 }
 
 /// Policy findings are a list of their own: the advisory join counts none of

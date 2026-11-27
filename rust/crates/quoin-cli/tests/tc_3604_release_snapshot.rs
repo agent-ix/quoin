@@ -399,7 +399,7 @@ impl Repo {
     fn refusal(&self, run: &Run) -> Value {
         let output = self.execute(run);
         assert_eq!(output.status.code(), Some(2), "{}", text(&output.stderr));
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
         let out = &run
             .flags
             .iter()
@@ -2027,7 +2027,10 @@ fn a_verified_control_and_a_complete_chain_yield_no_risk_completeness_item() {
         "| ID | Criteria |\n|---|---|\n| VER-1-AC-1 | synthetic |\n",
     );
     let snapshot = repo.snapshot(&with_risk(&repo));
-    assert!(findings_of(&snapshot, "control-without-verification").is_empty());
+    assert_eq!(
+        findings_of(&snapshot, "control-without-verification"),
+        [] as [&serde_json::Value; 0]
+    );
 
     let chain = Repo::bare();
     complete_chain(&chain);

@@ -1851,7 +1851,7 @@ mod tests {
 
         let report = build_report(&[quoin, quire_cli]).expect("complete report builds");
         assert_eq!(report.status, "complete");
-        assert!(report.incomplete_reasons.is_empty());
+        assert_eq!(report.incomplete_reasons, [] as [std::string::String; 0]);
         assert!(report.results.iter().any(|case| case.result == "fail"));
         assert!(report.results.iter().any(|case| case.result == "error"));
         assert!(
