@@ -16,8 +16,8 @@ use std::path::{Path, PathBuf};
 
 use ix_trace_rs::trace;
 use quoin_measurement::{
-    DiskMeasurement, PlanLoadOptions, load_active_assurance_profiles, load_measurement_plans,
-    read_measurement_collections,
+    DiskMeasurement, IntakeOrder, PlanLoadOptions, build_measurement_report,
+    load_active_assurance_profiles, load_measurement_plans, read_measurement_collections,
 };
 
 const PLAN: &str = "---\ntype: MeasurementPlan\nid: MP-1\ntitle: Coverage\nstatus: active\nstage: observe\nmetric: coverage\ndefinition_version: v1\n---\n\n# Coverage\n";
@@ -129,6 +129,18 @@ fn a_measurement_completes_over_a_readonly_corpus_without_changing_bytes() {
     );
 
     let source = DiskMeasurement::new(root);
+    let report = build_measurement_report(&source, root, &IntakeOrder::none())
+        .expect("measurement report completes over the read-only corpus");
+    assert_eq!(report.plans.len(), 1);
+    assert_eq!(report.current.len(), 1);
+    assert_eq!(
+        report.current[0]
+            .collection
+            .as_ref()
+            .expect("the report includes the retained collection")
+            .collection_id,
+        "c-1"
+    );
     let plans = load_measurement_plans(&source, PlanLoadOptions::default())
         .expect("measurement completes over the read-only corpus");
     let profiles =
