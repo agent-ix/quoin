@@ -209,6 +209,45 @@ fn dossier_rows_equal_the_evidence_backed_matrix_command() {
     assert!(text.contains("Criticality: unassigned"));
 }
 
+#[trace("FR-027-AC-10", "FR-115-AC-27")]
+#[test]
+fn dossier_matrix_uses_repository_limit_without_advising_an_unavailable_flag() {
+    let work = tempfile::tempdir().unwrap();
+    fs::create_dir_all(work.path().join("spec")).unwrap();
+    let config = work.path().join(".ix/config.d");
+    fs::create_dir_all(&config).unwrap();
+    fs::write(config.join("quoin.yaml"), "matrix_max_request_bytes: 1\n").unwrap();
+    let repo = work.path().to_str().unwrap();
+    let module = fixture();
+    let module = module.to_str().unwrap();
+
+    let output = quoin(
+        work.path(),
+        &[
+            "dossier",
+            "generate",
+            "--doc",
+            "trace-matrix",
+            "--version",
+            "1",
+            "--scope",
+            repo,
+            "--module",
+            module,
+            "--json",
+        ],
+    );
+    assert_ne!(output.status.code(), Some(0), "{output:?}");
+    let diagnostic = String::from_utf8_lossy(&output.stderr);
+    assert!(diagnostic.contains("selected 1-byte limit"), "{diagnostic}");
+    assert!(
+        diagnostic.contains("quoin config set matrix_max_request_bytes"),
+        "{diagnostic}"
+    );
+    assert!(diagnostic.contains("--module PATH"), "{diagnostic}");
+    assert!(!diagnostic.contains("--max-request-bytes"), "{diagnostic}");
+}
+
 #[trace("FR-194-AC-3")]
 #[test]
 fn an_empty_matrix_population_renders_the_source_reason() {

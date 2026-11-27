@@ -244,6 +244,7 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
     /// [`ConfigError::UnknownConfigKey`] when the schema declares no such key,
     /// [`ConfigError::ConfigSetParse`] when a complex key's value is not JSON,
     /// plus everything [`ConfigService::set`] can return.
+    #[implements("FR-027-AC-10")]
     pub fn set_key(
         &self,
         key_path: &str,
@@ -252,6 +253,30 @@ impl<'a, S: PluginConfigSchema + Default + serde::Serialize> ConfigService<'a, S
     ) -> Result<S, ConfigError> {
         let value = match S::key_kind(key_path) {
             KeyKind::Scalar => Yaml::String(raw_value.to_owned()),
+            KeyKind::Number => {
+                let parsed =
+                    raw_value
+                        .parse::<usize>()
+                        .map_err(|error| ConfigError::ConfigSetParse {
+                            key_path: key_path.to_owned(),
+                            expected: "a positive integer".to_owned(),
+                            detail: error.to_string(),
+                        })?;
+                if parsed == 0 {
+                    return Err(ConfigError::ConfigSetParse {
+                        key_path: key_path.to_owned(),
+                        expected: "a positive integer".to_owned(),
+                        detail: "the value must be greater than zero".to_owned(),
+                    });
+                }
+                to_yaml_via_json_text(&serde_json::json!(parsed)).map_err(|e| {
+                    ConfigError::ConfigSetParse {
+                        key_path: key_path.to_owned(),
+                        expected: "a positive integer".to_owned(),
+                        detail: e.to_string(),
+                    }
+                })?
+            }
             KeyKind::Complex => {
                 let parsed: serde_json::Value =
                     serde_json::from_str(raw_value).map_err(|e| ConfigError::ConfigSetParse {
