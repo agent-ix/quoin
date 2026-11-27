@@ -11,16 +11,20 @@
     reason = "test failures should report the violated assertion"
 )]
 
+#[cfg(target_os = "linux")]
 use std::fs;
+#[cfg(target_os = "linux")]
+use std::path::Path;
+#[cfg(target_os = "linux")]
 use std::process::Command;
 
+#[cfg(target_os = "linux")]
 use ix_trace_rs::trace;
+#[cfg(target_os = "linux")]
 use serde_json::Value;
 
-#[trace("FR-235-AC-13", "NFR-044-M-1")]
-#[test]
 #[cfg(target_os = "linux")]
-fn installed_selftest_runs_with_empty_home_and_no_network() {
+fn assert_offline_selftest(binary: &Path) {
     let temp = tempfile::tempdir().unwrap();
     let home = temp.path().join("empty-home");
     fs::create_dir(&home).unwrap();
@@ -44,7 +48,7 @@ fn installed_selftest_runs_with_empty_home_and_no_network() {
             "-o",
         ])
         .arg(&trace)
-        .arg(env!("CARGO_BIN_EXE_quoin"))
+        .arg(binary)
         .args(["selftest", "--run", "--case", "selftest-list", "--out"])
         .arg(&record)
         .current_dir(temp.path())
@@ -73,4 +77,28 @@ fn installed_selftest_runs_with_empty_home_and_no_network() {
         .find(|result| result["id"] == "selftest-list")
         .unwrap();
     assert_eq!(result["status"], "pass");
+}
+
+#[trace("NFR-044-M-1")]
+#[test]
+#[cfg(target_os = "linux")]
+fn selftest_runs_with_empty_home_and_no_network() {
+    assert_offline_selftest(Path::new(env!("CARGO_BIN_EXE_quoin")));
+}
+
+#[trace("FR-235-AC-13")]
+#[test]
+#[cfg(target_os = "linux")]
+#[ignore = "requires the matching published Quoin release binary in QUOIN_BINARY"]
+fn release_binary_selftest_runs_without_sibling_checkouts() {
+    let binary = std::env::var_os("QUOIN_BINARY")
+        .map(std::path::PathBuf::from)
+        .expect("set QUOIN_BINARY to the matching published Quoin release asset");
+    assert!(
+        binary.is_file(),
+        "QUOIN_BINARY is not a file: {}",
+        binary.display()
+    );
+    let binary = fs::canonicalize(binary).expect("canonicalize QUOIN_BINARY");
+    assert_offline_selftest(&binary);
 }
