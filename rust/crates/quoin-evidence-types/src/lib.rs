@@ -16,7 +16,7 @@
 //! `render_case` is the same instrument failing the other way. It imports one
 //! line:
 //!
-//! ```ignore
+//! ```typescript
 //! import type { AssuranceCase, CaseNode } from "./graph.js";
 //! ```
 //!
