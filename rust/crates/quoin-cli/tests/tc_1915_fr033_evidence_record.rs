@@ -160,3 +160,31 @@ fn tc_1915_tool_name_selects_the_run_adapter_when_adapter_flag_is_absent() {
     assert_eq!(run["entries"][0]["symbol"], "src/lib.rs::target");
     assert_eq!(run["entries"][0]["score"], 0.5);
 }
+
+#[trace("FR-069-AC-10")]
+#[test]
+fn tc_1915_malformed_conformance_row_after_valid_row_writes_no_run_or_binding() {
+    let fixture = Fixture::new();
+    let valid = r#"{"protocol":"filament.contract.conformance-jsonl/v1","corpus_id":"c","operation":"o","fixture_id":"good","status":"match"}"#;
+    let malformed = r#"{"protocol":"filament.contract.conformance-jsonl/v1","corpus_id":"c","operation":"o","fixture_id":"bad","status":"match","trace_ids":[]}"#;
+    let output = fixture.record(
+        Some("contract-conformance"),
+        "filament-contract-conformance 0.1.0",
+        &format!("{valid}\n{malformed}"),
+        "SUITE-CONFORMANCE",
+    );
+
+    assert!(
+        !output.status.success(),
+        "the malformed second row must refuse the recording"
+    );
+    let evidence = fixture.repo.path().join("spec/evidence");
+    assert!(
+        !evidence.join("runs/SUITE-CONFORMANCE").exists(),
+        "the valid first row must not leave a partial run"
+    );
+    assert!(
+        !evidence.join("bindings.json").exists(),
+        "the refused recording must not leave bindings"
+    );
+}

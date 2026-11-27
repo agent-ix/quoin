@@ -54,7 +54,7 @@ that is the ticket to reopen.
 ### `differential-report`
 
 - **Producer** — `quire-analyze run-package`, `agent-ix/filament-analyze`, which publishes one `quire.differential-report/v2` per analysis request (two engines, Z3 and cvc5). Specified in FR-151; it replaces the earlier `<domain>.differential-summary/v1` reader, whose schema no code wrote.
-- **Sample** — byte-exact reports captured from `quire-analyze run-package`, one per disposition the runner can produce, kept as test fixtures under `tests/fixtures/evidence/` by the implementing change (VER-80); the `unsupported-platform` fixture is captured on a non-Linux host or hand-constructed and validated by the owner's validator. quoin keeps no copy of the schema.
+- **Sample** — byte-exact reports captured from `quire-analyze run-package`, one per disposition the runner can produce, kept under `tests/fixtures/evidence/differential-report-v2/`; `tests/fixtures/evidence/differential-report-v2/agreement-satisfied.json` is a captured satisfied report. The `unsupported-platform` fixture is captured on a non-Linux host or hand-constructed and validated by the owner's validator. quoin keeps no copy of the schema.
 - **Governed target record** — one `RunRecord` entry per report (`agreement` is `pass` or `fail`; `inconclusive` and `unavailable` are `error`); a `disagreement` is named, not transcribed, and writes a run with no entries.
 - **Why nothing existing represents it** — `junit` has no state for "the engines disagreed" or "an engine could not run"; the finding-shaped adapters would record a disagreement as a rule violation, which is a different claim.
 

@@ -46,7 +46,7 @@ use quoin_measurement::types::collection::MeasurementCollection;
 use quoin_measurement::types::observation::MeasurementState;
 use quoin_measurement::types::plan::{LifecycleStatus, MeasurementStage};
 use quoin_measurement_graph::availability::{
-    CollectionUnavailability, GapAvailability, MappingRefusal,
+    CollectionUnavailability, GapAvailability, GapSubject, MappingRefusal,
 };
 use quoin_measurement_graph::error::GraphAdapterErrorCode;
 use quoin_measurement_graph::input::{
@@ -342,7 +342,7 @@ fn tc_480_051_history_keeps_every_readable_collection_in_order() {
 /// Every measure/dimension/key partition is its own row in the text and the
 /// JSON, and nothing is summed or averaged across them.
 ///
-#[trace("FR-067-AC-3")]
+#[trace("FR-067-AC-3", "FR-067-CON-3")]
 #[test]
 fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
     let report = build(&[
@@ -351,6 +351,7 @@ fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
     ]);
     for repository in &report.repositories {
         let current = repository.graph_quality.current.as_ref().expect("current");
+        assert_eq!(current.partitions.len(), 2, "no partition is collapsed");
         let identities: BTreeSet<(&str, &str, &str)> = current
             .partitions
             .iter()
@@ -388,13 +389,65 @@ fn tc_480_052_every_partition_is_a_distinct_row_and_none_is_summed() {
     }
 }
 
+/// Portfolio rows stay repository-scoped: the graph view emits neither a
+/// cross-repository aggregate nor a trust, release or threshold verdict.
+#[trace("FR-067-CON-2")]
+#[test]
+fn tc_480_053_graph_portfolio_derives_no_cross_repository_score_or_verdict() {
+    let first = collection_with("a-1", "2026-02-01T00:00:00Z", |value| {
+        value["observations"][0]["value"] = json!(0.61);
+        value["observations"][1]["value"] = json!(0.23);
+    });
+    let second = collection_with("b-1", "2026-02-01T00:00:00Z", |value| {
+        value["observations"][0]["value"] = json!(0.37);
+        value["observations"][1]["value"] = json!(0.11);
+    });
+    let report = build(&[one("/repos/a", vec![first]), one("/repos/b", vec![second])]);
+    assert_eq!(report.repositories.len(), 2);
+    let per_repository: Vec<Vec<f64>> = report
+        .repositories
+        .iter()
+        .map(|repository| {
+            let mut values: Vec<f64> = repository
+                .graph_quality
+                .current
+                .as_ref()
+                .expect("the repository's own graph row remains available")
+                .partitions
+                .iter()
+                .map(|partition| partition.value.expect("measured partition has a value"))
+                .collect();
+            values.sort_by(f64::total_cmp);
+            values
+        })
+        .collect();
+    assert_eq!(per_repository, [vec![0.23, 0.61], vec![0.11, 0.37]]);
+
+    let text = render_governed_graph_portfolio(&report).expect("rendered text");
+    let json = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    for projection in [&text, &json] {
+        for aggregate in ["0.98", "0.34", "0.49", "0.17", "1.32", "0.33"] {
+            assert!(
+                !projection.contains(aggregate),
+                "a cross-repository sum or average {aggregate} appeared: {projection}"
+            );
+        }
+        for verdict in ["trust_score", "release_verdict", "threshold_classification"] {
+            assert!(
+                !projection.contains(verdict),
+                "a derived portfolio verdict {verdict} appeared: {projection}"
+            );
+        }
+    }
+}
+
 // ------------------------------------------------------------- the gates
 
 /// Availability is a separate axis from measurement state, and neither is a
 /// numeric zero.
 ///
 /// Provenance: quoin#480
-#[trace("FR-067-AC-4")]
+#[trace("FR-067-AC-4", "FR-067-CON-3")]
 #[test]
 fn tc_480_040_availability_is_separate_from_state_and_from_numeric_zero() {
     for availability in GapAvailability::ALL {
@@ -413,6 +466,15 @@ fn tc_480_040_availability_is_separate_from_state_and_from_numeric_zero() {
             graph.availability(),
             availability.as_str(),
             "the injected refusal is the reported one"
+        );
+        let graph_gap = report.repositories[0]
+            .gaps
+            .iter()
+            .find(|gap| gap.subject == GapSubject::GraphExport)
+            .expect("an unavailable graph retains a graph-export gap");
+        assert_eq!(
+            graph_gap.availability, *availability,
+            "the gap retains the injected availability independently of graph state"
         );
         let rendered = canonical_graph_portfolio_json(&report).expect("canonical JSON");
         assert!(
@@ -445,6 +507,61 @@ fn tc_480_040_availability_is_separate_from_state_and_from_numeric_zero() {
     assert_eq!(
         partition.value, None,
         "a not-computed partition has no value"
+    );
+}
+
+/// Historical FR-044 collections and non-graph portfolio data remain
+/// readable through the graph projection without a collection migration.
+#[trace("FR-067-CON-4")]
+#[test]
+fn tc_480_054_legacy_fr044_collection_and_non_graph_rows_remain_readable() {
+    // Captured from the pre-migration FR-044 graph portfolio fixture at
+    // quoin commit d2b81a88; schemaVersion 1 still carries corpusRevision and
+    // configDigest, which later schemas removed.
+    let legacy_value: Value =
+        serde_json::from_str(include_str!("fixtures/historical-fr044-collection-v1.json"))
+            .expect("the historical FR-044 payload is JSON");
+    let legacy = admit(&legacy_value);
+    let non_graph = collection_with("legacy-non-graph", "2026-02-01T00:00:00Z", |value| {
+        value["observations"][0]["metric"] = json!("legacy_duration");
+        value["observations"][1]["metric"] = json!("legacy_count");
+    });
+    let root = tempfile::tempdir().expect("a readable legacy repository");
+    let root_path = root.path().to_string_lossy().into_owned();
+    let mut input = repository(
+        &root_path,
+        vec![legacy.clone(), non_graph],
+        Vec::new(),
+        no_graph(),
+    );
+    input.collections[0] = GraphCollectionRead::read(
+        format!("{root_path}/spec/evidence/measurements/a-2026-01.json"),
+        legacy,
+    );
+    let report = build(&[input]);
+    let repository = &report.repositories[0];
+    let latest = repository
+        .base
+        .latest_collection
+        .as_ref()
+        .expect("the legacy FR-044 collection remains readable");
+    assert_eq!(latest.id, "legacy-non-graph");
+    assert_eq!(latest.timestamp, "2026-02-01T00:00:00Z");
+    assert_eq!(latest.tool_identity, "agent-ix/quire-code-rs");
+    let quality = repository
+        .graph_quality
+        .current
+        .as_ref()
+        .expect("the historical FR-044 graph collection remains in the projection");
+    assert_eq!(quality.id, "a-2026-01");
+    assert_eq!(repository.graph_quality.history.len(), 1);
+    assert!(
+        repository
+            .graph_quality
+            .history
+            .iter()
+            .all(|row| row.id != "legacy-non-graph"),
+        "non-graph metrics are not reinterpreted as graph-quality rows"
     );
 }
 
