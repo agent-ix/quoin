@@ -37,12 +37,12 @@ canonical data set prevents the prose report, tickets, and future automation fro
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-054-AC-1 | `analysis/semantic-module-type-fit/` contains a versioned snapshot, corpus inventory, type-fit matrix, conflict ledger, missing-type ledger, repository-impact assessment, and summary manifest as canonical JSON. | Test |
-| FR-054-AC-2 | Every ledger row has a stable id, severity, status, confidence, affected qualified types/modules/repositories, evidence references, rationale, and recommended next decision or ticket boundary. | Test |
-| FR-054-AC-3 | Repository impact records every default module and each affected Quoin, Quire, Filament, compiler, generated-package, database, API, CLI, and UI boundary as `none`, `candidate`, `required`, or `unknown`, with effort, risk, dependency, wave, confidence, and rationale. | Test |
-| FR-054-AC-4 | A validated `SpecReview` and generated `report.md` summarize the canonical JSON, link every finding and denominator, and contain no independently maintained score or finding. | Test |
-| FR-054-AC-5 | The summary manifest records artifact schema versions and fails validation when an artifact is missing, unreferenced, stale, or disagrees with a declared count. | Test |
-| FR-054-AC-6 | Re-running against identical inputs yields byte-identical canonical JSON and report content except for a separately identified run timestamp field excluded from content identity. | Test |
+| FR-054-AC-1 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). `analysis/semantic-module-type-fit/` contains a versioned snapshot, corpus inventory, type-fit matrix, conflict ledger, missing-type ledger, repository-impact assessment, and summary manifest as canonical JSON. | Withdrawn |
+| FR-054-AC-2 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every ledger row has a stable id, severity, status, confidence, affected qualified types/modules/repositories, evidence references, rationale, and recommended next decision or ticket boundary. | Withdrawn |
+| FR-054-AC-3 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Repository impact records every default module and each affected Quoin, Quire, Filament, compiler, generated-package, database, API, CLI, and UI boundary as `none`, `candidate`, `required`, or `unknown`, with effort, risk, dependency, wave, confidence, and rationale. | Withdrawn |
+| FR-054-AC-4 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). A validated `SpecReview` and generated `report.md` summarize the canonical JSON, link every finding and denominator, and contain no independently maintained score or finding. | Withdrawn |
+| FR-054-AC-5 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). The summary manifest records artifact schema versions and fails validation when an artifact is missing, unreferenced, stale, or disagrees with a declared count. | Withdrawn |
+| FR-054-AC-6 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Re-running against identical inputs yields byte-identical canonical JSON and report content except for a separately identified run timestamp field excluded from content identity. | Withdrawn |
 
 ## Constraints
 

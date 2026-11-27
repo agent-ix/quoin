@@ -86,13 +86,13 @@ resolved one module from satisfying every criterion.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-085-AC-1 | Each declared module resolves to a commit and records its manifest version, declared artifact types and declared object types. | Test |
-| FR-085-AC-3 | Content read for a module is byte-identical to that module's content at the declared revision when the repository working tree carries an unrelated uncommitted edit, and no Git ref, index or object of that repository changes during the run. | Test |
-| FR-085-AC-4 | An unresolvable required revision exits non-zero before any corpus document is read, naming the module and the revision. | Test |
-| FR-085-AC-5 | A module publishing no mappings declaration records `mappings: absent` and still contributes its declared object types. | Test |
-| FR-085-AC-6 | Each module record states whether the measured resolved commit equals the commit its `default-modules.yaml` ref resolves to, and the report names every module where it does not. | Test |
-| FR-085-AC-9 | A module-load diagnostic, such as one name declared as both an archetype and an artifact type, is recorded as a module finding and fails no corpus document. | Test |
-| FR-085-AC-10 | A required module set missing one of the campaign's completed modules is refused before any corpus document is read. | Test |
+| FR-085-AC-1 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). Each declared module resolves to a commit and records its manifest version, declared artifact types and declared object types. | Withdrawn |
+| FR-085-AC-3 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). Content read for a module is byte-identical to that module's content at the declared revision when the repository working tree carries an unrelated uncommitted edit, and no Git ref, index or object of that repository changes during the run. | Withdrawn |
+| FR-085-AC-4 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). An unresolvable required revision exits non-zero before any corpus document is read, naming the module and the revision. | Withdrawn |
+| FR-085-AC-5 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A module publishing no mappings declaration records `mappings: absent` and still contributes its declared object types. | Withdrawn |
+| FR-085-AC-6 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). Each module record states whether the measured resolved commit equals the commit its `default-modules.yaml` ref resolves to, and the report names every module where it does not. | Withdrawn |
+| FR-085-AC-9 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A module-load diagnostic, such as one name declared as both an archetype and an artifact type, is recorded as a module finding and fails no corpus document. | Withdrawn |
+| FR-085-AC-10 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A required module set missing one of the campaign's completed modules is refused before any corpus document is read. | Withdrawn |
 
 ## Dependencies
 

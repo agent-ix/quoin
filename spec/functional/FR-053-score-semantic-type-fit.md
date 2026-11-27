@@ -38,14 +38,14 @@ and a representation-specific artifact that mixes definitions with accumulated e
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-053-AC-1 | Every declaration is assessed on vocabulary fit, structural fit, definition-versus-occurrence fit, identity, versioning, provenance, lifecycle, relationships, round-trip suitability, generated-code suitability, and accumulation behavior. | Test |
-| FR-053-AC-2 | Every axis records `supported`, `partial`, `conflict`, `missing`, or `not-applicable`, a confidence from `high`, `medium`, or `low`, and one or more inventory evidence references or an explanation for `not-applicable`. | Test |
-| FR-053-AC-3 | Every declaration receives exactly one disposition from `fits`, `fits-with-mapping`, `incomplete`, `conflict`, `representation-local`, or `deferred`, with a reason derived from its axis results. | Test |
-| FR-053-AC-4 | An unconstrained or placeholder object schema is identified explicitly and cannot yield `supported` generated-code or round-trip suitability solely because it validates. | Test |
-| FR-053-AC-5 | Duplicate type names and structurally similar archetypes are compared without collapsing their module-qualified identities, and incompatible definitions produce conflict-ledger entries. | Test |
-| FR-053-AC-6 | Schema-encoded JSON/string blobs and free-form Markdown fields are evaluated for lost structure, identity, relationships, and round-trip ambiguity. | Test |
-| FR-053-AC-7 | Definition-shaped types carrying run, result, evidence, timestamps, state transitions, or accumulated observations are evaluated for plane confusion. | Test |
-| FR-053-AC-8 | The review explicitly evaluates whether run, result, evidence, report, relationship, identity, version, provenance, and lifecycle concepts are absent, overloaded, or already represented. | Test |
+| FR-053-AC-1 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every declaration is assessed on vocabulary fit, structural fit, definition-versus-occurrence fit, identity, versioning, provenance, lifecycle, relationships, round-trip suitability, generated-code suitability, and accumulation behavior. | Withdrawn |
+| FR-053-AC-2 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every axis records `supported`, `partial`, `conflict`, `missing`, or `not-applicable`, a confidence from `high`, `medium`, or `low`, and one or more inventory evidence references or an explanation for `not-applicable`. | Withdrawn |
+| FR-053-AC-3 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every declaration receives exactly one disposition from `fits`, `fits-with-mapping`, `incomplete`, `conflict`, `representation-local`, or `deferred`, with a reason derived from its axis results. | Withdrawn |
+| FR-053-AC-4 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). An unconstrained or placeholder object schema is identified explicitly and cannot yield `supported` generated-code or round-trip suitability solely because it validates. | Withdrawn |
+| FR-053-AC-5 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Duplicate type names and structurally similar archetypes are compared without collapsing their module-qualified identities, and incompatible definitions produce conflict-ledger entries. | Withdrawn |
+| FR-053-AC-6 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Schema-encoded JSON/string blobs and free-form Markdown fields are evaluated for lost structure, identity, relationships, and round-trip ambiguity. | Withdrawn |
+| FR-053-AC-7 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Definition-shaped types carrying run, result, evidence, timestamps, state transitions, or accumulated observations are evaluated for plane confusion. | Withdrawn |
+| FR-053-AC-8 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). The review explicitly evaluates whether run, result, evidence, report, relationship, identity, version, provenance, and lifecycle concepts are absent, overloaded, or already represented. | Withdrawn |
 
 ## Constraints
 

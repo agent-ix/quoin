@@ -39,11 +39,11 @@ would create the inconsistency the semantic-data program is intended to remove.
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-055-AC-1 | Every conflict and missing-type row cites the applicable data plane, authority-by-concern entry, subsystem owner, and governing or provisional decision. | Test |
-| FR-055-AC-2 | Every overlapping concept in the `filament-core-data#10` census is linked and classified as reuse, extension, mapping, conflict, or unrelated; the audit creates no shadow core contract. | Test |
-| FR-055-AC-3 | Every Quire parsing, identity, addressing, validation, extraction, or splicing implication cites the `quire-rs#385` evidence and preserves Quire's recorded boundary. | Test |
-| FR-055-AC-4 | Proposed follow-up boundaries distinguish analysis from compiler, code-generation, module-schema, migration, database, API, publication, enforcement, and retirement work, and mark every major-interference boundary as gated. | Test |
-| FR-055-AC-5 | Acceptance uses a fresh census of `default-modules.yaml` and all resolved module heads; drift after the recorded snapshot makes the review stale and blocks signoff. | Test |
+| FR-055-AC-1 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every conflict and missing-type row cites the applicable data plane, authority-by-concern entry, subsystem owner, and governing or provisional decision. | Withdrawn |
+| FR-055-AC-2 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every overlapping concept in the `filament-core-data#10` census is linked and classified as reuse, extension, mapping, conflict, or unrelated; the audit creates no shadow core contract. | Withdrawn |
+| FR-055-AC-3 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every Quire parsing, identity, addressing, validation, extraction, or splicing implication cites the `quire-rs#385` evidence and preserves Quire's recorded boundary. | Withdrawn |
+| FR-055-AC-4 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Proposed follow-up boundaries distinguish analysis from compiler, code-generation, module-schema, migration, database, API, publication, enforcement, and retirement work, and mark every major-interference boundary as gated. | Withdrawn |
+| FR-055-AC-5 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Acceptance uses a fresh census of `default-modules.yaml` and all resolved module heads; drift after the recorded snapshot makes the review stale and blocks signoff. | Withdrawn |
 
 ## Constraints
 

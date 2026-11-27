@@ -95,15 +95,15 @@ a statement about the real contract, and makes everything the engine cannot do v
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-087-AC-1 | A document the engine reports no error against records `pass`. | Test |
-| FR-087-AC-2 | A document the engine reports a missing required section against records `fail` carrying the engine's diagnostic code, reason and line. | Test |
-| FR-087-AC-3 | The module contract applied is the resolved module set, demonstrated by a repository-local module declaring the same type having no effect on the outcome. | Test |
-| FR-087-AC-4 | A batch whose engine invocation terminates abnormally records every document of that batch `could-not-run` naming the termination, and none of them enters the pass numerator or denominator. | Test |
-| FR-087-AC-5 | A document the engine reports only warnings against records `pass` and carries those warnings as advisory findings. | Test |
-| FR-087-AC-6 | A document carrying three engine errors records all three in one evaluation record. | Test |
-| FR-087-AC-7 | Changing only the module declaration in the resolved set changes the recorded outcome of an unchanged document. | Test |
-| FR-087-AC-8 | The evaluation output names the engine version the outcomes were produced by. | Test |
-| FR-087-AC-9 | No source file of the measurement parses a module's `mappings.yaml` parse rules or builds a semantic record from Markdown. | Inspection |
+| FR-087-AC-1 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A document the engine reports no error against records `pass`. | Withdrawn |
+| FR-087-AC-2 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A document the engine reports a missing required section against records `fail` carrying the engine's diagnostic code, reason and line. | Withdrawn |
+| FR-087-AC-3 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). The module contract applied is the resolved module set, demonstrated by a repository-local module declaring the same type having no effect on the outcome. | Withdrawn |
+| FR-087-AC-4 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A batch whose engine invocation terminates abnormally records every document of that batch `could-not-run` naming the termination, and none of them enters the pass numerator or denominator. | Withdrawn |
+| FR-087-AC-5 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A document the engine reports only warnings against records `pass` and carries those warnings as advisory findings. | Withdrawn |
+| FR-087-AC-6 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A document carrying three engine errors records all three in one evaluation record. | Withdrawn |
+| FR-087-AC-7 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). Changing only the module declaration in the resolved set changes the recorded outcome of an unchanged document. | Withdrawn |
+| FR-087-AC-8 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). The evaluation output names the engine version the outcomes were produced by. | Withdrawn |
+| FR-087-AC-9 | Withdrawn: Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). No source file of the measurement parses a module's `mappings.yaml` parse rules or builds a semantic record from Markdown. | Withdrawn |
 
 ## Dependencies
 

@@ -36,13 +36,13 @@ documents Quire accepts or only types with schemas would hide the exact gaps thi
 
 | ID | Criteria | Verification |
 | --- | --- | --- |
-| FR-052-AC-1 | The module denominator equals the ordered entries in `default-modules.yaml`; duplicates and unresolved entries remain separately visible and prevent a clean verdict. | Test |
-| FR-052-AC-2 | For every module, the inventory records every declared artifact and object type exactly once per declaration, including duplicate names across or within modules. | Test |
-| FR-052-AC-3 | Each declared type records its structural kind, module identity, declaration location, schema, skeleton, relations, mappings, projections, and each surface's presence or explicit absence. | Test |
-| FR-052-AC-4 | Every Markdown file under each module corpus is retained with a module-relative path and one parse state from `parsed`, `invalid`, `untyped`, `excluded`, or `io-error`; non-parsed states include a reason. | Test |
-| FR-052-AC-5 | Parsed documents record their declared type, stable document identity when present, and definition/occurrence signals including run, result, evidence, timestamp, lifecycle, relationship, and provenance fields. | Test |
-| FR-052-AC-6 | Every declared type records zero or more representative document instances, and a type with none remains in the inventory with an explicit `no-instance` observation. | Test |
-| FR-052-AC-7 | The inventory publishes denominator reconciliation proving enumerated modules, declarations, contract surfaces, documents, and parse states equal their respective source counts. | Test |
+| FR-052-AC-1 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). The module denominator equals the ordered entries in `default-modules.yaml`; duplicates and unresolved entries remain separately visible and prevent a clean verdict. | Withdrawn |
+| FR-052-AC-2 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). For every module, the inventory records every declared artifact and object type exactly once per declaration, including duplicate names across or within modules. | Withdrawn |
+| FR-052-AC-3 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Each declared type records its structural kind, module identity, declaration location, schema, skeleton, relations, mappings, projections, and each surface's presence or explicit absence. | Withdrawn |
+| FR-052-AC-4 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every Markdown file under each module corpus is retained with a module-relative path and one parse state from `parsed`, `invalid`, `untyped`, `excluded`, or `io-error`; non-parsed states include a reason. | Withdrawn |
+| FR-052-AC-5 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Parsed documents record their declared type, stable document identity when present, and definition/occurrence signals including run, result, evidence, timestamp, lifecycle, relationship, and provenance fields. | Withdrawn |
+| FR-052-AC-6 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). Every declared type records zero or more representative document instances, and a type with none remains in the inventory with an explicit `no-instance` observation. | Withdrawn |
+| FR-052-AC-7 | Withdrawn: Withdrawn with the semantic type-fit audit under quoin#654; retained for provenance only (id not reused). The inventory publishes denominator reconciliation proving enumerated modules, declarations, contract surfaces, documents, and parse states equal their respective source counts. | Withdrawn |
 
 ## Constraints
 
