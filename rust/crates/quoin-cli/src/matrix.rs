@@ -242,7 +242,7 @@ fn selected_request_limit(arguments: &ArgMatches, repo: &str) -> Result<usize, S
 #[implements("FR-027-AC-10")]
 fn configured_request_limit(repo: &str) -> Result<Option<usize>, String> {
     let environment = ProcessEnvironment;
-    let context = crate::config::context_for_repo(std::path::Path::new(repo))?;
+    let context = crate::config::context_for_repo(std::path::Path::new(repo));
     let service = ConfigService::<QuoinConfig>::for_plugin(&environment, &context);
     Ok(service
         .get(&mut IncidentLog::new())

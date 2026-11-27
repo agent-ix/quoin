@@ -157,13 +157,13 @@ pub(crate) fn context() -> Result<RuntimeContext, String> {
 }
 
 #[implements("FR-027-AC-10")]
-pub(crate) fn context_for_repo(repo: &Path) -> Result<RuntimeContext, String> {
+pub(crate) fn context_for_repo(repo: &Path) -> RuntimeContext {
     let invocation = invocation::current();
     let context = RuntimeContext::for_cwd(repo, invocation.no_project_config());
-    Ok(invocation
+    invocation
         .config_root()
         .cloned()
-        .map_or(context.clone(), |root| context.with_config_root(root)))
+        .map_or(context.clone(), |root| context.with_config_root(root))
 }
 fn required(arguments: &ArgMatches, name: &str) -> Result<String, String> {
     arguments
