@@ -97,9 +97,20 @@ const PARENT_GROUP_MODULE: &str = r##"name: quoin-cli-parent-group-matrix-fixtur
 version: 0.1.0
 description: Fixture module for parent-group matrix projection
 artifact_types:
+  - name: FR
+    grammar_ref: iso-spec-core
+    defaults:
+      id_pattern: FR-{next:03d}
+  - name: Component
   - name: RoleSpec
+edge_types:
+  implements: { description: a component implements an FR, category: traceability }
 traceability:
   trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
     - name: role-rule
       archetype: RoleSpec
       section: Rules
@@ -110,7 +121,41 @@ traceability:
       id_column: ID
       parent_target: role-rule
       parent_id_column: Rule
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  required_relations:
+    - name: fr-has-component
+      from: FR
+      edges: [implements]
+      to: [Component]
+      direction: outgoing
+      check: implementation
+  design_relations: [fr-has-component]
 "##;
+
+const PARENT_GROUP_FR_SPEC: &str = r"---
+id: FR-001
+type: FR
+title: Three criteria with a design element
+relationships:
+  - target: CMP-001
+    type: implements
+---
+
+## Acceptance Criteria
+
+| ID | Criteria | Verification |
+|----|----------|--------------|
+| FR-001-AC-1 | Every stored payload shall round-trip through the reader unchanged. | Test |
+| FR-001-AC-2 | The reader shall refuse a payload over its ceiling. | Test |
+| FR-001-AC-3 | The reader shall name the refused field. | Test |
+";
+
+const PARENT_GROUP_COMPONENT: &str =
+    "---\nid: CMP-001\ntype: Component\ntitle: Matrix fixture component\n---\n";
 
 const PARENT_GROUP_SPEC: &str = r"---
 id: RS
@@ -128,8 +173,8 @@ type: RoleSpec
 
 | ID | Rule |
 |---|---|
-| RS-R01-E1 | RS-R01 |
 | RS-R01-E2 | RS-R01 |
+| RS-R01-E1 | RS-R01 |
 ";
 
 const RECORD_KEYS_MODULE: &str = r##"name: quoin-cli-record-keys-fixture
@@ -307,6 +352,14 @@ fn repository(module: &str) -> Fixture {
     };
     fixture.write("manifest.yaml", module);
     fixture.write("spec/FR-001-example.md", SPEC);
+    fixture
+}
+
+fn parent_group_repository(module: &str) -> Fixture {
+    let fixture = repository(module);
+    fixture.write("spec/FR-001-example.md", PARENT_GROUP_FR_SPEC);
+    fixture.write("spec/roles.md", PARENT_GROUP_SPEC);
+    fixture.write("spec/CMP-001.md", PARENT_GROUP_COMPONENT);
     fixture
 }
 
@@ -746,12 +799,21 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
 #[trace("FR-165-AC-22")]
 #[test]
 fn tc_1080_214_matrix_json_exposes_parent_groups_and_empty_children() {
-    let fixture = repository(PARENT_GROUP_MODULE);
-    std::fs::remove_file(fixture.repo().join("spec/FR-001-example.md")).unwrap();
-    fixture.write("spec/roles.md", PARENT_GROUP_SPEC);
+    let fixture = parent_group_repository(PARENT_GROUP_MODULE);
+    let control_module = PARENT_GROUP_MODULE.replace(
+        "      parent_target: role-rule\n      parent_id_column: Rule\n",
+        "",
+    );
+    let control = parent_group_repository(&control_module);
 
     let matrix: Value =
         serde_json::from_str(&fixture.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    let control_matrix: Value =
+        serde_json::from_str(&control.ok(&["matrix", "--module", ".", "--json"])).unwrap();
+    assert!(
+        control_matrix.get("parented_target_groups").is_none(),
+        "the control module must not declare parent groups"
+    );
     let groups = matrix["parented_target_groups"].as_array().unwrap();
     let group = |parent_id: &str| {
         groups
@@ -761,11 +823,37 @@ fn tc_1080_214_matrix_json_exposes_parent_groups_and_empty_children() {
     };
 
     assert_eq!(
-        group("RS-R01")["child_ids"],
-        serde_json::json!(["RS-R01-E1", "RS-R01-E2"])
+        group("RS-R01"),
+        &serde_json::json!({
+            "parent_target": "role-rule",
+            "parent_id": "RS-R01",
+            "parent_document": "spec/roles.md",
+            "child_target": "role-evaluation",
+            "child_ids": ["RS-R01-E1", "RS-R01-E2"],
+        })
     );
-    assert_eq!(group("RS-R02")["child_ids"], serde_json::json!([]));
-    assert!(matrix["requirements"].is_array());
+    assert_eq!(
+        group("RS-R02"),
+        &serde_json::json!({
+            "parent_target": "role-rule",
+            "parent_id": "RS-R02",
+            "parent_document": "spec/roles.md",
+            "child_target": "role-evaluation",
+            "child_ids": [],
+        })
+    );
+
+    let requirements = matrix["requirements"].as_array().unwrap();
+    assert_eq!(requirements.len(), 1);
+    assert_eq!(requirements[0]["id"], "FR-001");
+    assert_eq!(requirements[0]["criteria"].as_array().unwrap().len(), 3);
+    assert_eq!(requirements[0]["design"][0]["relation"], "fr-has-component");
+    assert_eq!(requirements[0]["design"][0]["state"], "covered");
+    assert_eq!(requirements[0]["design"][0]["elements"][0]["id"], "CMP-001");
+    assert_eq!(
+        matrix["requirements"], control_matrix["requirements"],
+        "adding parent groups must leave the populated requirement and design projection unchanged"
+    );
 }
 
 /// The retained runs reach `matrix.build` through the host: the run identity of
