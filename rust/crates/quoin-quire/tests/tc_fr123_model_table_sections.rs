@@ -79,6 +79,48 @@ fn run_fixture(id: &str) -> (Value, Value) {
     )
 }
 
+fn run_process_emits_relationship() -> Value {
+    let (case, schema, schema_documents) = fixture_case("steps-copied-states-stay-in-model");
+    let markdown = r#"---
+id: process-001
+title: Process fixture
+object: process
+---
+# Process fixture
+
+## Relationships
+
+| Name | Verb | Target | Multiplicity |
+|---|---|---|---|
+| event | emits | order-placed | 1 |
+"#;
+    let request = json!({
+        "markdown": markdown,
+        "module": {
+            "contractVersion": "1.0.0",
+            "package": case.get("package").unwrap_or(&json!("agent-ix/spec-objects-business")),
+            "exports": [],
+            "mappings": ["relationships", "record-sections"],
+        },
+        "path": "process.md",
+        "sourceIdentity": "ix://acme/shop/process-001",
+        "bundle": case["bundle"],
+        "dataSchema": schema,
+        "schemaDocuments": schema_documents,
+        "objectType": "process",
+        "relationVocabulary": {
+            "objectType": "process",
+            "edgeTypes": {"emits": {"category": "dependency"}},
+            "roles": {"process": [], "event": []},
+            "allowedLinks": {"process": {"emits": ["event"]}},
+        },
+    });
+    serde_json::to_value(
+        extract_semantic_json(&request).expect("pinned Quire extracts process relationship"),
+    )
+    .expect("semantic output serializes")
+}
+
 fn is_valid(schema_name: &str, instance: &Value) -> bool {
     let schema_dir = quire_fixtures::record_sections_dir().join("schemas");
     let schema_text =
@@ -338,4 +380,31 @@ fn header_only_values_table_is_available_and_empty() {
         "available"
     );
     assert_eq!(output["diagnostics"], json!([]));
+}
+
+#[trace("FR-123-AC-6")]
+#[test]
+fn typed_emits_persists_and_event_source_keep_their_declared_owners() {
+    let process = run_process_emits_relationship();
+    assert_eq!(
+        process["relations"][0],
+        json!({
+            "verb": "emits",
+            "category": "dependency",
+            "composite": false,
+            "target": "ix://acme/shop/order-placed",
+            "multiplicity": {"lower": 1, "upper": 1, "ordered": false, "unique": false}
+        })
+    );
+    assert_eq!(process["availability"]["relations"]["state"], "available");
+    assert_eq!(process["diagnostics"], json!([]));
+
+    let (_, repository) = run_fixture("persists-and-emits-sections-are-prose");
+    assert_eq!(repository["persists"], json!(["ix://acme/shop/agg-001"]));
+    assert_eq!(repository["diagnostics"], json!([]));
+    assert!(repository["record"].is_null());
+
+    let (_, event) = run_fixture("event-source-section");
+    assert_eq!(event["record"]["source"], "ix://acme/shop/agg-001");
+    assert_eq!(event["diagnostics"], json!([]));
 }
