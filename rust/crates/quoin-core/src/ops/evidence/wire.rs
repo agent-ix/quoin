@@ -363,6 +363,9 @@ pub struct RecordRequest {
     /// The obligations as quire derives them today.
     #[serde(default)]
     pub obligations: Vec<quoin_quire_types::Obligation>,
+    /// The source binders used to resolve same-named test symbols by file path.
+    #[serde(default)]
+    pub coverage_matrix: Vec<quoin_quire_types::CoverageMatrixRequirement>,
 }
 
 /// The payload `evidence.record` writes to stdout.
@@ -378,6 +381,9 @@ pub enum RecordPayload {
         bound: Vec<ObligationId>,
         /// Trace ids matching no derived obligation, sorted.
         unmatched: Vec<String>,
+        /// Qualified symbols that appeared in multiple files without an entry path.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        ambiguous: Vec<String>,
         /// The stderr line when the recording is exit 1: an unmatched trace id,
         /// or a test run whose entries carry no trace id at all.
         #[serde(skip_serializing_if = "Option::is_none")]

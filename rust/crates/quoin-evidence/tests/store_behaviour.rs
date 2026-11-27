@@ -68,6 +68,7 @@ fn entry(symbol: &str, outcome: Outcome, traces: &[&str]) -> RunEntry {
     RunEntry {
         symbol: SymbolId::new(symbol),
         outcome,
+        path: None,
         score: None,
         metric: None,
         trace_ids: Some(traces.iter().map(|id| (*id).to_owned()).collect()),

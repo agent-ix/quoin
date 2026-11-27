@@ -100,7 +100,7 @@ fn tc_1915_junit_record_keeps_the_extracted_symbol_and_trace_id() {
     let fixture = Fixture::new();
     let output = fixture.record(
         Some("junit"),
-        "junit 1.0",
+        "junit 1.0.0",
         r#"<testsuite><testcase classname="tests.adapter" name="test_acceptance"><properties><property name="trace" value="FR-001-AC-1"/></properties></testcase></testsuite>"#,
         "SUITE-JUNIT",
     );
@@ -128,7 +128,7 @@ fn tc_1915_cargo_mutants_record_keeps_the_per_function_score() {
     let results = r#"{"outcomes":[{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"CaughtMutant"},{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"MissedMutant"}]}"#;
     let output = fixture.record(
         Some("cargo-mutants"),
-        "cargo-mutants 25.1",
+        "cargo-mutants 25.1.0",
         results,
         "SUITE-MUTANTS",
     );
@@ -148,7 +148,7 @@ fn tc_1915_cargo_mutants_record_keeps_the_per_function_score() {
 fn tc_1915_tool_name_selects_the_run_adapter_when_adapter_flag_is_absent() {
     let fixture = Fixture::new();
     let results = r#"{"outcomes":[{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"CaughtMutant"},{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"MissedMutant"}]}"#;
-    let output = fixture.record(None, "cargo-mutants 25.1", results, "SUITE-TOOL-SELECTED");
+    let output = fixture.record(None, "cargo-mutants 25.1.0", results, "SUITE-TOOL-SELECTED");
     assert!(
         output.status.success(),
         "{}",

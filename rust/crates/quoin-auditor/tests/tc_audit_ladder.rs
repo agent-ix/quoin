@@ -134,6 +134,7 @@ fn method(id: &str, class: &str, evidence_kind: Option<&str>) -> VerificationMet
         class: class.to_owned(),
         definition: String::new(),
         evidence_kind: evidence_kind.map(ToOwned::to_owned),
+        unreachable_reason: None,
         applicability: BTreeMap::new(),
         tooling: Vec::new(),
         module_name: "m".to_owned(),
