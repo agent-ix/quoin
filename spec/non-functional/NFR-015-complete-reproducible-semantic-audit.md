@@ -24,8 +24,9 @@ relationships:
 > output is deleted by quoin#654, so the thing it constrained no longer exists
 > and nothing surviving inherits the obligation.
 >
-> The metric definitions below are retained for provenance. Their methods are marked
-> `Withdrawn` so the computed matrix matches this disposition.
+> The former metric definitions are retained below as prose for provenance. The
+> measurement table uses the repository's withdrawn placeholder so the computed
+> matrix does not treat those historical measures as active obligations.
 
 ## Statement
 
@@ -34,12 +35,16 @@ and reproduce the same canonical content from the same identified inputs.
 
 ## Measurement and Evaluation
 
+The withdrawn audit measured these historical quantities:
+
+- Default modules inventoried / default modules declared — target 100%, threshold 100%.
+- Type declarations with complete axis assessments / type declarations inventoried — target 100%, threshold 100%.
+- Markdown paths assigned exactly one parse state / Markdown paths discovered — target 100%, threshold 100%.
+- Canonical artifact bytes differing across equal-input reruns — target 0, threshold 0.
+
 | Metric | Target | Threshold | Method |
 | --- | --- | --- | --- |
-| Default modules inventoried / default modules declared | 100% | 100% | Withdrawn |
-| Type declarations with complete axis assessments / type declarations inventoried | 100% | 100% | Withdrawn |
-| Markdown paths assigned exactly one parse state / Markdown paths discovered | 100% | 100% | Withdrawn |
-| Canonical artifact bytes differing across equal-input reruns | 0 | 0 | Withdrawn |
+| Withdrawn | n/a | n/a | n/a |
 
 ## Verification
 
