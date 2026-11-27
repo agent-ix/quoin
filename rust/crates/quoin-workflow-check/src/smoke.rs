@@ -1505,7 +1505,8 @@ mod tests {
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        let harness = Harness::new_with_plugin_version(&binary, &runner, &plugin, false, true)
+            .expect("smoke harness");
         design_gate_context_seeded(&harness).expect("design-gate host seeding and protection");
     }
 
@@ -1517,7 +1518,8 @@ mod tests {
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        let harness = Harness::new_with_plugin_version(&binary, &runner, &plugin, false, true)
+            .expect("smoke harness");
         design_gate_missing_host_refused(&harness).expect("missing host API is refused");
     }
 
@@ -1529,7 +1531,8 @@ mod tests {
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
         let plugin =
             std::env::var("QUOIN_PLUGIN_ROOT").expect("QUOIN_PLUGIN_ROOT from workflow-test");
-        let harness = Harness::new(&binary, &runner, &plugin, false).expect("smoke harness");
+        let harness = Harness::new_with_plugin_version(&binary, &runner, &plugin, false, true)
+            .expect("smoke harness");
         design_gate_incompatible_host_refused(&harness).expect("incompatible host API is refused");
     }
 

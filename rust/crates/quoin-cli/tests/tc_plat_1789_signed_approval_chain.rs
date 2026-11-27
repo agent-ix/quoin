@@ -467,7 +467,7 @@ fn a_tag_binds_exactly_the_digest_quoin_computed_and_one_changed_character_refus
     assert!(refused.get("approver").is_none());
 }
 
-#[trace("FR-065-AC-12", "FR-068-AC-13", "FR-188-AC-25")]
+#[trace("FR-065-AC-12", "FR-068-AC-13")]
 #[test]
 #[ignore = "needs a real engineering-assurance: run `make e2e-signing`"]
 fn a_forged_claimed_approval_stays_a_claim_and_the_real_verifier_refuses_it() {
@@ -493,7 +493,12 @@ fn a_forged_claimed_approval_stays_a_claim_and_the_real_verifier_refuses_it() {
         "tag": "approval-1",
         "record_id": "change-1",
         "record_digest": digest,
-        "trust": real["trust"],
+        // The event carries Quoin's declared claim projection. EA 0.11.0 adds
+        // diagnostic fields to its result's trust object; those are not part
+        // of this persisted claim shape.
+        "trust": {
+            "allowed_signers": real["trust"]["allowed_signers"],
+        },
         "approver": "reviewer@example.test",
         "meaning": ["reviewed", "tested"],
         "signature_kind": "ssh",
