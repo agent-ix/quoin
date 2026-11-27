@@ -237,7 +237,7 @@ fn tc_002_a_stated_obligation_binds_a_satisfied_report() {
     assert_eq!(held[0]["symbols"], json!([expected]));
 }
 
-#[trace("FR-152-AC-2", "FR-152-AC-3", "NFR-033-M-1")]
+#[trace("FR-152-AC-2", "FR-152-AC-3")]
 #[test]
 fn tc_002_no_stated_obligation_leaves_the_entry_unbound() {
     // AC-3: ids unrelated to the symbol or analysisKind.

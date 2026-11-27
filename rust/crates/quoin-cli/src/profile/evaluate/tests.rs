@@ -189,7 +189,7 @@ fn a_pack_key_is_refused_in_the_project_layer_and_accepted_in_the_user_layer() {
     assert!(evaluate(&user, &[module("mod-a")], &engine).is_ok());
 }
 
-#[trace("FR-181-AC-9", "NFR-037-AC-3", "NFR-037-M-3")]
+#[trace("FR-181-AC-9", "NFR-037-AC-3")]
 #[test]
 fn the_document_shape_is_closed_and_has_no_verdict_field() {
     let report = evaluate(&profile(&["a"]), &[module("mod-a")], &fake()).expect("evaluates");

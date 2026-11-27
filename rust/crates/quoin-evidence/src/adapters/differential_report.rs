@@ -618,7 +618,7 @@ mod tests {
     use ix_trace_rs::trace;
     use std::cell::Cell;
 
-    #[trace("NFR-032-M-1")]
+    #[trace("FR-151-AC-10")]
     #[test]
     fn oversized_report_is_refused_before_the_parser_receives_it() {
         let input = " ".repeat(MAX_REPORT_BYTES + 1);
