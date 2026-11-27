@@ -43,13 +43,27 @@ impl From<String> for LaunchFailure {
     }
 }
 
+#[implements("FR-020-AC-3")]
 fn launch(name: &str, arguments: &ArgMatches) -> Result<Response, LaunchFailure> {
     if !FLOWS.contains(&name) {
         return Err("an unknown flow command reached dispatch".to_owned().into());
     }
     let path = skill_path(name, arguments)?;
     let home = absolute_home()?;
-    let version = execute(ProcessCommand::new(runner_program()).arg("--version"))?;
+    let version =
+        execute(ProcessCommand::new(runner_program()).arg("--version")).map_err(|failure| {
+            match failure {
+                LaunchFailure::Local(message) => LaunchFailure::Local(format!(
+                    "{message}; install ix-flow with npm install -g @agent-ix/ix-flow@latest"
+                )),
+                LaunchFailure::Child(exit, message) => LaunchFailure::Child(
+                    exit,
+                    format!(
+                        "{message}; install ix-flow with npm install -g @agent-ix/ix-flow@latest"
+                    ),
+                ),
+            }
+        })?;
     let parsed = semver::Version::parse(version.trim().trim_start_matches('v'))
         .map_err(|_| "ix-flow did not report a supported semantic version".to_owned())?;
     if parsed < semver::Version::new(0, 3, 1) {

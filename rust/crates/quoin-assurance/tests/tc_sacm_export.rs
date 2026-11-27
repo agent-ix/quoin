@@ -218,6 +218,55 @@ fn sacm_keeps_an_open_challenge_and_top_claim_open_with_or_without_acceptance() 
     }
 }
 
+#[trace("FR-047-AC-10")]
+#[test]
+fn sacm_retains_an_open_strategy_challenge_as_an_unmapped_diagnostic() {
+    for signed_acceptance in [false, true] {
+        let mut fixture = quoin_assurance::gsn::from_authored(&json!({
+            "topClaim": { "id": "TOP", "statement": "Top claim", "status": "open",
+                "reasons": ["Open authored challenge"] },
+            "reasoning": [{ "id": "ARG", "statement": "Strategy", "supports": "TOP",
+                "criteria": [{ "criterion": "Criterion", "status": "open" }] }],
+            "challenges": [{ "id": "CH", "target": "ARG", "statement": "Open strategy challenge",
+                "status": "open", "reason": "Open authored challenge" }]
+        }))
+        .expect("authored strategy challenge converts to GSN");
+        if signed_acceptance {
+            fixture.signed_acceptance = Some(
+                serde_json::from_value(json!({
+                    "label": "Human acceptance of case content", "record_id": "quoin.gsn-case/v1",
+                    "record_digest": format!("sha256:{SECOND_DIGEST}"),
+                    "tag": "case/review", "approver": "case-reviewer@example.invalid",
+                    "meaning": ["assurance-case-accepted"], "signer_source": "allowed_signers",
+                    "signed_at_missing": "tagger_date_unreadable", "trusted_at_missing": "ssh_signature"
+                }))
+                .expect("signed acceptance shape"),
+            );
+        }
+
+        let exported =
+            export(&fixture, &MemoryEvidence::default()).expect("strategy challenge exports");
+        let parsed = parse_xml(&exported.xmi);
+        let argument = parsed.child("argumentPackage");
+        for (id, kind) in [("G1", "sacm:Claim"), ("CC1", "sacm:Claim")] {
+            let retained = argument.by_id(id);
+            assert_eq!(retained.attr("xmi:type"), kind);
+            assert_eq!(retained.attr("assertionDeclaration"), "needsSupport");
+        }
+        assert_eq!(
+            argument.by_id("S1").attr("xmi:type"),
+            "sacm:ArgumentReasoning"
+        );
+        assert!(argument.children.iter().all(|element| {
+            element.attr("xmi:type") != "sacm:AssertedInference" || element.attr("source") != "CC1"
+        }));
+        assert_eq!(
+            exported.report.diagnostics().collect::<Vec<_>>(),
+            ["unmapped: CH: challenges ARG: strategy target is not a SACM Claim"]
+        );
+    }
+}
+
 #[trace("FR-226-AC-9")]
 #[test]
 fn signed_acceptance_is_one_contained_artifact_and_unsigned_export_is_unchanged() {
