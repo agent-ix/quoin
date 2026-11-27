@@ -24,13 +24,14 @@ use quoin_change_assurance::error::{ChangeAssuranceError, Subject};
 use quoin_change_assurance::ids::{AttestationId, RecordId, Revision};
 use quoin_change_assurance::intake::disk::{DiskEvidenceStore, STAGING_PREFIX};
 use quoin_change_assurance::intake::memory::MemoryEvidenceStore;
+use quoin_change_assurance::model::decision::{DecisionHistory, ReviewDecision, read_review_event};
 use quoin_change_assurance::{
     EvidenceStore, Published, RetainedPair, intake_attestation, prepare_change_record,
     read_attestation, read_change_record, write_change_record,
 };
 use quoin_store::{JsonValue, canonical_bytes};
 
-use crate::common::{OUTPUT, attestation_text, json, record_text, replacing};
+use crate::common::{OUTPUT, attestation_text, history, json, record_text, replacing};
 
 /// The scenario attestation's canonical bytes and the output it attests to.
 fn pair() -> (Vec<u8>, Vec<u8>) {
@@ -186,6 +187,50 @@ fn tc_455_writing_a_successor_leaves_every_parent_byte_untouched() {
             }
         }
         assert_eq!(retained.len(), 3);
+    });
+}
+
+/// A rejected or revision-requested decision keeps the addressed record
+/// revision available for later review and lineage checks.
+#[trace("FR-063-CON-2")]
+#[test]
+fn tc_455_rejected_and_revision_requested_records_remain_addressable() {
+    let id = RecordId::parse("change-1", Subject::Record, "record_id").unwrap();
+    let decision = |id: &str, sequence: u8, revision: u8, status: &str| {
+        format!(
+            r#"{{"id":"{id}","ts":"2026-08-31T00:00:00.000Z","sequence":{sequence},"actor":{{"id":"reviewer-1","kind":"human"}},"kind":"change_assurance.review_decided","payload":{{"schema_version":2,"record_id":"change-1","revision":{revision},"decision":"{status}"}}}}"#
+        )
+    };
+    let decision_history = DecisionHistory::from_json(&history(&[
+        decision("event-1", 1, 1, "rejected"),
+        decision("event-2", 2, 2, "revise"),
+    ]))
+    .unwrap();
+
+    over_both_stores(|store_name, store| {
+        for number in 1..=2_u32 {
+            let record = prepare_change_record(&record_at(number)).unwrap();
+            write_change_record(store, &record).unwrap();
+        }
+
+        let ordered = decision_history
+            .in_sequence_order()
+            .expect("the retained decisions have contiguous sequence numbers");
+        assert_eq!(ordered.len(), 2);
+        for (event, expected) in ordered
+            .into_iter()
+            .zip([ReviewDecision::Rejected, ReviewDecision::Revise])
+        {
+            let event = read_review_event(event).expect("the decision event is retained");
+            assert_eq!(event.payload.decision, expected);
+            let revision =
+                Revision::new(event.payload.revision, Subject::Record, "revision").unwrap();
+            let retained = read_change_record(store, &id, revision)
+                .unwrap()
+                .unwrap_or_else(|| panic!("{store_name}: {expected:?} revision was not retained"));
+            assert_eq!(retained.revision, revision);
+            assert_eq!(retained.record_id, id);
+        }
     });
 }
 
