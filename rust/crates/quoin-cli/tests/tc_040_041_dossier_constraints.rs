@@ -26,6 +26,16 @@ fn quoin(work: &Path, args: &[&str]) -> Output {
         .expect("quoin starts")
 }
 
+fn quoin_with_safety_fixture(work: &Path, args: &[&str]) -> Output {
+    let checkout = safety_checkout();
+    Command::new(env!("CARGO_BIN_EXE_quoin"))
+        .args(args)
+        .env("SPEC_OBJECTS_SAFETY_DIR", checkout)
+        .current_dir(work)
+        .output()
+        .expect("quoin starts")
+}
+
 fn repo(work: &Path) -> String {
     work.to_str().unwrap().to_owned()
 }
@@ -56,18 +66,31 @@ fn omit_verification_methods(root: &Path, ids: &[&str]) {
     }
 }
 
+fn safety_checkout() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-safety")
+}
+
 fn safety_module() -> String {
-    std::env::var_os("SPEC_OBJECTS_SAFETY_DIR")
-        .map_or_else(
-            || {
-                Path::new(env!("CARGO_MANIFEST_DIR"))
-                    .join("../../../../spec-objects-safety/spec_objects_safety")
-            },
-            std::path::PathBuf::from,
-        )
+    safety_checkout()
+        .join("spec_objects_safety")
         .to_str()
         .unwrap()
         .to_owned()
+}
+
+fn values_after_field<'a>(document: &'a str, field: &str) -> impl Iterator<Item = &'a str> {
+    document
+        .lines()
+        .filter_map(move |line| line.strip_prefix(field))
+        .map(str::trim)
+}
+
+fn table_cells(document: &str) -> impl Iterator<Item = &str> {
+    document
+        .lines()
+        .filter(|line| line.starts_with('|'))
+        .flat_map(|line| line.split('|').map(str::trim))
+        .filter(|cell| !cell.is_empty() && !cell.chars().all(|character| character == '-'))
 }
 
 fn write_undecided_risk(root: &Path) {
@@ -134,15 +157,26 @@ fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
             document.contains("Authored statement"),
             "{name}: {document}"
         );
-        for unsupported in [
-            "Criticality: high",
-            "Criticality: critical",
-            "Software safety class: class-",
-            "compliance: compliant",
-            "acceptability: acceptable",
-        ] {
-            assert!(!document.contains(unsupported), "{name}: {document}");
+        assert!(
+            values_after_field(&document, "Criticality: ").all(|value| value == "unassigned"),
+            "{name} rendered an unrecorded criticality: {document}"
+        );
+        assert!(
+            values_after_field(&document, "Software safety class: ")
+                .all(|value| value == "unassigned"),
+            "{name} rendered an unrecorded software safety class: {document}"
+        );
+        let cells: Vec<_> = table_cells(&document).collect();
+        for unsupported in ["high", "critical", "compliant", "acceptable"] {
+            assert!(
+                !cells.contains(&unsupported),
+                "{name} rendered unsourced value {unsupported:?}: {document}"
+            );
         }
+        assert!(
+            !cells.iter().any(|cell| cell.starts_with("class-")),
+            "{name} rendered an unrecorded class: {document}"
+        );
     }
 }
 
@@ -185,11 +219,22 @@ fn authored_requirement_bytes_are_preserved_and_change_only_the_srs_content() {
 
     let before_docs = selected_docs(before.path());
     let after_docs = selected_docs(after.path());
-    assert_ne!(before_docs[0], after_docs[0]);
-    assert!(after_docs[0].contains("Changed authored meaning — preserve bytes."));
-    assert_eq!(before_docs[1..], after_docs[1..]);
-    assert!(before_docs[0].contains("Authored statement for FR-002."));
+    let source_text = "Authored statement for FR-001.";
+    let changed_text = "Changed authored meaning — preserve bytes.";
+    assert_eq!(
+        before_docs[0].replace(source_text, changed_text),
+        after_docs[0]
+    );
+    assert_eq!(before_docs[1], after_docs[1], "architecture output changed");
+    assert_eq!(
+        before_docs[2].replace(source_text, changed_text),
+        after_docs[2],
+        "trace-matrix changed beyond the authored criterion bytes"
+    );
+    assert!(after_docs[0].contains(changed_text));
+    assert!(after_docs[2].contains(changed_text));
     assert!(after_docs[0].contains("Authored statement for FR-002."));
+    assert!(after_docs[2].contains("Authored statement for FR-002."));
 }
 
 fn clause_binding(path: &Path, id: &str, clause: &str) {
@@ -286,7 +331,7 @@ fn missing_values_remain_explicit_gaps_in_the_selected_m2_documents() {
 
 #[trace("NFR-041-AC-4")]
 #[test]
-fn not_released_stays_not_released_and_empty_risk_input_is_not_accepted() {
+fn not_released_stays_not_released_and_undecided_risk_is_not_accepted() {
     let work = tempfile::tempdir().unwrap();
     write_fixture(work.path(), &["FR-001"]);
     write_undecided_risk(work.path());
@@ -299,7 +344,7 @@ fn not_released_stays_not_released_and_empty_risk_input_is_not_accepted() {
     let verify = verify.to_str().unwrap();
     let scope = repo(work.path());
     let safety = safety_module();
-    let output = quoin(
+    let output = quoin_with_safety_fixture(
         work.path(),
         &[
             "dossier",
@@ -345,6 +390,7 @@ fn rmm_sections(document: &str) -> (Vec<String>, BTreeMap<String, String>) {
             let (heading, body) = section.split_once('\n').unwrap();
             (heading.to_owned(), body.to_owned())
         })
+        .filter(|(heading, _)| heading != "Gaps")
         .collect::<Vec<_>>();
     let order = sections
         .iter()
