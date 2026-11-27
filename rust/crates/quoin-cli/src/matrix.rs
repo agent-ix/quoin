@@ -263,22 +263,26 @@ fn ensure_request_size(request: &serde_json::Value, limit: usize) -> Result<(), 
     if observed <= limit {
         return Ok(());
     }
-    let error = if observed <= HARD_MAX_REQUEST_BYTES {
+    Err(request_size_error(observed, limit))
+}
+
+#[implements("FR-115-AC-27")]
+fn request_size_error(observed: usize, limit: usize) -> String {
+    if observed <= HARD_MAX_REQUEST_BYTES {
         format!(
             "matrix.build request is {observed} bytes, over the selected {limit}-byte limit. Raise it with --max-request-bytes {observed}, `quoin config set matrix_max_request_bytes {observed}` for the user setting, or `matrix_max_request_bytes: {observed}` in project .ix/config.d/quoin.yaml (quoin.matrix_max_request_bytes); reduce the request with repeatable --module PATH. The hard maximum is {HARD_MAX_REQUEST_BYTES} bytes"
         )
     } else {
         format!(
-            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {HARD_MAX_REQUEST_BYTES}-byte hard maximum. This request cannot be raised further; reduce its size with repeatable --module PATH"
+            "matrix.build request is {observed} bytes, over the selected {limit}-byte limit and the {HARD_MAX_REQUEST_BYTES}-byte hard maximum. You can set the selected limit with --max-request-bytes N or `quoin config set matrix_max_request_bytes N` (quoin.matrix_max_request_bytes), but it cannot exceed the hard maximum; reduce the request with repeatable --module PATH"
         )
-    };
-    Err(error)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        DEFAULT_MAX_REQUEST_BYTES, HARD_MAX_REQUEST_BYTES, ensure_request_size,
+        DEFAULT_MAX_REQUEST_BYTES, HARD_MAX_REQUEST_BYTES, ensure_request_size, request_size_error,
         select_request_limit,
     };
     use ix_trace_rs::trace;
@@ -321,5 +325,19 @@ mod tests {
         let error = select_request_limit(Some(HARD_MAX_REQUEST_BYTES + 1), None)
             .expect_err("hard ceiling cannot be overridden");
         assert!(error.contains("hard maximum"));
+    }
+
+    #[trace("FR-115-AC-27")]
+    #[test]
+    fn refusal_over_hard_max_names_limit_and_scoped_alternative() {
+        let observed = HARD_MAX_REQUEST_BYTES + 1;
+        let error = request_size_error(observed, HARD_MAX_REQUEST_BYTES);
+
+        assert!(error.contains(&format!("request is {observed} bytes")));
+        assert!(error.contains(&format!("{}-byte hard maximum", HARD_MAX_REQUEST_BYTES)));
+        assert!(error.contains("--max-request-bytes N"));
+        assert!(error.contains("quoin.matrix_max_request_bytes"));
+        assert!(error.contains("repeatable --module PATH"));
+        assert!(error.contains("cannot exceed the hard maximum"));
     }
 }
