@@ -26,6 +26,23 @@ verification_catalog:
     name: Unit testing
     class: Test
     definition: Exercise the behavior under test.
+traceability:
+  trace_targets:
+    - name: acceptance-criterion
+      archetype: FR
+      section: Acceptance Criteria
+      id_column: ID
+  obligations:
+    - name: acceptance-criterion
+      target: acceptance-criterion
+      statement_column: Criteria
+      method_column: Verification
+  trace_tags:
+    markers:
+      - name: rust-trace-attribute
+        language: rust
+        pattern: '#\[trace\(([^)]*)\)\]'
+        template: "#[trace({ids})]"
 "#;
 
 const SPEC: &str = "---\nid: FR-001\ntype: FR\ntitle: Advice fixture\n---\n\n\
