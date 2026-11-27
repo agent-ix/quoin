@@ -111,7 +111,7 @@ rather than lowering it.
 | --- | --- | --- | --- |
 | FR-089-CON-1 | The eight classes SHALL be exhaustive and mutually exclusive over the reported findings. | Interface | Withdrawn |
 | FR-089-CON-2 | A finding SHALL NOT be removed from the partition by any classification. | Interface | Withdrawn |
-| FR-089-CON-3 | A `contract-fix-this-campaign` disposition SHALL NOT relax a declared constraint in order to lower a count; it amends a declaration the measurement showed to be wrong. | Safety | Inspection |
+| FR-089-CON-3 | Withdrawn with the corpus-measurement implementation under quoin#388; retained for provenance only (id not reused). A `contract-fix-this-campaign` disposition SHALL NOT relax a declared constraint in order to lower a count; it amends a declaration the measurement showed to be wrong. | Safety | Withdrawn |
 
 ## Acceptance Criteria
 
