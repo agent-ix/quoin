@@ -17,14 +17,13 @@ relationships:
 
 ## Description
 
-Quoin SHALL specify the mapping from an enumeration's `## Values` table, and
-from each other model-table section a module declares (`## States`,
-`## Transitions`, `## Workflow`, `## Members`, `## Ubiquitous Language`), to the
-record key of the same meaning that the object type's `data_schema` declares,
-and SHALL name the owner of every other optional record key of
-`agent-ix/spec-objects-business`, so that every such key has exactly one owner
-and one authored form. The golden fixtures live in the `quire-fixtures` crate
-of `agent-ix/quire-rs`, which implements the extractor.
+Quoin SHALL map the model-table sections and related record keys listed in this
+requirement to the same-meaning record keys declared by their object schemas,
+and SHALL state one owner and authored form for each optional key in that local
+mapping boundary. The complete schema inventory belongs to the external
+`agent-ix/spec-objects-business` module and is not enumerated by this
+requirement. The golden fixtures live in the `quire-fixtures` crate of
+`agent-ix/quire-rs`, which implements the extractor.
 
 ## Rationale
 
@@ -36,7 +35,9 @@ table gives each value a row, a source locus and a column for the description,
 the same shape as every other model table, and no module or corpus artifact
 authors the list form. FR-071 is amended to say so.
 
-The module's other optional keys fall into four groups, each with one owner:
+The known related optional keys in Quoin's local mapping boundary fall into
+four groups, each with one owner. This is not a census of the external
+module's complete schema inventory:
 
 - Model tables: quire-rs FR-075 extracts them under `model`, gated by the
   module's `table_row` locator. This requirement maps them onto the record
@@ -74,7 +75,7 @@ The module's other optional keys fall into four groups, each with one owner:
 - The record SHALL carry no `sourceSpan`; each key's span is reported in `recordSources` (FR-121) and the per-entry spans in `model` (quire-rs FR-075).
 - Quire SHALL NOT read under FR-121 a record key that a declared quire-rs FR-075 table locator of the object type fills (`values`, `states`, `transitions`, `steps`, `members`, `vocabulary`), whatever the heading of its section normalizes to, so the section is read once, by its locator.
 
-### Owners of every other key
+### Owners of known related keys
 
 - Quire SHALL derive `emits` (`aggregate_root`, `process`) and `persists` (`repository`) from `## Relationships` rows whose verb is `emits` or `persists` (quire-rs FR-076), and SHALL NOT read a `## Emits` or `## Persists` section. A module that ships them names the token `relationships`.
 - Quire SHALL read an `event`'s `source` from a `## Source` section holding one inline id, by FR-121; a module that ships the key names the token `record-sections` and adds the section.
@@ -122,7 +123,7 @@ that Quoin carries or enumerates those schemas.
 | FR-123-AC-5 | Under `semantic.mappings` naming `record-sections`, an `enumeration` with a `## Values` table yields no `semantic.invalid-model-cell` `column-unknown` and no second reading of the section, and `## States`, `## Transitions`, `## Workflow` and `## Members` are likewise read once, by their locators. | Test |
 | FR-123-AC-6 | A `repository` `## Relationships` row with verb `persists` and a `process` row with verb `emits` extract `persists` and `emits` through quire-rs FR-076; under `record-sections` a `## Emits` section and a `## Persists` section are prose and yield no diagnostic; an `event` with a `## Source` inline id extracts `source` under `record-sections`. | Test |
 | FR-123-AC-7 | Under `semantic.mappings` naming `record-sections`, a `nested_entity` fixture with a `## Parent` section and a `## Owner` section has no `owner` key and no diagnostic, and a `domain` fixture with a `## Ubiquitous Language` table has no `ubiquitous_language` key. | Test |
-| FR-123-AC-8 | Every optional record key governed by this requirement appears exactly once in the Record-key ownership table with one owner and an authored form, or is explicitly marked unmapped; the external `spec-objects-business` schema population is outside Quoin's local test boundary. | Test |
+| FR-123-AC-8 | The Record-key ownership table names one mapping owner and authored form for each locally governed optional key, and explicitly marks locally known keys this requirement does not map. | Inspection |
 | FR-123-AC-9 | An `enumeration` fixture whose `## Values` table has a header and no rows extracts an empty `values` and reports `values` `available`. | Test |
 
 ## Dependencies

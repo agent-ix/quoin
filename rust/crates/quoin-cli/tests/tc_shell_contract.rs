@@ -87,15 +87,19 @@ fn tc_1650_root_command_inventory_matches_the_retained_shell() {
     let output = invoke(&["--help"]);
     assert!(output.status.success(), "stderr: {}", text(&output.stderr));
     let current = text(&output.stdout);
-    let retained = command_names(retained);
+    let retained: std::collections::BTreeSet<_> = command_names(retained).into_iter().collect();
+    let additions = [
+        ("COMMANDS".to_owned(), "selftest".to_owned()),
+        ("COMMANDS".to_owned(), "validation".to_owned()),
+    ]
+    .into_iter()
+    .collect::<std::collections::BTreeSet<_>>();
+    let mut expected = retained;
+    expected.extend(additions);
     let current: std::collections::BTreeSet<_> = command_names(&current).into_iter().collect();
-    let missing: Vec<_> = retained
-        .into_iter()
-        .filter(|command| !current.contains(command))
-        .collect();
-    assert!(
-        missing.is_empty(),
-        "retained root topics or commands disappeared during the port: {missing:?}"
+    assert_eq!(
+        current, expected,
+        "the root command inventory must match the retained surface plus the explicit native maintenance commands"
     );
 }
 

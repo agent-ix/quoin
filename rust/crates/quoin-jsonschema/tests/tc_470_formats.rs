@@ -33,7 +33,8 @@ use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_jsonschema::{
-    JsonSchemaError, JsonSchemaErrorCode, MeasurementSchema, SchemaKeyword, SchemaValidator,
+    JsonSchemaError, JsonSchemaErrorCode, MeasurementSchema, MeasurementValidator, SchemaKeyword,
+    SchemaValidator,
 };
 use quoin_measurement::date_time::Rfc3339DateTime;
 use serde_json::{Value, json};
@@ -86,17 +87,10 @@ fn with_observed_at(schema: MeasurementSchema, value: &str) -> Value {
     document
 }
 
-fn asserted(schema: MeasurementSchema) -> SchemaValidator {
-    SchemaValidator::compile_with_formats(
-        Path::new(schema.vendored_path()),
-        &schema.document().expect("the vendored schema parses"),
-        &[],
-        &[quoin_jsonschema::FormatCheck {
-            name: "date-time",
-            check: is_rfc3339_date_time,
-        }],
-    )
-    .expect("compiles with formats")
+fn asserted(schema: MeasurementSchema) -> MeasurementValidator {
+    schema
+        .compile(is_rfc3339_date_time)
+        .expect("production measurement schema compiler registers formats")
 }
 
 fn annotated(schema: MeasurementSchema) -> SchemaValidator {
