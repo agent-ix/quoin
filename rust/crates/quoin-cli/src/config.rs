@@ -153,7 +153,7 @@ fn edit() -> Result<Response, String> {
 pub(crate) fn context() -> Result<RuntimeContext, String> {
     let cwd = std::env::current_dir()
         .map_err(|error| format!("cannot read current directory: {error}"))?;
-    context_for_repo(&cwd)
+    Ok(context_for_repo(&cwd))
 }
 
 #[implements("FR-027-AC-10")]
