@@ -67,7 +67,7 @@ fn tc_1806_cli_unmatched_id_exits_1_with_a_warning_line() {
             "--suite",
             "SUITE-1",
             "--tool",
-            "custom",
+            "custom 1.0.0",
             "--results",
             results.to_str().unwrap(),
             "--timestamp",

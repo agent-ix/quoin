@@ -556,6 +556,64 @@ fn tc_456_209_the_graph_never_keeps_the_statement() {
     );
 }
 
+#[trace("FR-030-AC-11")]
+#[test]
+fn tc_456_bindings_append_across_suites_and_merge_within_a_suite() {
+    let obligations = [obligation("FR-001-AC-1")];
+    let mut store = MemoryEvidence::new();
+
+    for (suite_name, timestamp, symbol) in [
+        ("SUITE-001", "2026-08-17T00:00:00Z", "tests::first"),
+        ("SUITE-001", "2026-08-18T00:00:00Z", "tests::second"),
+        ("SUITE-002", "2026-08-17T00:00:00Z", "tests::other_suite"),
+    ] {
+        let mut request = request(
+            suite_name,
+            vec![entry(symbol, Outcome::Pass, &["FR-001-AC-1"])],
+        );
+        request.timestamp = timestamp.to_owned();
+        record_run(&mut store, &request, &obligations).unwrap();
+    }
+
+    let graph = read_bindings(&store).unwrap();
+    assert_eq!(graph.bindings.len(), 2, "one binding is retained per suite");
+    assert_eq!(graph.bindings[0].suite, suite("SUITE-001"));
+    assert_eq!(
+        graph.bindings[0].symbols,
+        vec![
+            SymbolId::new("tests::first"),
+            SymbolId::new("tests::second")
+        ]
+    );
+    assert_eq!(graph.bindings[1].suite, suite("SUITE-002"));
+    assert_eq!(
+        graph.bindings[1].symbols,
+        vec![SymbolId::new("tests::other_suite")]
+    );
+}
+
+#[trace("FR-030-AC-14")]
+#[test]
+fn tc_456_binding_graph_order_has_fixed_locale_independent_bytes() {
+    let mut store = MemoryEvidence::new();
+    write_bindings(
+        &mut store,
+        &[
+            binding("FR-010-AC-1", "SUITE-z"),
+            binding("FR-002-AC-1", "SUITE-a"),
+            binding("FR-002-AC-1", "SUITE-Z"),
+        ],
+    )
+    .unwrap();
+
+    let bytes = store.read(&bindings_path()).unwrap().unwrap();
+    assert_eq!(
+        bytes,
+        "{\n  \"bindings\": [\n    {\n      \"obligation\": \"FR-002-AC-1\",\n      \"suite\": \"SUITE-Z\",\n      \"symbols\": [\n        \"t\"\n      ]\n    },\n    {\n      \"obligation\": \"FR-002-AC-1\",\n      \"suite\": \"SUITE-a\",\n      \"symbols\": [\n        \"t\"\n      ]\n    },\n    {\n      \"obligation\": \"FR-010-AC-1\",\n      \"suite\": \"SUITE-z\",\n      \"symbols\": [\n        \"t\"\n      ]\n    }\n  ],\n  \"schemaVersion\": 1\n}\n",
+        "the binding graph's checked-in ordering bytes changed"
+    );
+}
+
 #[trace("FR-030-AC-15")]
 #[test]
 fn tc_456_210_a_test_case_id_binds_to_every_criterion_whose_cell_names_it() {

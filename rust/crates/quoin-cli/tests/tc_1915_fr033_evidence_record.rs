@@ -100,7 +100,7 @@ fn tc_1915_junit_record_keeps_the_extracted_symbol_and_trace_id() {
     let fixture = Fixture::new();
     let output = fixture.record(
         Some("junit"),
-        "junit 1.0",
+        "junit 1.0.0",
         r#"<testsuite><testcase classname="tests.adapter" name="test_acceptance"><properties><property name="trace" value="FR-001-AC-1"/></properties></testcase></testsuite>"#,
         "SUITE-JUNIT",
     );
@@ -128,7 +128,7 @@ fn tc_1915_cargo_mutants_record_keeps_the_per_function_score() {
     let results = r#"{"outcomes":[{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"CaughtMutant"},{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"MissedMutant"}]}"#;
     let output = fixture.record(
         Some("cargo-mutants"),
-        "cargo-mutants 25.1",
+        "cargo-mutants 25.1.0",
         results,
         "SUITE-MUTANTS",
     );
@@ -148,7 +148,7 @@ fn tc_1915_cargo_mutants_record_keeps_the_per_function_score() {
 fn tc_1915_tool_name_selects_the_run_adapter_when_adapter_flag_is_absent() {
     let fixture = Fixture::new();
     let results = r#"{"outcomes":[{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"CaughtMutant"},{"scenario":{"Mutant":{"file":"src/lib.rs","function":{"function_name":"target"}}},"summary":"MissedMutant"}]}"#;
-    let output = fixture.record(None, "cargo-mutants 25.1", results, "SUITE-TOOL-SELECTED");
+    let output = fixture.record(None, "cargo-mutants 25.1.0", results, "SUITE-TOOL-SELECTED");
     assert!(
         output.status.success(),
         "{}",
@@ -159,4 +159,47 @@ fn tc_1915_tool_name_selects_the_run_adapter_when_adapter_flag_is_absent() {
     assert_eq!(run["suite"], "SUITE-TOOL-SELECTED");
     assert_eq!(run["entries"][0]["symbol"], "src/lib.rs::target");
     assert_eq!(run["entries"][0]["score"], 0.5);
+}
+
+#[trace("FR-030-AC-17")]
+#[test]
+fn tc_1915_record_requires_an_exact_semantic_tool_version() {
+    let fixture = Fixture::new();
+    let output = fixture.record(
+        Some("entries"),
+        "quoin 1.0.0",
+        r#"{"entries":[]}"#,
+        "SUITE-VERSIONED",
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(fixture.stored_run(&output)["tool"], "quoin 1.0.0");
+
+    for invalid in ["quoin", "quoin latest", "quoin 1.0"] {
+        let fixture = Fixture::new();
+        let output = fixture.record(
+            Some("entries"),
+            invalid,
+            r#"{"entries":[]}"#,
+            "SUITE-INVALID",
+        );
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "accepted invalid --tool identity {invalid:?}: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains("exact semantic version"),
+            "missing version diagnostic: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(
+            !fixture.repo.path().join("spec/evidence").exists(),
+            "invalid tool identity wrote evidence"
+        );
+    }
 }
