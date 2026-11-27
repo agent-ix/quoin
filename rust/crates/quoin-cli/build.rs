@@ -10,8 +10,12 @@ use std::path::Path;
 use std::process::Command;
 use std::{fmt::Write as _, io};
 
+use ix_trace_rs::implements;
+
 mod build_git;
 
+#[implements("FR-002-AC-3")]
+#[implements("FR-002-AC-4")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // `.git` is a text file in a linked worktree, so watching it never fires;
     // watch the files Git itself says move HEAD, branch and tags.
@@ -19,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("cargo:rerun-if-changed={}", path.display());
     }
     let version = Command::new("git")
-        .args(["describe", "--tags", "--dirty"])
+        .args(["describe", "--tags"])
         .output()
         .ok()
         .filter(|output| output.status.success())

@@ -7,11 +7,19 @@ use std::process::Command;
 
 use ix_trace_rs::trace;
 
-#[trace("FR-002-AC-1", "FR-002-AC-2")]
+#[trace("FR-002-AC-1", "FR-002-AC-2", "FR-002-AC-4")]
 #[test]
-fn fr_002_ac_1_ac_2_version_aliases_print_the_nonempty_baked_version() {
+fn fr_002_ac_1_ac_2_ac_4_version_aliases_print_the_nonempty_baked_version() {
     let expected = env!("QUOIN_VERSION");
     assert!(!expected.is_empty(), "the built CLI version is non-empty");
+    assert!(
+        !expected.starts_with('v'),
+        "the baked version has no leading v"
+    );
+    assert!(
+        !expected.ends_with("-dirty"),
+        "the baked version has no dirty marker"
+    );
 
     for argument in ["version", "--version", "-v"] {
         let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
