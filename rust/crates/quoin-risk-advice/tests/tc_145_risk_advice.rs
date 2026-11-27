@@ -310,7 +310,7 @@ fn an_estimate_that_breaks_its_contract_is_skipped() {
             .as_array()
             .unwrap()
             .as_slice(),
-        []
+        [] as [serde_json::Value; 0]
     );
 }
 
@@ -936,7 +936,7 @@ fn an_estimate_with_no_residual_risk_is_listed_apart() {
             .as_array()
             .unwrap()
             .as_slice(),
-        []
+        [] as [serde_json::Value; 0]
     );
     assert_eq!(queue(&json).len(), 2);
 }
