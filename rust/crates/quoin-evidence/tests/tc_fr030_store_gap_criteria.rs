@@ -13,7 +13,7 @@ use quoin_evidence::record::{RecordRequest, record_run};
 use quoin_evidence::store::read_bindings;
 use quoin_evidence::types::{Outcome, RunEntry};
 use quoin_evidence::{
-    EvidenceSource, MemoryEvidence, ObligationId, STORE_SCHEMA_VERSION, SuiteId, SymbolId,
+    EvidenceSource, MemoryEvidence, STORE_SCHEMA_VERSION, SuiteId, SymbolId,
 };
 use quoin_quire_types::Obligation;
 
