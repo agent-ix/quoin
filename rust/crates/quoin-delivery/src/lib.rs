@@ -497,6 +497,7 @@ fn validate_record(record: &ArtifactRecord) -> Result<(), DeliveryError> {
 )]
 mod tests {
     use ix_trace_rs::trace;
+    use std::cell::RefCell;
     use std::collections::BTreeMap;
 
     use super::*;
@@ -506,6 +507,26 @@ mod tests {
     }
     impl Transport for FixtureTransport {
         fn get(&self, url: &Url, limit: usize) -> Result<Vec<u8>, DeliveryError> {
+            let body = self
+                .bodies
+                .get(url.as_str())
+                .ok_or_else(|| DeliveryError::Transport("fixture URL absent".to_owned()))?
+                .clone();
+            if body.len() > limit {
+                return Err(DeliveryError::BodyTooLarge);
+            }
+            Ok(body)
+        }
+    }
+
+    struct RecordingTransport {
+        bodies: BTreeMap<String, Vec<u8>>,
+        requested: RefCell<Vec<String>>,
+    }
+
+    impl Transport for RecordingTransport {
+        fn get(&self, url: &Url, limit: usize) -> Result<Vec<u8>, DeliveryError> {
+            self.requested.borrow_mut().push(url.as_str().to_owned());
             let body = self
                 .bodies
                 .get(url.as_str())
@@ -560,7 +581,43 @@ mod tests {
         ));
     }
 
-    #[trace("FR-022")]
+    #[trace("FR-022-AC-1")]
+    #[test]
+    fn tc_373_750_update_selects_host_artifact_and_replaces_single_unhashed_executable() {
+        let archive_url = "https://example.test/quoin-host.tar.gz";
+        let archive = tar(b"replacement executable", executable_name());
+        let manifest_url = "https://example.test/manifest.json";
+        let document = manifest(&archive, archive_url);
+        let parsed = ReleaseManifest::parse(&document).expect("manifest without a hash parses");
+        let target = host_target().expect("test host has a supported release target");
+        parsed.select(target).expect("host artifact exists");
+        let mut bodies = BTreeMap::new();
+        bodies.insert(manifest_url.to_owned(), document);
+        bodies.insert(archive_url.to_owned(), archive);
+        let scratch = tempfile::tempdir().unwrap();
+        let executable = scratch.path().join(executable_name());
+        fs::write(&executable, b"old executable").unwrap();
+
+        let result = update(
+            &FixtureTransport { bodies },
+            manifest_url,
+            false,
+            &Version::new(1, 0, 0),
+            &executable,
+            false,
+        )
+        .expect("valid host artifact replaces the running executable");
+
+        assert_eq!(
+            result,
+            UpdateResult::Replaced {
+                version: Version::new(9, 9, 9)
+            }
+        );
+        assert_eq!(fs::read(executable).unwrap(), b"replacement executable");
+    }
+
+    #[trace("FR-022-AC-2")]
     #[test]
     fn tc_373_747_check_only_never_fetches_or_mutates_the_archive() {
         let archive_url = "https://example.test/quoin.tar.gz";
@@ -571,8 +628,12 @@ mod tests {
         let scratch = tempfile::tempdir().unwrap();
         let executable = scratch.path().join(executable_name());
         fs::write(&executable, b"old executable").unwrap();
+        let transport = RecordingTransport {
+            bodies,
+            requested: RefCell::new(Vec::new()),
+        };
         let result = update(
-            &FixtureTransport { bodies },
+            &transport,
             manifest_url,
             false,
             &Version::new(1, 0, 0),
@@ -587,6 +648,11 @@ mod tests {
             }
         );
         assert_eq!(fs::read(executable).unwrap(), b"old executable");
+        assert_eq!(
+            *transport.requested.borrow(),
+            [manifest_url],
+            "check-only fetches the manifest but never requests the archive URL"
+        );
     }
 
     #[trace("FR-022")]

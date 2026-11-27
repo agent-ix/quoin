@@ -631,4 +631,62 @@ mod tests {
         };
         assert_eq!(duplicate.modules, ["\u{10000}", "\u{e000}"]);
     }
+
+    #[trace("NFR-002-M-1")]
+    #[test]
+    fn tc_521_fixed_roots_have_stable_catalog_order_across_runs() {
+        let roots = [
+            ModuleDocument {
+                root: "/roots/first".to_owned(),
+                manifest: "name: first\nartifact_types: [{name: FR}]\n".to_owned(),
+                skeleton_names: Vec::new(),
+            },
+            ModuleDocument {
+                root: "/roots/second".to_owned(),
+                manifest: "name: second\nartifact_types: [{name: FR}]\n".to_owned(),
+                skeleton_names: Vec::new(),
+            },
+        ];
+
+        let first = build(&roots, &[]).expect("fixed roots build");
+        let repeated = build(&roots, &[]).expect("same fixed roots build again");
+
+        assert_eq!(
+            first, repeated,
+            "fixed roots produce identical catalog output"
+        );
+        assert_eq!(
+            first
+                .modules
+                .iter()
+                .map(|module| module.name.as_str())
+                .collect::<Vec<_>>(),
+            ["first", "second"],
+            "module ordering follows the fixed candidate-root order"
+        );
+    }
+
+    #[trace("NFR-002-M-2")]
+    #[test]
+    fn tc_521_duplicate_module_lists_are_sorted_independent_of_root_order() {
+        let roots = [
+            ModuleDocument {
+                root: "/roots/zeta".to_owned(),
+                manifest: "name: zeta\nartifact_types: [{name: FR}]\n".to_owned(),
+                skeleton_names: Vec::new(),
+            },
+            ModuleDocument {
+                root: "/roots/alpha".to_owned(),
+                manifest: "name: alpha\nartifact_types: [{name: FR}]\n".to_owned(),
+                skeleton_names: Vec::new(),
+            },
+        ];
+
+        let catalog = build(&roots, &[]).expect("duplicate roots build");
+        let [duplicate] = catalog.duplicates.as_slice() else {
+            panic!("one duplicate artifact type is reported");
+        };
+
+        assert_eq!(duplicate.modules, ["alpha", "zeta"]);
+    }
 }
