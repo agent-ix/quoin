@@ -11,9 +11,10 @@ relationships:
 
 ## Description
 
-When the tool validation kit runs a self-test or real-tool test suite, it shall
-retain one run record so a later report can identify what ran and what each
-case found.
+When Quoin runs its self-test suite, it shall retain one run record so a later
+report can identify what ran and what each case found. The Toolchain Validation
+Kit owns run records for suites that invoke external tools (PLAT-1641); Quoin's
+self-test runner does not invoke external tools.
 
 ## Inputs
 
@@ -21,7 +22,6 @@ case found.
 - Operating system and architecture
 - Run timestamp and suite name
 - Per-case outcome, traced acceptance criteria, and detail
-- External-tool configuration index reference, when the run uses external tools
 - The producing binary's embedded anomaly-record set
 
 ## Outputs
@@ -71,9 +71,6 @@ case found.
   array when the producing binary embeds an empty anomaly set.
 - The self-test recorder SHALL set provided to false and documents to an empty
   array when the producing binary embeds no anomaly set.
-- When any listed external tool participates in the run, the run record shall
-  carry the external-tools configuration index reference defined by
-  [PLAT-1641](https://linear.app/agent-ix/issue/PLAT-1641).
 - A serialized run record shall not store a source commit digest, a source
   revision pin, or a report-content digest.
 
@@ -83,7 +80,7 @@ case found.
 | --- | --- | --- |
 | FR-236-AC-1 | A successful run record contains the tool name and version output, OS, architecture, suite, timestamp, and every case result. | Test |
 | FR-236-AC-2 | A failed, errored, or not-executed run is retained with the corresponding status and detail. | Test |
-| FR-236-AC-3 | When a run involves an external tool, its record contains the PLAT-1641 configuration index reference used by that run. This is a cross-repository validation-kit follow-up; quoin selftest does not invoke external tools. | Test |
+| FR-236-AC-3 | Rehomed to the Toolchain Validation Kit under [PLAT-1641](https://linear.app/agent-ix/issue/PLAT-1641): a retained record for a suite that invokes external tools contains the configuration index reference used by that run. Quoin selftest does not invoke external tools. | Inspection |
 | FR-236-AC-4 | A serialized run record contains no source commit digest, source revision pin, or report-content digest. | Test |
 | FR-236-AC-5 | Given no repository evidence store, `selftest --run --out <path>` retains the canonical run record at that path; without `--out`, the runner reports the missing retained destination and starts no case. | Test |
 | FR-236-AC-6 | Given nested ancestors with `spec/evidence/`, the recorder writes under the nearest one without invoking Git and creates its `runs/<suite>/` directories; when no ancestor has `spec/evidence/`, it uses required `--out`. | Test |
