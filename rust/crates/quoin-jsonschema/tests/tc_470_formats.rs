@@ -33,7 +33,8 @@ use ix_trace_rs::trace;
 use std::path::Path;
 
 use quoin_jsonschema::{
-    JsonSchemaError, JsonSchemaErrorCode, MeasurementSchema, SchemaKeyword, SchemaValidator,
+    JsonSchemaError, JsonSchemaErrorCode, MeasurementSchema, MeasurementValidator, SchemaKeyword,
+    SchemaValidator,
 };
 use quoin_measurement::date_time::Rfc3339DateTime;
 use serde_json::{Value, json};
@@ -86,17 +87,10 @@ fn with_observed_at(schema: MeasurementSchema, value: &str) -> Value {
     document
 }
 
-fn asserted(schema: MeasurementSchema) -> SchemaValidator {
-    SchemaValidator::compile_with_formats(
-        Path::new(schema.vendored_path()),
-        &schema.document().expect("the vendored schema parses"),
-        &[],
-        &[quoin_jsonschema::FormatCheck {
-            name: "date-time",
-            check: is_rfc3339_date_time,
-        }],
-    )
-    .expect("compiles with formats")
+fn asserted(schema: MeasurementSchema) -> MeasurementValidator {
+    schema
+        .compile(is_rfc3339_date_time)
+        .expect("production measurement schema compiler registers formats")
 }
 
 fn annotated(schema: MeasurementSchema) -> SchemaValidator {
@@ -137,6 +131,44 @@ fn tc_470_date_time_is_asserted_on_both_schemas_and_annotation_only_without_it()
              fails, the two constructors no longer differ and `quoin-semantic`'s goldens were \
              captured against the other one"
         );
+    }
+}
+
+/// Each current schema replay compares verdicts and normalized diagnostics
+/// against the committed expected cases, and reports its nonempty population.
+#[trace("FR-098-AC-1", "FR-098-AC-8")]
+#[test]
+fn tc_470_each_schema_replay_reports_its_compared_population() {
+    for schema in MeasurementSchema::ALL {
+        let validator = asserted(*schema);
+        let cases = [
+            (retained_base(*schema), true, vec![]),
+            (
+                with_observed_at(*schema, "2026-02-30T00:00:00Z"),
+                false,
+                vec![("/observed_at", SchemaKeyword::Format)],
+            ),
+        ];
+        let mut compared = 0;
+        for (document, expected_verdict, expected_diagnostics) in cases {
+            let errors = validator.errors(&document);
+            assert_eq!(
+                validator.is_valid(&document),
+                expected_verdict,
+                "{schema}: replayed verdict differs from the committed expected case"
+            );
+            let diagnostics: Vec<_> = errors
+                .iter()
+                .map(quoin_jsonschema::SchemaError::identity)
+                .collect();
+            assert_eq!(
+                diagnostics, expected_diagnostics,
+                "{schema}: normalized diagnostic tuples differ from the committed expected case"
+            );
+            compared += 1;
+        }
+        assert!(compared > 0, "{schema}: parity replay must not be empty");
+        println!("{schema}: compared population = {compared}");
     }
 }
 

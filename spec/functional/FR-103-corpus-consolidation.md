@@ -11,63 +11,48 @@ relationships:
 
 ## Description
 
-Quoin SHALL consolidate the corpus accounting and selection behaviour it owns
-into one Rust implementation obtained from `engineering-assurance`, SHALL treat
-the `corpus/` submodule's contents as another repository's tree that Quoin may
-read but not retire, and SHALL change no accepted-corpus byte.
+The corpus-accounting and source-selection consolidation is withdrawn: Quoin
+no longer owns that subsystem. The one-shot corpus-measurement subsystem was
+disposed of under [#388](https://github.com/agent-ix/quoin/issues/388), and the
+accepted corpus is owned by `agent-ix/qa-corpus`; this repository has no
+`corpus/` submodule or gitlink. The retained read-only boundary is specified by
+FR-100-CON-3.
 
 ## Inputs
 
-- `agent-ix/qa-corpus` read as a sibling checkout; this repository carries no
-  `corpus/` submodule and no gitlink to it.
-- The governed corpus consumed by the measurement crates.
-- The Quoin-side corpus selection and accounting code reached from `src/` and
-  `scripts/`.
-- `engineering-assurance`'s published corpus-accounting capability.
+- The retained read-only corpus boundary in FR-100-CON-3.
 
 ## Outputs
 
-- A corpus-accounting record naming the corpus identity and the population it covers.
-- A recorded statement of which corpus concerns are out of Quoin's ownership,
-  pending the owner scope ruling.
+- A recorded disposition that this repository owns no corpus-measurement
+  capability.
 
 ## Behavior
 
-- Quoin SHALL scope this consolidation to the corpus accounting and selection its
-  own measurement crates consume.
-- Quoin SHALL record that corpus construction and reproduction from recorded
-  sources belong to the repository the submodule points at, and SHALL treat the
-  question of whether this programme has any scope over `agent-ix/qa-corpus` as
-  an open owner ruling rather than assuming either answer.
-- Quoin SHALL obtain corpus accounting from `engineering-assurance` rather than
-  implementing a local equivalent, and if `engineering-assurance` does not supply
-  it, then Quoin SHALL file a gap ticket in `engineering-assurance`.
-- Quoin SHALL leave every accepted-corpus file unchanged by the consolidation;
-  the repository's own history shows it, and nothing is computed or recorded.
-- Quoin SHALL publish no corpus tooling package to public npmjs or crates.io, and
-  SHALL publish any retained Python package to the internal PyPI.
+- No active Quoin measurement crate consumes corpus accounting or resolves a
+  corpus source. Reintroducing either capability requires a new requirement and
+  must follow FR-100's shared-ownership and read-only boundaries.
 
 ## Error Conditions
 
-A `corpus/` tree that differs byte for byte before and after consolidation, a measurement run
-that resolves two corpus sources each block consolidation.
+None: no corpus measurement or consolidation runs in this repository.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-103-CON-1 | Consolidation SHALL NOT change an accepted-corpus byte. | Data Integrity | Test |
+| FR-103-CON-1 | Quoin SHALL NOT implement corpus accounting or select a corpus source; any future capability requires a new requirement and ownership ruling. | Responsibility | Inspection |
 
 ## Acceptance Criteria
 
 | ID | Criteria | Verification |
 |----|----------|--------------|
-| FR-103-AC-2 | `git diff` over the accepted-corpus tree between the commit before consolidation and the commit after it is empty, over a named non-empty population. | Test |
-| FR-103-AC-3 | A measurement run resolves exactly one corpus source, and a planted second source is refused. | Test |
-| FR-103-AC-4 | Corpus accounting is obtained from `engineering-assurance`, and no local corpus-accounting implementation exists in the workspace. | Test |
+| FR-103-AC-2 | Withdrawn: the consolidation was disposed of under #388 before any accepted-corpus tree was changed; the read-only guarantee remains FR-100-CON-3. | Withdrawn |
+| FR-103-AC-3 | Withdrawn: Quoin no longer runs corpus measurement or selects a corpus source; a future such capability requires a new requirement. | Withdrawn |
+| FR-103-AC-4 | Withdrawn: no current Quoin capability consumes corpus accounting from `engineering-assurance`; FR-100 governs any future shared capability. | Withdrawn |
 | FR-103-AC-7 | Withdrawn: the corpus is not a submodule, so no revision is recorded or reported. | Withdrawn |
 
 ## Dependencies
 
-- **Upstream**: [FR-096](./FR-096-versioned-rust-engine-boundary.md); the owner ruling that `agent-ix/qa-corpus` is out of this programme's scope (2026-09-12). This requirement runs in parallel with the delivery stages.
-- **Downstream**: none. This previously named [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md) as consuming the consolidated accounting, which stopped being true when [#388](https://github.com/agent-ix/quoin/issues/388) disposed of the corpus-measurement subsystem: FR-100's measurement crates now carry the measurement-record capability and are required NOT to restate corpus accounting.
+- **Upstream**: the recorded disposition in [#388](https://github.com/agent-ix/quoin/issues/388) and the retained read-only boundary in [FR-100-CON-3](./FR-100-rust-evidence-measurement-change-assurance.md).
+- **Downstream**: none. FR-100's measurement crates retain measurement-record behavior and SHALL NOT restate corpus accounting.

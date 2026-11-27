@@ -49,9 +49,13 @@ plugin disposition, or a remaining Node/oclif shell path blocks the cutover.
 
 | ID | Constraint | Type | Validation |
 |----|-----------|------|------------|
-| FR-102-CON-1 | The Node/oclif shell SHALL NOT be removed before every capability is Rust-native. | Lifecycle | Test |
 | FR-102-CON-2 | The extension withdrawal SHALL have a dated owner disposition. | Compatibility | Inspection |
 | FR-102-CON-3 | The command surface SHALL NOT change as a side effect of a port stage. | Compatibility | Test |
+
+Historical disposition: FR-102-CON-1 was the pre-cutover ordering gate. The
+gate completed when the Node/oclif shell was retired; current native surface
+and shell absence are covered by FR-102-AC-6. The retired identifier is not
+reused.
 
 ## Acceptance Criteria
 

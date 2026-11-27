@@ -225,7 +225,7 @@ mod tests {
         );
     }
 
-    #[trace("FR-022")]
+    #[trace("FR-022", "FR-001-AC-3")]
     #[test]
     fn tc_373_751_update_preserves_check_and_registry_grammar() {
         let matches = command()
