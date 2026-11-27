@@ -557,6 +557,11 @@ fn execute_script(
     let _subreaper = SubreaperGuard::acquire()?;
     let mut command = ProcessCommand::new("/bin/sh");
     command
+        .args([
+            "-c",
+            "trap 'case_status=$?; trap - EXIT; wait; exit \"$case_status\"' EXIT; case_script=$1; shift; . \"$case_script\"",
+        ])
+        .arg(script)
         .arg(script)
         .current_dir(case_tmp)
         .env_clear()
@@ -610,15 +615,18 @@ fn execute_script(
         if Instant::now() >= deadline {
             timed_out = true;
             #[cfg(target_os = "linux")]
-            let descendants = case_processes(child.id(), &pipe_links)?;
-            terminate_process_group(&mut child)?;
-            status = Some(
+            let timeout_status = {
+                let descendants = case_processes(child.id(), &pipe_links);
+                cleanup_timed_out_case(&mut child, descendants)?
+            };
+            #[cfg(not(target_os = "linux"))]
+            let timeout_status = {
+                terminate_process_group(&mut child)?;
                 child
                     .wait()
-                    .map_err(|error| format!("reap timed-out case process: {error}"))?,
-            );
-            #[cfg(target_os = "linux")]
-            terminate_case_descendants(&descendants)?;
+                    .map_err(|error| format!("reap timed-out case process: {error}"))?
+            };
+            status = Some(timeout_status);
             break;
         }
         thread::sleep(Duration::from_millis(10));
@@ -638,6 +646,43 @@ fn execute_script(
         stderr,
         timed_out,
     })
+}
+
+#[cfg(target_os = "linux")]
+fn cleanup_timed_out_case(
+    child: &mut std::process::Child,
+    descendants: Result<BTreeSet<i32>, String>,
+) -> Result<std::process::ExitStatus, String> {
+    let mut cleanup_errors = Vec::new();
+    let descendants = match descendants {
+        Ok(descendants) => Some(descendants),
+        Err(error) => {
+            cleanup_errors.push(format!("enumerate timed-out case descendants: {error}"));
+            None
+        }
+    };
+    if let Err(error) = terminate_process_group(child) {
+        cleanup_errors.push(format!("terminate timed-out case process group: {error}"));
+    }
+    let reaped_status = match child.wait() {
+        Ok(status) => Some(status),
+        Err(error) => {
+            cleanup_errors.push(format!("reap timed-out case process: {error}"));
+            None
+        }
+    };
+    if let Some(descendants) = descendants {
+        if let Err(error) = terminate_case_descendants(&descendants) {
+            cleanup_errors.push(format!("terminate timed-out case descendants: {error}"));
+        }
+    }
+    if !cleanup_errors.is_empty() {
+        return Err(format!(
+            "timeout cleanup failed: {}",
+            cleanup_errors.join("; ")
+        ));
+    }
+    reaped_status.ok_or_else(|| "timed-out case process was not reaped".to_owned())
 }
 
 #[cfg(target_os = "linux")]
@@ -1226,6 +1271,76 @@ mod tests {
         assert!(
             unrelated_status.is_none(),
             "timeout cleanup killed an unrelated child: {unrelated_status:?}"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[trace("FR-235-AC-7")]
+    #[test]
+    fn tc_229_timeout_kills_detached_descendant_after_it_closes_case_pipes() {
+        let root = tempfile::tempdir().expect("a temporary test root");
+        let pid_path = root.path().join("detached.pid");
+        let script = format!(
+            "#!/bin/sh\nsetsid sh -c 'echo $$ > \"{}\"; exec sleep 5' >/dev/null 2>&1 &\nsleep 5 &\nexit 0\n",
+            pid_path.display()
+        );
+        let case_tmp = tempfile::tempdir().expect("a temporary case directory");
+        let home = tempfile::tempdir().expect("an empty home directory");
+        let script_path = case_tmp.path().join("run.sh");
+        std::fs::write(&script_path, script).expect("the timeout script is written");
+
+        let output = execute_script(
+            &script_path,
+            Path::new("/bin/true"),
+            case_tmp.path(),
+            home.path(),
+            Duration::from_millis(100),
+        )
+        .expect("the timed-out case and detached descendants are terminated");
+        assert!(output.timed_out);
+        let pid = std::fs::read_to_string(&pid_path)
+            .expect("the detached child's pid was recorded")
+            .trim()
+            .parse::<u32>()
+            .expect("the recorded pid is numeric");
+        let survived = Path::new(&format!("/proc/{pid}")).exists();
+        if survived {
+            if let Some(pid) = rustix::process::Pid::from_raw(
+                i32::try_from(pid).expect("the recorded pid fits a process id"),
+            ) {
+                let _ = rustix::process::kill_process(pid, rustix::process::Signal::KILL);
+            }
+        }
+        assert!(
+            !survived,
+            "detached child {pid} survived after closing both case pipes"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[trace("FR-235-AC-7")]
+    #[test]
+    fn tc_229_timeout_cleanup_reaps_case_when_proc_scan_fails() {
+        let mut command = ProcessCommand::new("/bin/sh");
+        command.args(["-c", "sleep 5"]);
+        {
+            use std::os::unix::process::CommandExt as _;
+            command.process_group(0);
+        }
+        let mut child = command.spawn().expect("the case process starts");
+        let pid = child.id();
+        let error = cleanup_timed_out_case(
+            &mut child,
+            Err("simulated proc enumeration failure".to_owned()),
+        )
+        .expect_err("the scan failure is reported after cleanup");
+        assert!(
+            error.contains("simulated proc enumeration failure"),
+            "{error}"
+        );
+        assert!(
+            !Path::new(&format!("/proc/{pid}")).exists(),
+            "timed-out case process {pid} was not reaped"
         );
     }
 
