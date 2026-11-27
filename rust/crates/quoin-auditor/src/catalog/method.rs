@@ -36,6 +36,9 @@ pub struct VerificationMethod {
     /// skipped, not failed.
     #[serde(default)]
     pub applicability: BTreeMap<String, Vec<String>>,
+    /// Why a method keyed only on characteristics is intentionally unreachable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unreachable_reason: Option<String>,
     /// Tools the module names for the method.
     #[serde(default)]
     pub tooling: Vec<String>,
@@ -122,6 +125,7 @@ mod tests {
             definition: String::new(),
             evidence_kind: None,
             applicability: std::collections::BTreeMap::new(),
+            unreachable_reason: None,
             tooling: Vec::new(),
             module_name: "m".to_owned(),
         }

@@ -470,13 +470,33 @@ const DERIVED_ASSURANCE: [&str; 9] = [
     "2026-01-01T00:00:00Z",
 ];
 
-#[trace("FR-234-AC-3", "FR-228-AC-8")]
+#[trace("FR-234-AC-3", "FR-228-AC-8", "FR-040-AC-21")]
 #[test]
 fn sacm_derived_command_exports_the_retained_run_selected_by_gsn() {
     let fixture = populated();
     let run_path = "spec/evidence/runs/unit/2026-01-01T00~3A00~3A00Z.json";
     let run = std::fs::read(fixture.repo().join(run_path)).expect("retained run record");
     let digest = quoin_store::attachment::sha256_hex(&run);
+
+    let markdown = fixture.ok(&DERIVED_ASSURANCE);
+    assert!(markdown.starts_with("# Assurance case\n"), "{markdown}");
+    assert!(
+        markdown.contains("```mermaid\nflowchart TD\n"),
+        "{markdown}"
+    );
+    assert!(!markdown.contains("quoin.gsn-case/v1"), "{markdown}");
+    assert!(
+        !markdown.contains("sacm:AssuranceCasePackage"),
+        "{markdown}"
+    );
+
+    let mut legacy_json_args = DERIVED_ASSURANCE.to_vec();
+    legacy_json_args.push("--json");
+    let legacy_json: Value = serde_json::from_str(&fixture.ok(&legacy_json_args))
+        .expect("the existing JSON mode remains case JSON");
+    assert!(legacy_json["claims"].as_array().is_some(), "{legacy_json}");
+    assert!(!legacy_json.get("format").is_some(), "{legacy_json}");
+
     let mut args = DERIVED_ASSURANCE.to_vec();
     args.push("--gsn");
     let gsn: Value = serde_json::from_str(&fixture.ok(&args)).expect("validated GSN");
@@ -696,6 +716,44 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
             .any(|(id, summary)| id == "FR-001-AC-2" && summary.contains("no recorded run")),
         "the stale status must come from the auditor's missing-run check: {from_audit:?}"
     );
+}
+
+/// Existing evidence-audit and assurance projections stay byte-identical
+/// when the repository gains a retained change-assurance record.
+#[trace("FR-065-CON-4")]
+#[test]
+fn change_assurance_storage_does_not_change_existing_audit_or_assurance_output() {
+    let fixture = populated();
+    let audit_args = [
+        "evidence", "audit", "--repo", ".", "--module", ".", "--json",
+    ];
+    let before_audit = fixture.ok(&audit_args);
+    let mut assurance_args = DERIVED_ASSURANCE.to_vec();
+    assurance_args.push("--json");
+    let before_assurance = fixture.ok(&assurance_args);
+
+    let record = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/change-assurance-cli/record-body.json")
+        .canonicalize()
+        .unwrap();
+    let write = fixture.quoin(&[
+        "change-assurance",
+        "write-record",
+        "--input",
+        record.to_str().unwrap(),
+        "--repo",
+        ".",
+        "--json",
+    ]);
+    assert_eq!(
+        write.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&write.stderr)
+    );
+
+    assert_eq!(fixture.ok(&audit_args), before_audit);
+    assert_eq!(fixture.ok(&assurance_args), before_assurance);
 }
 
 /// The retained runs reach `matrix.build` through the host: the run identity of

@@ -939,6 +939,133 @@ fn tc_480_046_old_evidence_stays_historical_and_nothing_is_aggregated() {
     );
 }
 
+/// Responsibility fields are checked as serialized property names, so a
+/// prose occurrence cannot hide a report that emits one of the forbidden
+/// decisions.
+#[trace("FR-067-CON-2")]
+#[test]
+fn tc_480_053_portfolio_has_no_derived_aggregate_or_verdict_fields() {
+    let report = build(&[
+        one("/repos/a", vec![collection("a", "2026-01-01T00:00:00Z")]),
+        one("/repos/b", vec![collection("b", "2026-01-02T00:00:00Z")]),
+    ]);
+    let canonical = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    let value: Value = serde_json::from_str(&canonical).expect("the report is JSON");
+    assert_eq!(value["repositories"].as_array().unwrap().len(), 2);
+
+    fn contains_forbidden_field(value: &Value) -> bool {
+        const FORBIDDEN: &[&str] = &[
+            "aggregate",
+            "aggregates",
+            "aggregateScore",
+            "trustScore",
+            "trust_score",
+            "releaseVerdict",
+            "release_verdict",
+            "qualityVerdict",
+            "thresholdClassification",
+            "threshold_classification",
+        ];
+        match value {
+            Value::Object(fields) => fields.iter().any(|(name, child)| {
+                FORBIDDEN.contains(&name.as_str()) || contains_forbidden_field(child)
+            }),
+            Value::Array(items) => items.iter().any(contains_forbidden_field),
+            _ => false,
+        }
+    }
+
+    assert!(
+        !contains_forbidden_field(&value),
+        "the serialized portfolio must not expose cross-repository aggregation, trust, release, or threshold decisions"
+    );
+}
+
+/// The portfolio carries FR-062 state and gaps as an opaque report object.
+#[trace("FR-067-CON-3")]
+#[test]
+fn tc_480_054_portfolio_preserves_graph_completeness_and_gap_states() {
+    let fan_out = json!({
+        "view": "fan-out",
+        "state": "incomplete",
+        "gaps": [{
+            "kind": "unresolved-binding",
+            "subject": "unit:FR-404-AC-1",
+            "reason": "FR-404-AC-1 is absent from the accepted assurance export"
+        }],
+        "rows": [{
+            "suite": "unit",
+            "obligationCount": 0,
+            "obligations": [],
+            "unresolvedBindings": ["FR-404-AC-1"]
+        }]
+    });
+    let change_impact = json!({
+        "view": "change-impact",
+        "state": "not_computed",
+        "gaps": [{
+            "kind": "unknown-requirement",
+            "subject": "FR-404",
+            "reason": "the requested requirement is absent from the accepted export"
+        }],
+        "rows": []
+    });
+    let stored = |value: &Value| from_serde(value).expect("an opaque analysis crosses the bridge");
+    let graph = InjectedStructuralGraph::Available {
+        path: Some("/repos/a/graph/export.json".to_owned()),
+        premises: stored(&json!({ "accepted": true })),
+        fan_out: stored(&fan_out),
+        change_impact: Some(vec![stored(&change_impact)]),
+    };
+    let report = build(&[repository("/repos/a", Vec::new(), Vec::new(), graph)]);
+    let canonical = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    let value: Value = serde_json::from_str(&canonical).expect("the report is JSON");
+
+    assert_eq!(value["repositories"][0]["graph"]["fanOut"], fan_out);
+    assert_eq!(
+        value["repositories"][0]["graph"]["changeImpact"],
+        json!([change_impact])
+    );
+}
+
+/// A historical non-graph FR-044 collection remains available through the
+/// existing portfolio projection, without becoming graph-quality evidence.
+#[trace("FR-067-CON-4")]
+#[test]
+fn tc_480_055_legacy_measurement_rows_remain_readable_without_migration() {
+    let legacy = collection_with("legacy-metric", "2026-01-01T00:00:00Z", |value| {
+        for observation in value["observations"].as_array_mut().unwrap() {
+            observation["metric"] = json!("legacy_measure");
+            observation["planId"] = json!("legacy-plan");
+        }
+    });
+    let root = tempfile::tempdir().expect("a temporary repository");
+    let root_path = root.path().to_str().expect("UTF-8 repository path");
+    let report = build(&[one(root_path, vec![legacy])]);
+    let repository = &report.repositories[0];
+    assert!(repository.graph_quality.history.is_empty());
+    assert_eq!(
+        repository
+            .base
+            .latest_collection
+            .as_ref()
+            .map(|row| row.id.as_str()),
+        Some("legacy-metric"),
+        "the original FR-044 portfolio still selects its legacy collection"
+    );
+
+    let canonical = canonical_graph_portfolio_json(&report).expect("canonical JSON");
+    let value: Value = serde_json::from_str(&canonical).expect("the report is JSON");
+    assert_eq!(
+        value["repositories"][0]["latestCollection"]["id"],
+        "legacy-metric"
+    );
+    assert_eq!(
+        value["repositories"][0]["graphQuality"]["history"],
+        json!([])
+    );
+}
+
 /// The projection consumes injected objects: it executes nothing, traverses no
 /// graph and writes nothing.
 ///

@@ -452,7 +452,7 @@ fn sacm_preserves_authored_citation_resolution_without_a_fabricated_run() {
     }
 }
 
-#[trace("FR-226-AC-10")]
+#[trace("FR-226-AC-10", "FR-047-AC-9", "FR-047-AC-10")]
 #[test]
 fn sacm_preserves_goal_and_assumption_counter_inferences_and_reports_strategy_challenges() {
     let repo = repo_with_argument("argument-unresolved-ref.md");
@@ -482,6 +482,28 @@ fn sacm_preserves_goal_and_assumption_counter_inferences_and_reports_strategy_ch
             .as_str()
             .unwrap()
     };
+    let top_id = node_id("CLAIM-1018-B");
+    let challenge_id = node_id("CH-OPEN-GOAL");
+    let top = nodes
+        .iter()
+        .find(|node| node["id"] == top_id)
+        .expect("the open top claim remains in GSN");
+    let challenge = nodes
+        .iter()
+        .find(|node| node["id"] == challenge_id)
+        .expect("the open challenge remains in GSN");
+    assert_eq!(top["status"], "open");
+    assert_eq!(challenge["kind"], "counter_claim");
+    assert_eq!(challenge["status"], "open");
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node["source"] == "CH-OPEN-GOAL" && node["kind"] == "context")
+    );
+    assert!(gsn["edges"].as_array().unwrap().iter().any(|edge| {
+        edge["kind"] == "challenges" && edge["from"] == challenge_id && edge["to"] == top_id
+    }));
+
     let output = run_authored_args(&args, &["--sacm"]);
     let xmi = successful_text(&output);
     for (counter, target) in [
@@ -512,6 +534,15 @@ fn sacm_preserves_goal_and_assumption_counter_inferences_and_reports_strategy_ch
     }
     assert!(
         !xmi.contains(&format!("source=\"{}\"", node_id("CH-OPEN-STRATEGY"))),
+        "{xmi}"
+    );
+    assert!(
+        xmi.lines().any(|line| {
+            line.contains("sacm:AssertedInference")
+                && line.contains(&format!("source=\"{challenge_id}\""))
+                && line.contains(&format!("target=\"{top_id}\""))
+                && line.contains("isCounter=\"true\"")
+        }),
         "{xmi}"
     );
     assert!(text(&output.stderr).contains(

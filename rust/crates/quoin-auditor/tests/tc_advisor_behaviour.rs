@@ -40,6 +40,7 @@ fn method(id: &str, class: &str, rules: &[(&str, &[&str])]) -> VerificationMetho
                 )
             })
             .collect(),
+        unreachable_reason: None,
         tooling: Vec::new(),
         module_name: "m".to_owned(),
     }

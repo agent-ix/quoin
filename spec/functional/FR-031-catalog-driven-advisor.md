@@ -128,7 +128,7 @@ against another.
 | FR-031-AC-10 | The advisor is reachable from a command: `quoin advise` derives the obligations from `quire coverage --json`, reads each criterion's FR-052 property shape from `quire properties --json`, and emits one recommendation set per obligation, with `--mismatch-only`, `--inconclusive-only` and `--json`. | Test |
 | FR-031-AC-11 | A `quire properties` run that exits non-zero because some input document failed to resolve still contributes the shapes it did emit. Two untyped asset files must not cost the whole `property_shapes` axis. | Test |
 | FR-031-AC-12 | Every `characteristics` value the active catalog declares is producible by some fact source, or is listed as exempt with a reason. A value asked for and never produced fails the check by name, alongside the methods it strands. | Test |
-| FR-031-AC-13 | No method keyed solely on `characteristics` is unreachable by every possible statement, unless it is declared unreachable with a reason. | Test |
+| FR-031-AC-13 | No method keyed solely on `characteristics` is unreachable by every possible statement, unless its catalog entry declares a non-empty `unreachable_reason`. | Test |
 | FR-031-AC-14 | Characteristics are read from a statement's prose: a markdown link's **target** contributes nothing, its text does. | Test |
 | FR-031-AC-15 | `high-criticality` is minted from the obligation's own declared criticality value, never from a threshold the engine chose. | Test |
 | FR-031-AC-16 | The join check carries no exemption for a `characteristics` value the active catalog no longer declares. | Test |

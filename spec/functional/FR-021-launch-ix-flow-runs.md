@@ -46,10 +46,9 @@ and explicit human acknowledgement.
 | FR-021-AC-2 | A non-zero `ix-flow` exit is propagated as the process exit status                                               | Test (quoin-cli/src/flow.rs) |
 | FR-021-AC-3 | A signal-terminated child yields exit status 1                                                                   | None (no native test is tagged to this criterion; PLAT-1045) |
 | FR-021-AC-4 | A failure to spawn `ix-flow` surfaces an error                                                                   | None (no native test is tagged to this criterion; PLAT-1045) |
-
-| FR-021-AC-5 | Malformed, unsupported and oversized provider requests fail without a success payload. | Test |
-| FR-021-AC-6 | Both workflows refuse automatic final acceptance and expose an explicit acknowledgement gate. | Test |
-| FR-021-AC-7 | Packaged native and npm installations run the installed plugin workflow lifecycle without an agent host or private runtime credentials. | Test |
+| FR-021-AC-5 | Malformed, unsupported and oversized provider requests fail without a success payload.                         | Test (`quoin-cli/src/flow/provider/tests.rs::protocol_errors_never_emit_a_success_payload`) |
+| FR-021-AC-6 | Both workflows refuse automatic final acceptance and expose an explicit acknowledgement gate.                  | Test (`quoin-workflow-check::tc_fr021_review_and_plan_require_human_acknowledgement`) |
+| FR-021-AC-7 | Packaged native and npm installations run the installed plugin workflow lifecycle without an agent host or private runtime credentials. | Test (`quoin-workflow-check::tc_fr021_packaged_install_runs_plugin_workflow_without_credentials`) |
 
 ## Dependencies
 

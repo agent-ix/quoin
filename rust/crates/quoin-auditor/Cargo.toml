@@ -19,6 +19,7 @@ path = "src/lib.rs"
 workspace = true
 
 [dependencies]
+ix-trace-rs = { workspace = true }
 # Optional, and turned on by `quoin-schemas` rather than here: the
 # `auditor.*` wire shapes are this crate's types, and a schema nobody generates
 # is a contract nobody checks.

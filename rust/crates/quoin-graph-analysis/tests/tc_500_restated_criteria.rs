@@ -385,6 +385,40 @@ fn tc_500_044_every_view_carries_the_accepted_premises() {
     }
 }
 
+/// A binding absent from the accepted export is visible but never live.
+///
+/// Restates "retains unresolved bindings under their suite without counting them".
+///
+/// Provenance: quoin#500
+#[trace("FR-062-AC-2")]
+#[test]
+fn tc_500_046_fan_out_keeps_unresolved_bindings_out_of_live_count() {
+    let report = as_json(&GraphAnalysis::from(analyze_fan_out(&plain(&[
+        binding("FR-001-AC-1", "unit"),
+        binding("FR-404-AC-9", "unit"),
+    ]))));
+
+    assert_eq!(report["state"], "incomplete");
+    assert_eq!(report["rows"][0]["suite"], "unit");
+    assert_eq!(report["rows"][0]["obligationCount"], 1);
+    assert_eq!(
+        report["rows"][0]["obligations"],
+        json!([{
+            "obligation": "FR-001-AC-1",
+            "requirements": ["FR-001"],
+        }])
+    );
+    assert_eq!(
+        report["rows"][0]["unresolvedBindings"],
+        json!(["FR-404-AC-9"])
+    );
+    assert!(report["gaps"].as_array().unwrap().iter().any(|gap| {
+        gap["kind"] == "unresolved-binding"
+            && gap["subject"] == "unit:FR-404-AC-9"
+            && gap["reason"] == "FR-404-AC-9 is absent from the accepted assurance export"
+    }));
+}
+
 /// Invalid inputs, non-exact premises and a mismatched audit identity fail
 /// closed; an unavailable retained store never appears as a healthy zero, and
 /// absent is not the same answer as unreadable.

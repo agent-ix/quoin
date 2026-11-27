@@ -53,7 +53,9 @@ pub use advise::{
 pub use audit::{AuditInput, MOCK_SUBJECT_FLOOR, audit, scores_for};
 pub use catalog::{
     DiskModuleCatalogSource, MemoryModuleCatalogSource, MethodCatalog, ModuleCatalogSource,
-    ModuleRoot, VerificationMethod, load_method_catalog, method_classes,
+    ModuleRoot, UnjustifiedUnreachableMethod, UnreachableCharacteristic, VerificationMethod,
+    load_method_catalog, method_classes, unjustified_unreachable_methods,
+    unreachable_characteristics,
 };
 pub use error::{AuditorError, AuditorErrorCode};
 pub use inert::Inert;

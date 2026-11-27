@@ -129,7 +129,18 @@ mod tests {
     use quoin_delivery::{DeliveryError, Transport};
     use url::Url;
 
-    use super::{command, run_with};
+    use super::{DEFAULT_MANIFEST_URL, command, run_with};
+
+    struct RecordingTransport {
+        requests: std::cell::RefCell<Vec<String>>,
+    }
+
+    impl Transport for RecordingTransport {
+        fn get(&self, url: &url::Url, _limit: usize) -> Result<Vec<u8>, DeliveryError> {
+            self.requests.borrow_mut().push(url.to_string());
+            Err(DeliveryError::Manifest("request observed".to_owned()))
+        }
+    }
 
     /// Fails every fetch, so a run that reaches the transport is observable.
     struct Unreachable;
@@ -171,6 +182,47 @@ mod tests {
         let diagnostic = response.diagnostics.first().expect("diagnostic");
         assert_ne!(diagnostic.code, "update.npm_managed");
         assert!(diagnostic.message.contains("transport reached"));
+    }
+
+    #[trace("FR-022-AC-3")]
+    #[test]
+    fn tc_fr022_explicit_and_default_manifest_selection() {
+        let explicit_url = "http://localhost/manifest.json";
+        let explicit = command()
+            .try_get_matches_from(["update", "--registry", explicit_url])
+            .expect("explicit registry parses");
+        let explicit_transport = RecordingTransport {
+            requests: std::cell::RefCell::new(Vec::new()),
+        };
+        let explicit_response = run_with(
+            &explicit,
+            Path::new("/usr/local/bin/quoin"),
+            &explicit_transport,
+        )
+        .expect("explicit update returns a response");
+        assert!(
+            explicit_response.diagnostics[0]
+                .message
+                .contains("request observed")
+        );
+        assert_eq!(explicit_transport.requests.into_inner(), [explicit_url]);
+
+        let default = command()
+            .try_get_matches_from(["update"])
+            .expect("default update parses");
+        let default_transport = RecordingTransport {
+            requests: std::cell::RefCell::new(Vec::new()),
+        };
+        let _response = run_with(
+            &default,
+            Path::new("/usr/local/bin/quoin"),
+            &default_transport,
+        )
+        .expect("default update returns a response");
+        assert_eq!(
+            default_transport.requests.into_inner(),
+            [DEFAULT_MANIFEST_URL]
+        );
     }
 
     #[trace("FR-022")]

@@ -4,6 +4,7 @@
 //! Rust adapter for retained `quoin advise`.
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_core::protocol::Response;
 
 use crate::core_runtime::invoke;
@@ -80,25 +81,14 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         return Ok(advised);
     }
     let all = field(&advised.payload, "advice")?;
-    let shown = all
+    let population = all
         .as_array()
-        .ok_or_else(|| "auditor.advise did not return advice".to_owned())?
-        .iter()
-        .filter(|advice| {
-            (!arguments.get_flag("mismatch-only") && !arguments.get_flag("inconclusive-only"))
-                || (arguments.get_flag("mismatch-only")
-                    && advice
-                        .get("mismatch")
-                        .and_then(serde_json::Value::as_bool)
-                        .unwrap_or(false))
-                || (arguments.get_flag("inconclusive-only")
-                    && advice
-                        .get("inconclusive")
-                        .and_then(serde_json::Value::as_bool)
-                        .unwrap_or(false))
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+        .ok_or_else(|| "auditor.advise did not return advice".to_owned())?;
+    let shown = select(
+        population,
+        arguments.get_flag("mismatch-only"),
+        arguments.get_flag("inconclusive-only"),
+    );
     let rendered = if arguments.get_flag("json") {
         serde_json::to_string_pretty(&serde_json::json!({ "advice": shown }))
             .map_err(|error| error.to_string())?
@@ -106,6 +96,30 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         render(&shown, all.as_array().map_or(&[], Vec::as_slice))?
     };
     Ok(Response::ok(serde_json::json!({ "rendered": rendered })))
+}
+
+#[implements("FR-031-AC-24")]
+fn select(
+    all: &[serde_json::Value],
+    mismatch_only: bool,
+    inconclusive_only: bool,
+) -> Vec<serde_json::Value> {
+    all.iter()
+        .filter(|advice| {
+            (!mismatch_only && !inconclusive_only)
+                || (mismatch_only
+                    && advice
+                        .get("mismatch")
+                        .and_then(serde_json::Value::as_bool)
+                        .unwrap_or(false))
+                || (inconclusive_only
+                    && advice
+                        .get("inconclusive")
+                        .and_then(serde_json::Value::as_bool)
+                        .unwrap_or(false))
+        })
+        .cloned()
+        .collect()
 }
 
 fn field(value: &serde_json::Value, name: &str) -> Result<serde_json::Value, String> {
@@ -214,7 +228,7 @@ fn recommendations(advice: &serde_json::Value) -> Result<String, String> {
 #[cfg(test)]
 #[allow(clippy::expect_used, reason = "test fixtures may panic")]
 mod tests {
-    use super::render;
+    use super::{command, render, select};
     use ix_trace_rs::trace;
 
     #[trace("FR-031", "FR-062", "FR-102")]
@@ -248,6 +262,41 @@ mod tests {
         assert_eq!(
             render(rows, rows).expect("valid advice renders"),
             "FR-001-AC-1  authored=Test  recommend: Analysis (characteristic, property); Test (risk); Inspection (review)  ⚠ mismatch\nNFR-001  authored=—  inconclusive  ⚠ uncatalogued\n\n2 of 2 obligation(s) shown. Of all 2: 1 mismatch, 1 uncatalogued, 1 inconclusive. Recommendations, not verdicts: confirm the method in spec review."
+        );
+    }
+
+    #[trace("FR-031-AC-24")]
+    #[test]
+    fn tc_031_120_filters_union_real_findings_and_tallies_the_full_population() {
+        let all = serde_json::json!([
+            {"obligation":"FR-1-AC-1","mismatch":true,"uncatalogued":false,"inconclusive":false,"authored":"Inspection","recommended":[]},
+            {"obligation":"FR-1-AC-2","mismatch":false,"uncatalogued":false,"inconclusive":true,"authored":"Test","recommended":[]},
+            {"obligation":"FR-1-AC-3","mismatch":false,"uncatalogued":true,"inconclusive":false,"authored":"Unknown","recommended":[]},
+            {"obligation":"FR-1-AC-4","mismatch":false,"uncatalogued":false,"inconclusive":false,"authored":"Test","recommended":[]}
+        ]);
+        let population = all.as_array().expect("fixture population is an array");
+        let arguments = command()
+            .try_get_matches_from(["advise", "--mismatch-only", "--inconclusive-only"])
+            .expect("both filters are accepted together");
+        let shown = select(
+            population,
+            arguments.get_flag("mismatch-only"),
+            arguments.get_flag("inconclusive-only"),
+        );
+        let ids: Vec<&str> = shown
+            .iter()
+            .filter_map(|advice| advice.get("obligation").and_then(serde_json::Value::as_str))
+            .collect();
+        assert_eq!(ids, ["FR-1-AC-1", "FR-1-AC-2"]);
+
+        let rendered = render(&shown, population).expect("human report renders");
+        assert!(
+            rendered.contains("2 of 4 obligation(s) shown."),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("Of all 4: 1 mismatch, 1 uncatalogued, 1 inconclusive."),
+            "{rendered}"
         );
     }
 }

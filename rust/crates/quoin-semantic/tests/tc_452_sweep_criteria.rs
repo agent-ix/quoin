@@ -307,6 +307,34 @@ fn report(root: &Path) -> Value {
     serde_json::to_value(swept).unwrap()
 }
 
+/// The emitted report is the published sweep schema and counts every legacy
+/// form across the shipped fixture corpus.
+#[trace("FR-074-AC-5")]
+#[test]
+fn tc_452_656_fixture_sweep_report_validates_and_counts_each_legacy_form() {
+    let scratch = Scratch::new();
+    let corpus_root = corpus(&scratch);
+    let generated = report(&corpus_root);
+
+    assert!(validators().sweep_report().is_valid(&generated));
+    assert_eq!(generated["corpus"][0]["repository"], "corpus");
+    assert_eq!(generated["counts"]["artifacts"], 5);
+    assert_eq!(
+        generated["counts"]["forms"],
+        json!({
+            "typed-table": 1,
+            "free-column-table": 1,
+            "bullet-list": 2,
+            "sysml-fence": 1,
+            "none": 0,
+        })
+    );
+    assert_eq!(
+        generated["counts"]["legacy"],
+        json!({"bullet-list": 2, "free-column-table": 1})
+    );
+}
+
 /// `legacy_forms: error` is admissible only with a shipped sweep report for
 /// the same package and version, and only one the report schema accepts.
 ///
