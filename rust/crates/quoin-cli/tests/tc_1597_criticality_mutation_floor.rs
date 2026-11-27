@@ -133,9 +133,9 @@ impl Fixture {
         );
     }
 
-    fn audit(&self) -> Value {
+    fn audit_output_with_floor(&self, floor: &str) -> Output {
         let module = process_module();
-        let output = self.invoke(&[
+        self.invoke(&[
             "evidence",
             "audit",
             "--repo",
@@ -143,9 +143,13 @@ impl Fixture {
             "--module",
             module.to_str().unwrap(),
             "--mutation-floor",
-            "high=0.8",
+            floor,
             "--json",
-        ]);
+        ])
+    }
+
+    fn audit_with_floor(&self, floor: &str) -> Value {
+        let output = self.audit_output_with_floor(floor);
         assert_eq!(
             output.status.code(),
             Some(0),
@@ -153,6 +157,10 @@ impl Fixture {
             String::from_utf8_lossy(&output.stderr)
         );
         serde_json::from_slice(&output.stdout).unwrap()
+    }
+
+    fn audit(&self) -> Value {
+        self.audit_with_floor("high=0.8")
     }
 }
 
@@ -196,4 +204,43 @@ fn tc_1597_002_absent_rating_does_not_apply_high_floor() {
             }),
         "an unrated obligation has no high-specific floor: {report}"
     );
+}
+
+#[trace("FR-039-AC-8")]
+#[test]
+fn tc_1597_003_p0_mutation_floor_pair_is_parsed_and_applied() {
+    let fixture = Fixture::new("P0");
+    fixture.record_score();
+
+    let report = fixture.audit_with_floor("P0=0.8");
+    assert!(
+        report["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|finding| {
+                finding["kind"] == "insufficient-mutation-score"
+                    && finding["obligation"] == "FR-1597-AC-1"
+            }),
+        "the exact P0 floor pair must apply to the matching obligation: {report}"
+    );
+}
+
+#[trace("FR-039-AC-9")]
+#[test]
+fn tc_1597_004_out_of_range_and_malformed_mutation_floors_are_refused() {
+    for floor in ["P0=1.01", "P0"] {
+        let fixture = Fixture::new("P0");
+        let output = fixture.audit_output_with_floor(floor);
+        assert_ne!(
+            output.status.code(),
+            Some(0),
+            "invalid mutation floor `{floor}` must be refused"
+        );
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert!(
+            stderr.contains("--mutation-floor"),
+            "the refusal should identify the malformed option: {stderr}"
+        );
+    }
 }
