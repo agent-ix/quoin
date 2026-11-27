@@ -210,7 +210,7 @@ fn record_args(scope: &Scope) -> Vec<String> {
         "--suite",
         "SUITE-1",
         "--tool",
-        "custom",
+        "custom 1.0.0",
         "--results",
         results.to_str().unwrap(),
         "--timestamp",

@@ -100,7 +100,7 @@ impl Fixture {
             "--suite",
             "SUITE-1597",
             "--tool",
-            "fixture",
+            "fixture 1.0.0",
             "--adapter",
             "entries",
             "--results",
