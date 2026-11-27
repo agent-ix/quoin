@@ -4,9 +4,12 @@
 //! Run the self-test cases embedded in the installed binary (FR-235, PLAT-1639).
 
 use clap::{Arg, ArgAction, ArgGroup, ArgMatches, Command};
+use ix_trace_rs::implements;
 use quoin_core::error::{CoreError, CoreErrorCode};
 use quoin_core::protocol::Response;
 use std::collections::BTreeSet;
+#[cfg(target_os = "linux")]
+use std::os::fd::AsRawFd;
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command as ProcessCommand, Stdio};
 #[cfg(target_os = "linux")]
@@ -542,6 +545,7 @@ fn embedded_file<'a>(case: &'a EmbeddedCase, path: &str) -> Option<&'a [u8]> {
         .map(|file| file.bytes)
 }
 
+#[implements("FR-235-AC-7")]
 fn execute_script(
     script: &Path,
     quoin_binary: &Path,
@@ -553,6 +557,11 @@ fn execute_script(
     let _subreaper = SubreaperGuard::acquire()?;
     let mut command = ProcessCommand::new("/bin/sh");
     command
+        .args([
+            "-c",
+            "trap 'case_status=$?; trap - EXIT; wait; exit \"$case_status\"' EXIT; case_script=$1; shift; . \"$case_script\"",
+        ])
+        .arg(script)
         .arg(script)
         .current_dir(case_tmp)
         .env_clear()
@@ -579,6 +588,11 @@ fn execute_script(
         .stderr
         .take()
         .ok_or_else(|| "case stderr pipe was not created".to_owned())?;
+    #[cfg(target_os = "linux")]
+    let pipe_links = [
+        pipe_link(stdout.as_raw_fd())?,
+        pipe_link(stderr.as_raw_fd())?,
+    ];
     let stdout_reader = thread::spawn(move || read_pipe(stdout));
     let stderr_reader = thread::spawn(move || read_pipe(stderr));
     let deadline = Instant::now() + timeout;
@@ -600,14 +614,19 @@ fn execute_script(
         }
         if Instant::now() >= deadline {
             timed_out = true;
-            terminate_process_group(&mut child)?;
-            status = Some(
+            #[cfg(target_os = "linux")]
+            let timeout_status = {
+                let descendants = case_processes(child.id(), &pipe_links);
+                cleanup_timed_out_case(&mut child, descendants)?
+            };
+            #[cfg(not(target_os = "linux"))]
+            let timeout_status = {
+                terminate_process_group(&mut child)?;
                 child
                     .wait()
-                    .map_err(|error| format!("reap timed-out case process: {error}"))?,
-            );
-            #[cfg(target_os = "linux")]
-            terminate_adopted_descendants()?;
+                    .map_err(|error| format!("reap timed-out case process: {error}"))?
+            };
+            status = Some(timeout_status);
             break;
         }
         thread::sleep(Duration::from_millis(10));
@@ -630,42 +649,143 @@ fn execute_script(
 }
 
 #[cfg(target_os = "linux")]
-fn terminate_adopted_descendants() -> Result<(), String> {
-    loop {
-        let tasks = std::fs::read_dir("/proc/self/task")
-            .map_err(|error| format!("list case supervisor threads: {error}"))?;
-        let mut children = BTreeSet::new();
+fn cleanup_timed_out_case(
+    child: &mut std::process::Child,
+    descendants: Result<BTreeSet<i32>, String>,
+) -> Result<std::process::ExitStatus, String> {
+    let mut cleanup_errors = Vec::new();
+    let descendants = match descendants {
+        Ok(descendants) => Some(descendants),
+        Err(error) => {
+            cleanup_errors.push(format!("enumerate timed-out case descendants: {error}"));
+            None
+        }
+    };
+    if let Err(error) = terminate_process_group(child) {
+        cleanup_errors.push(format!("terminate timed-out case process group: {error}"));
+    }
+    let reaped_status = match child.wait() {
+        Ok(status) => Some(status),
+        Err(error) => {
+            cleanup_errors.push(format!("reap timed-out case process: {error}"));
+            None
+        }
+    };
+    if let Some(descendants) = descendants {
+        if let Err(error) = terminate_case_descendants(&descendants) {
+            cleanup_errors.push(format!("terminate timed-out case descendants: {error}"));
+        }
+    }
+    if !cleanup_errors.is_empty() {
+        return Err(format!(
+            "timeout cleanup failed: {}",
+            cleanup_errors.join("; ")
+        ));
+    }
+    reaped_status.ok_or_else(|| "timed-out case process was not reaped".to_owned())
+}
+
+#[cfg(target_os = "linux")]
+fn pipe_link(fd: std::os::fd::RawFd) -> Result<std::path::PathBuf, String> {
+    std::fs::read_link(format!("/proc/self/fd/{fd}"))
+        .map_err(|error| format!("read case output pipe: {error}"))
+}
+
+#[cfg(target_os = "linux")]
+fn case_processes(root: u32, pipe_links: &[std::path::PathBuf]) -> Result<BTreeSet<i32>, String> {
+    let root = i32::try_from(root).map_err(|_| "case process id is invalid".to_owned())?;
+    let mut roots = direct_children()?;
+    roots.insert(root);
+    let mut processes = BTreeSet::new();
+    for candidate in roots {
+        let tree = process_tree(candidate)?;
+        if candidate == root || tree.iter().any(|pid| holds_case_pipe(*pid, pipe_links)) {
+            processes.extend(tree);
+        }
+    }
+    Ok(processes)
+}
+
+#[cfg(target_os = "linux")]
+fn direct_children() -> Result<BTreeSet<i32>, String> {
+    let tasks = std::fs::read_dir("/proc/self/task")
+        .map_err(|error| format!("list case supervisor threads: {error}"))?;
+    let mut children = BTreeSet::new();
+    for task in tasks {
+        let task = task.map_err(|error| format!("read case supervisor thread: {error}"))?;
+        let contents = match std::fs::read_to_string(task.path().join("children")) {
+            Ok(contents) => contents,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(format!("read case supervisor children: {error}")),
+        };
+        for child in contents.split_whitespace() {
+            let pid = child
+                .parse::<i32>()
+                .map_err(|error| format!("parse case child process id: {error}"))?;
+            children.insert(pid);
+        }
+    }
+    Ok(children)
+}
+
+#[cfg(target_os = "linux")]
+fn process_tree(root: i32) -> Result<BTreeSet<i32>, String> {
+    let mut pending = vec![root];
+    let mut processes = BTreeSet::new();
+    while let Some(parent) = pending.pop() {
+        if processes.contains(&parent) {
+            continue;
+        }
+        let tasks = match std::fs::read_dir(format!("/proc/{parent}/task")) {
+            Ok(tasks) => tasks,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => return Err(format!("list case process tasks: {error}")),
+        };
+        processes.insert(parent);
         for task in tasks {
-            let task = task.map_err(|error| format!("read case supervisor thread: {error}"))?;
-            let path = task.path().join("children");
-            let contents = match std::fs::read_to_string(&path) {
+            let task = task.map_err(|error| format!("read case process task: {error}"))?;
+            let contents = match std::fs::read_to_string(task.path().join("children")) {
                 Ok(contents) => contents,
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
-                Err(error) => return Err(format!("read adopted case processes: {error}")),
+                Err(error) => return Err(format!("read case descendants: {error}")),
             };
             for child in contents.split_whitespace() {
                 let pid = child
                     .parse::<i32>()
-                    .map_err(|error| format!("parse adopted case process id: {error}"))?;
-                children.insert(pid);
-            }
-        }
-        if children.is_empty() {
-            return Ok(());
-        }
-
-        for child in &children {
-            if let Some(pid) = rustix::process::Pid::from_raw(*child) {
-                let _ = rustix::process::kill_process(pid, rustix::process::Signal::KILL);
-            }
-        }
-        for child in children {
-            if let Some(pid) = rustix::process::Pid::from_raw(child) {
-                rustix::process::waitpid(Some(pid), rustix::process::WaitOptions::empty())
-                    .map_err(|error| format!("reap adopted case process: {error}"))?;
+                    .map_err(|error| format!("parse case descendant process id: {error}"))?;
+                pending.push(pid);
             }
         }
     }
+    Ok(processes)
+}
+
+#[cfg(target_os = "linux")]
+fn holds_case_pipe(pid: i32, pipe_links: &[std::path::PathBuf]) -> bool {
+    let Ok(fds) = std::fs::read_dir(format!("/proc/{pid}/fd")) else {
+        return false;
+    };
+    fds.filter_map(Result::ok)
+        .filter_map(|fd| std::fs::read_link(fd.path()).ok())
+        .any(|target| pipe_links.contains(&target))
+}
+
+#[cfg(target_os = "linux")]
+fn terminate_case_descendants(descendants: &BTreeSet<i32>) -> Result<(), String> {
+    for child in descendants {
+        if let Some(pid) = rustix::process::Pid::from_raw(*child) {
+            let _ = rustix::process::kill_process(pid, rustix::process::Signal::KILL);
+        }
+    }
+    for child in descendants {
+        if let Some(pid) = rustix::process::Pid::from_raw(*child) {
+            match rustix::process::waitpid(Some(pid), rustix::process::WaitOptions::empty()) {
+                Ok(_) | Err(rustix::io::Errno::CHILD) => {}
+                Err(error) => return Err(format!("reap case descendant: {error}")),
+            }
+        }
+    }
+    Ok(())
 }
 
 fn read_pipe(mut pipe: impl std::io::Read) -> std::io::Result<Vec<u8>> {
@@ -1118,6 +1238,110 @@ mod tests {
         assert!(output.timed_out);
         thread::sleep(Duration::from_millis(450));
         assert!(!marker.exists(), "the background descendant was terminated");
+    }
+
+    #[cfg(target_os = "linux")]
+    #[trace("FR-235-AC-7")]
+    #[test]
+    fn tc_229_timeout_cleanup_preserves_an_unrelated_child_process() {
+        let mut unrelated = ProcessCommand::new("/bin/sh")
+            .args(["-c", "sleep 5"])
+            .spawn()
+            .expect("the unrelated child starts");
+        let case_tmp = tempfile::tempdir().expect("a temporary case directory");
+        let home = tempfile::tempdir().expect("an empty home directory");
+        let script_path = case_tmp.path().join("run.sh");
+        std::fs::write(&script_path, "#!/bin/sh\nsleep 5\n")
+            .expect("the timeout script is written");
+
+        let output = execute_script(
+            &script_path,
+            Path::new("/bin/true"),
+            case_tmp.path(),
+            home.path(),
+            Duration::from_millis(100),
+        )
+        .expect("the timed-out child is terminated and reaped");
+        assert!(output.timed_out);
+        let unrelated_status = unrelated
+            .try_wait()
+            .expect("the unrelated child can be checked");
+        let _ = unrelated.kill();
+        let _ = unrelated.wait();
+        assert!(
+            unrelated_status.is_none(),
+            "timeout cleanup killed an unrelated child: {unrelated_status:?}"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[trace("FR-235-AC-7")]
+    #[test]
+    fn tc_229_timeout_kills_detached_descendant_after_it_closes_case_pipes() {
+        let root = tempfile::tempdir().expect("a temporary test root");
+        let pid_path = root.path().join("detached.pid");
+        let script = format!(
+            "#!/bin/sh\nsetsid sh -c 'echo $$ > \"{}\"; exec sleep 5' >/dev/null 2>&1 &\nsleep 5 &\nexit 0\n",
+            pid_path.display()
+        );
+        let case_tmp = tempfile::tempdir().expect("a temporary case directory");
+        let home = tempfile::tempdir().expect("an empty home directory");
+        let script_path = case_tmp.path().join("run.sh");
+        std::fs::write(&script_path, script).expect("the timeout script is written");
+
+        let output = execute_script(
+            &script_path,
+            Path::new("/bin/true"),
+            case_tmp.path(),
+            home.path(),
+            Duration::from_millis(100),
+        )
+        .expect("the timed-out case and detached descendants are terminated");
+        assert!(output.timed_out);
+        let pid = std::fs::read_to_string(&pid_path)
+            .expect("the detached child's pid was recorded")
+            .trim()
+            .parse::<u32>()
+            .expect("the recorded pid is numeric");
+        let survived = Path::new(&format!("/proc/{pid}")).exists();
+        if survived {
+            if let Some(pid) = rustix::process::Pid::from_raw(
+                i32::try_from(pid).expect("the recorded pid fits a process id"),
+            ) {
+                let _ = rustix::process::kill_process(pid, rustix::process::Signal::KILL);
+            }
+        }
+        assert!(
+            !survived,
+            "detached child {pid} survived after closing both case pipes"
+        );
+    }
+
+    #[cfg(target_os = "linux")]
+    #[trace("FR-235-AC-7")]
+    #[test]
+    fn tc_229_timeout_cleanup_reaps_case_when_proc_scan_fails() {
+        let mut command = ProcessCommand::new("/bin/sh");
+        command.args(["-c", "sleep 5"]);
+        {
+            use std::os::unix::process::CommandExt as _;
+            command.process_group(0);
+        }
+        let mut child = command.spawn().expect("the case process starts");
+        let pid = child.id();
+        let error = cleanup_timed_out_case(
+            &mut child,
+            Err("simulated proc enumeration failure".to_owned()),
+        )
+        .expect_err("the scan failure is reported after cleanup");
+        assert!(
+            error.contains("simulated proc enumeration failure"),
+            "{error}"
+        );
+        assert!(
+            !Path::new(&format!("/proc/{pid}")).exists(),
+            "timed-out case process {pid} was not reaped"
+        );
     }
 
     #[cfg(target_os = "linux")]
