@@ -104,7 +104,7 @@ jobs:
       - name: Test
         env:
           SPEC_OBJECTS_SAFETY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-safety
-          SPEC_OBJECTS_SECURITY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-security/spec_objects_security
+          SPEC_OBJECTS_SECURITY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-security
           SPEC_ARTIFACTS_PROCESS_DIR: ${{ github.workspace }}/.ci-deps/spec-artifacts-process
           OPENVEX_SCHEMA_PATH: ${{ runner.temp }}/openvex_json_schema_0.2.0.json
           CYCLONEDX_SCHEMA_PATH: ${{ runner.temp }}/cyclonedx_bom_1.7.schema.json
