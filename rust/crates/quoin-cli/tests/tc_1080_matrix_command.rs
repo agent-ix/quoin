@@ -718,6 +718,44 @@ fn tc_1080_200_a_real_store_yields_bound_stale_and_undischarged() {
     );
 }
 
+/// Existing evidence-audit and assurance projections stay byte-identical
+/// when the repository gains a retained change-assurance record.
+#[trace("FR-065-CON-4")]
+#[test]
+fn change_assurance_storage_does_not_change_existing_audit_or_assurance_output() {
+    let fixture = populated();
+    let audit_args = [
+        "evidence", "audit", "--repo", ".", "--module", ".", "--json",
+    ];
+    let before_audit = fixture.ok(&audit_args);
+    let mut assurance_args = DERIVED_ASSURANCE.to_vec();
+    assurance_args.push("--json");
+    let before_assurance = fixture.ok(&assurance_args);
+
+    let record = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../tests/fixtures/change-assurance-cli/record-body.json")
+        .canonicalize()
+        .unwrap();
+    let write = fixture.quoin(&[
+        "change-assurance",
+        "write-record",
+        "--input",
+        record.to_str().unwrap(),
+        "--repo",
+        ".",
+        "--json",
+    ]);
+    assert_eq!(
+        write.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&write.stderr)
+    );
+
+    assert_eq!(fixture.ok(&audit_args), before_audit);
+    assert_eq!(fixture.ok(&assurance_args), before_assurance);
+}
+
 /// The retained runs reach `matrix.build` through the host: the run identity of
 /// a bound criterion is read from the real store, bounded to what a binding
 /// names, and a criterion whose run is gone has none. The source revision is the
