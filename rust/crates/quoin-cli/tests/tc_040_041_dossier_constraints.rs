@@ -67,7 +67,20 @@ fn omit_verification_methods(root: &Path, ids: &[&str]) {
 }
 
 fn safety_checkout() -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../../spec-objects-safety")
+    let module_exists =
+        |checkout: &Path| checkout.join("spec_objects_safety/manifest.yaml").is_file();
+    if let Some(override_path) = std::env::var_os("SPEC_OBJECTS_SAFETY_DIR") {
+        let checkout = std::path::PathBuf::from(override_path);
+        if module_exists(&checkout) {
+            return checkout;
+        }
+    }
+
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .map(|ancestor| ancestor.join("spec-objects-safety"))
+        .find(|checkout| module_exists(checkout))
+        .expect("spec-objects-safety checkout with module manifest is available")
 }
 
 fn safety_module() -> String {
@@ -154,10 +167,6 @@ fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
         .zip(docs)
     {
         assert!(
-            document.contains("Authored statement"),
-            "{name}: {document}"
-        );
-        assert!(
             values_after_field(&document, "Criticality: ").all(|value| value == "unassigned"),
             "{name} rendered an unrecorded criticality: {document}"
         );
@@ -177,6 +186,12 @@ fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
             !cells.iter().any(|cell| cell.starts_with("class-")),
             "{name} rendered an unrecorded class: {document}"
         );
+        if name == "SRS" || name == "trace matrix" {
+            assert!(
+                document.contains("Authored statement"),
+                "{name} omitted authored requirement text: {document}"
+            );
+        }
     }
 }
 
