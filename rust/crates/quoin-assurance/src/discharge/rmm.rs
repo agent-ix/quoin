@@ -443,7 +443,7 @@ mod tests {
         request.binding.clauses.clear();
         let report = build_discharge_report(&request).unwrap();
         let matrix = build_requirements_mapping(&request.binding, &report).unwrap();
-        assert!(matrix.rows.is_empty());
+        assert_eq!(matrix.rows, [] as [crate::discharge::rmm::RmmRow; 0]);
         let text = render_requirements_mapping(&matrix);
         assert!(
             text.contains("_The binding report names no clauses._"),
@@ -462,7 +462,7 @@ mod tests {
         let second = &matrix.rows[1];
         assert_eq!(second.compliance, RmmCompliance::Tailored);
         assert_ne!(second.compliance, RmmCompliance::Compliant);
-        assert!(second.evidence_refs.is_empty());
+        assert_eq!(second.evidence_refs, [] as [std::string::String; 0]);
         assert_eq!(
             second.tailoring_description.as_deref(),
             Some("accepted_risk (approval approval://1)")
@@ -518,7 +518,7 @@ mod tests {
             let row = by(id);
             assert_eq!(row.compliance, RmmCompliance::AttestationNotCurrent, "{id}");
             assert_eq!(row.reason.as_deref(), Some(why), "{id}");
-            assert!(row.evidence_refs.is_empty());
+            assert_eq!(row.evidence_refs, [] as [std::string::String; 0]);
             assert!(row.tailoring_description.is_none());
         }
         assert_eq!(by("SYN-004").compliance, RmmCompliance::Undetermined);
@@ -689,7 +689,10 @@ mod tests {
             "{:?}",
             current.rows[0]
         );
-        assert!(current.rows[0].evidence_refs.is_empty());
+        assert_eq!(
+            current.rows[0].evidence_refs,
+            [] as [std::string::String; 0]
+        );
 
         let expired = checked_matrix(vec![direct()], "2026-10-01T00:00:00Z");
         assert_eq!(

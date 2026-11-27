@@ -76,7 +76,10 @@ fn words(line: &str) -> Vec<String> {
 #[trace("FR-063-AC-11")]
 #[test]
 fn tc_1511_the_claim_word_census_stays_strict_for_prose() {
-    assert!(!words("the `signed_approval` policy").is_empty());
+    assert_ne!(
+        words("the `signed_approval` policy"),
+        [] as [std::string::String; 0]
+    );
     assert!(!words("the `signed_approval` policy").contains(&"signed".to_owned()));
     assert!(words("this record was signed by a person").contains(&"signed".to_owned()));
 }

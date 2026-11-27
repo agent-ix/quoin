@@ -328,8 +328,7 @@ fn render_report(report: &Report, json_output: bool) -> Result<String, String> {
             let disposition = item
                 .analysis_disposition
                 .as_deref()
-                .map(|value| format!(" ({value})"))
-                .unwrap_or_default();
+                .map_or_default(|value| format!(" ({value})"));
             format!("{} {} {}{disposition}", item.state, item.id, item.document)
         })
         .collect::<Vec<_>>()

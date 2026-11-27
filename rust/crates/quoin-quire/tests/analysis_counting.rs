@@ -923,7 +923,10 @@ fn a_same_suite_newer_stale_revision_supersedes_an_older_current_pass() {
 fn an_empty_run_and_empty_disagreement_never_qualify_a_candidate() {
     let mut store = Recorded::new();
     store.record("SUITE-A", "2026-11-22T10:00:00Z", DISAGREEMENT, &[AC1]);
-    assert!(store.runs()[0].record.entries.is_empty());
+    assert_eq!(
+        store.runs()[0].record.entries,
+        [] as [quoin_evidence::RunEntry; 0]
+    );
 
     let outcome = store.count(&[AC1], admitted());
     assert_eq!(counted(&outcome), 0);
@@ -1294,7 +1297,10 @@ fn trace_returns_the_record_claim_and_never_a_source_symbol() {
     };
     assert_eq!(outcome.trace(Query::Record(&locator)), binders);
     assert_eq!(outcome.trace(Query::Run(&locator.run)), binders);
-    assert!(outcome.trace(Query::Obligation(AC2)).is_empty());
+    assert_eq!(
+        outcome.trace(Query::Obligation(AC2)),
+        [] as [quire_rs::evidence::RecordBinder; 0]
+    );
 
     // A source-symbol query for the retained entry's own identity returns no
     // claim, and the obligation id in prose stays a citation (FR-077).
@@ -1341,7 +1347,7 @@ fn a_report_recorded_without_discharges_counts_for_no_obligation() {
     let store = satisfied_store(&[]);
     let outcome = store.count(&[AC1, AC2], admitted());
     assert_eq!(counted(&outcome), 0);
-    assert!(store.bindings().is_empty());
+    assert_eq!(store.bindings(), [] as [quoin_evidence::types::Binding; 0]);
 
     // Even where the entry's symbol and the report's analysis kind equal an
     // obligation id: the text is not a binding source.
@@ -1355,7 +1361,10 @@ fn a_report_recorded_without_discharges_counts_for_no_obligation() {
         &[],
         &report,
     );
-    assert!(colliding.bindings().is_empty());
+    assert_eq!(
+        colliding.bindings(),
+        [] as [quoin_evidence::types::Binding; 0]
+    );
     let outcome = colliding.count(&[AC1], admitted());
     assert_eq!(counted(&outcome), 0);
     assert_ne!(status(&outcome, AC1), CoverageMatrixStatus::QualifiedRecord);

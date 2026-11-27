@@ -700,7 +700,10 @@ mod tests {
             Some(&store()),
         );
         assert_eq!(checked.report.binding.direct.len(), 1);
-        assert!(checked.failures.is_empty());
+        assert_eq!(
+            checked.failures,
+            [] as [crate::discharge::verify::CheckFailure; 0]
+        );
         // Empty expected outputs accept a record of any kind.
         let checked = one(direct(), &policy(&[], vec![]), Some(&store()));
         assert_eq!(checked.report.binding.direct.len(), 1);
@@ -813,7 +816,10 @@ mod tests {
             Some(&customer_store()),
         );
         assert_eq!(checked.report.binding.direct.len(), 1, "{checked:?}");
-        assert!(checked.failures.is_empty());
+        assert_eq!(
+            checked.failures,
+            [] as [crate::discharge::verify::CheckFailure; 0]
+        );
     }
 
     #[trace("FR-211-AC-26")]
@@ -1263,7 +1269,10 @@ mod tests {
         let delegated = one(disposition("delegated"), &customer, Some(&store()));
         assert_eq!(delegated.report.binding.dispositions.len(), 1);
         let accepted = one(disposition("accepted_risk"), &customer, Some(&store()));
-        assert!(accepted.report.binding.dispositions.is_empty());
+        assert_eq!(
+            accepted.report.binding.dispositions,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
         assert!(
             accepted.report.binding.open[0]
                 .reason
@@ -1322,7 +1331,10 @@ mod tests {
             false,
         )
         .unwrap();
-        assert!(checked.report.binding.dispositions.is_empty());
+        assert_eq!(
+            checked.report.binding.dispositions,
+            [] as [crate::discharge::report::ClauseDischarge; 0]
+        );
         let verified = StubVerifier::approving("alice", &["reviewer"]);
         let checked = run(
             vec![fact],

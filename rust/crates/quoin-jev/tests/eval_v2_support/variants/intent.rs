@@ -244,14 +244,12 @@ pub(crate) fn trace_question(mode: Mode) -> Option<Question> {
 }
 
 fn trace_asks(row: &Row) -> Vec<Ask> {
-    trace_question(row.mode)
-        .map(|question| {
-            vec![Ask {
-                unit: None,
-                request: request(state(row), questions([(TRACE_CORRECT, question)])),
-            }]
-        })
-        .unwrap_or_default()
+    trace_question(row.mode).map_or_default(|question| {
+        vec![Ask {
+            unit: None,
+            request: request(state(row), questions([(TRACE_CORRECT, question)])),
+        }]
+    })
 }
 
 fn trace_derive(row: &Row, answered: &[Answered]) -> Predictions {
@@ -513,8 +511,7 @@ fn loudly<T>(row: &Row, derived: Result<T, String>) -> T {
 
 fn split_derive(row: &Row, answered: &[Answered]) -> Predictions {
     loudly(row, derive_asserts_intent(&whole_row(answered)))
-        .map(|prediction| Predictions::from([(TEST_ASSERTS_INTENT, prediction)]))
-        .unwrap_or_default()
+        .map_or_default(|prediction| Predictions::from([(TEST_ASSERTS_INTENT, prediction)]))
 }
 
 const TEST_MODES: &[Mode] = &[Mode::ReqTest, Mode::ReqTestCode];
@@ -1500,8 +1497,7 @@ fn t0_rt_derive(row: &Row, answered: &[Answered]) -> Predictions {
     let answers = whole_row(answered);
     loudly(row, noul_probability(&answers, TEST_ASSERTS_INTENT));
     noul_prediction(&answers, TEST_ASSERTS_INTENT)
-        .map(|prediction| Predictions::from([(TEST_ASSERTS_INTENT, prediction)]))
-        .unwrap_or_default()
+        .map_or_default(|prediction| Predictions::from([(TEST_ASSERTS_INTENT, prediction)]))
 }
 
 /// T0 on requirement-plus-test rows: the RT comparator for T1 and T2

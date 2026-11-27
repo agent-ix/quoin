@@ -178,10 +178,9 @@ fn tc_165_002_every_unsafe_reference_refuses_before_bytes_are_admitted() {
         retain_attachment(root, "", BINARY).unwrap_err().code(),
         MeasurementErrorCode::AttachmentInvalid
     );
-    assert!(
-        collection_attachments(&from_serde(&collection(&Value::Null)).unwrap())
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        collection_attachments(&from_serde(&collection(&Value::Null)).unwrap()).unwrap(),
+        [] as [quoin_measurement::AttachmentReference; 0]
     );
 }
 

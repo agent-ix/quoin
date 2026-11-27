@@ -195,8 +195,7 @@ pub(super) fn deleted_and_edited(
         let first = history
             .first_added
             .as_deref()
-            .map(|commit| plan_ids_at(repo, commit, &id))
-            .unwrap_or_default();
+            .map_or_default(|commit| plan_ids_at(repo, commit, &id));
         if let Some(before) = &history.removed_from {
             let mut plan_ids = first.clone();
             plan_ids.extend(plan_ids_at(repo, before, &id));
@@ -236,8 +235,7 @@ fn plan_ids_at(repo: &str, revision: &str, id: &str) -> BTreeSet<String> {
         revision,
         &format!("{MEASUREMENTS_DIRECTORY}/{id}.json"),
     )
-    .map(|bytes| plan_ids_of(&bytes))
-    .unwrap_or_default()
+    .map_or_default(|bytes| plan_ids_of(&bytes))
 }
 
 /// The `planId` of every observation in a collection document's bytes.

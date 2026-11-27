@@ -396,7 +396,10 @@ fn a_dangling_target_is_grouped_as_authored() {
     let report = report(&repo);
     let json = json_of(&report);
     assert_eq!(json["byRequirement"][0]["target"], "FR-999");
-    assert!(report.unreadable.is_empty());
+    assert_eq!(
+        report.unreadable,
+        [] as [quoin_anomaly::report::Unreadable; 0]
+    );
     assert!(!report.to_markdown().contains("dangling"));
 }
 
@@ -779,7 +782,7 @@ fn pending_absent_and_not_applicable_rationale_changes_yield_no_diagnostic() {
     let outside = dir.path().join("AN-001.md");
     std::fs::write(&outside, &with).unwrap();
     let checked = check_document(&outside, &with, CONTEXT).unwrap();
-    assert!(checked.diagnostics.is_empty());
+    assert_eq!(checked.diagnostics, [] as [quoin_anomaly::Diagnostic; 0]);
 }
 
 #[trace("FR-163-AC-7", "FR-136-AC-16")]
@@ -899,7 +902,7 @@ fn the_fixing_change_is_absent_without_a_fixed_resolution_pending_or_not_applica
     std::fs::write(&path, &text).unwrap();
     let checked = check_document(&path, &text, CONTEXT).unwrap();
     assert_eq!(checked.fixing_change, Some(Derived::NotApplicable));
-    assert!(checked.diagnostics.is_empty());
+    assert_eq!(checked.diagnostics, [] as [quoin_anomaly::Diagnostic; 0]);
 }
 
 #[trace("FR-162-AC-14", "FR-163-AC-5", "FR-136-AC-1")]
@@ -987,7 +990,10 @@ fn a_missing_title_reads_as_null_and_the_record_is_readable() {
         &set_key(&fx("valid", "assessed", "AN-001"), "title", None),
     );
     let report = report(&repo);
-    assert!(report.unreadable.is_empty());
+    assert_eq!(
+        report.unreadable,
+        [] as [quoin_anomaly::report::Unreadable; 0]
+    );
     assert_eq!(json_of(&report)["anomalies"][0]["title"], Value::Null);
     let markdown = report.to_markdown();
     let line = markdown
@@ -1064,7 +1070,10 @@ fn the_unassessed_gate_names_every_unassessed_anomaly_and_passes_without_one() {
     let passing = corpus_with(&[("AN-003", "valid", "assessed")]);
     let report = report_with(&passing, &[GateMode::Unassessed]);
     assert!(!report.failed());
-    assert!(report.gate.as_ref().unwrap().failures.is_empty());
+    assert_eq!(
+        report.gate.as_ref().unwrap().failures,
+        [] as [quoin_anomaly::Failure; 0]
+    );
     assert_eq!(
         ids(&report),
         ["AN-003"],
@@ -1200,7 +1209,10 @@ fn an_unreadable_document_fails_the_gate_even_when_every_readable_one_passes() {
     let broken = set_key(&fx("valid", "assessed", "AN-002"), "safety_impact", None);
     repo.commit(&anomaly_path("AN-002"), &broken);
     let report = report_with(&repo, &[GateMode::Unassessed]);
-    assert!(report.gate.as_ref().unwrap().failures.is_empty());
+    assert_eq!(
+        report.gate.as_ref().unwrap().failures,
+        [] as [quoin_anomaly::Failure; 0]
+    );
     assert!(report.failed());
     assert_eq!(report.unreadable.len(), 1);
     assert!(

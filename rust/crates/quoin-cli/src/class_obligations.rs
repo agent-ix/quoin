@@ -377,7 +377,7 @@ fn fold_rows(rows: &[&Value], archetypes: &[String]) -> Option<&'static str> {
 /// `met`. Nothing to read is `not-available`, and the row says which input is
 /// missing: a requirement no relation obliges has not been asked for the activity.
 fn relation_status(relations: Option<&Vec<Value>>, document: &str, activity: &Activity) -> Status {
-    let relations = relations.map(Vec::as_slice).unwrap_or_default();
+    let relations = relations.map_or_default(Vec::as_slice);
     if relations.is_empty() {
         return not_available("design join has no relations".to_owned());
     }

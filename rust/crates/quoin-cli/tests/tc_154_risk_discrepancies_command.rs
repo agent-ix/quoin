@@ -188,7 +188,7 @@ fn a_missing_scope_and_a_malformed_record_exit_2_with_and_without_strict() {
     for extra in [&[][..], &["--strict"][..]] {
         let out = discrepancies(dir.path(), extra);
         assert_eq!(out.status.code(), Some(2));
-        assert!(out.stdout.is_empty());
+        assert_eq!(out.stdout, [] as [u8; 0]);
         assert!(String::from_utf8_lossy(&out.stderr).contains("RR-1"));
     }
     std::fs::remove_file(dir.path().join("RR-1.md")).unwrap();
@@ -196,7 +196,7 @@ fn a_missing_scope_and_a_malformed_record_exit_2_with_and_without_strict() {
     for extra in [&[][..], &["--strict"][..]] {
         let out = discrepancies(dir.path(), extra);
         assert_eq!(out.status.code(), Some(2));
-        assert!(out.stdout.is_empty());
+        assert_eq!(out.stdout, [] as [u8; 0]);
         assert!(String::from_utf8_lossy(&out.stderr).contains("RR-2.md"));
     }
 }

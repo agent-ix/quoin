@@ -1194,7 +1194,7 @@ mod tests {
         let records = read_records(t.path(), true, false, false)
             .expect("unselected device records are not read");
         assert_eq!(records.software.len(), 1);
-        assert!(records.devices.is_empty());
+        assert_eq!(records.devices, [] as [serde_json::Value; 0]);
     }
 
     #[trace("FR-231-AC-2")]
@@ -1527,7 +1527,7 @@ mod tests {
         assert!(body.contains("- `ADR-1`"));
         assert!(!body.contains("PART-B"));
         assert!(!body.contains("ADR-2"));
-        assert!(gaps.is_empty());
+        assert_eq!(gaps, [] as [crate::gap::Gap; 0]);
     }
 
     #[trace("FR-231-AC-5")]

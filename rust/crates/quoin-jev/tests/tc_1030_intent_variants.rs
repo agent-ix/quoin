@@ -1129,18 +1129,16 @@ fn result(
     row_id: &str,
     p_yes: Option<f64>,
 ) -> variant::RowResult {
-    let predictions = p_yes
-        .map(|p| {
-            variant::Predictions::from([(
-                key,
-                Prediction {
-                    answer: if p >= 0.5 { "yes" } else { "no" }.to_owned(),
-                    confidence: Some(p.max(1.0 - p)),
-                    ordinal: Some(p),
-                },
-            )])
-        })
-        .unwrap_or_default();
+    let predictions = p_yes.map_or_default(|p| {
+        variant::Predictions::from([(
+            key,
+            Prediction {
+                answer: if p >= 0.5 { "yes" } else { "no" }.to_owned(),
+                confidence: Some(p.max(1.0 - p)),
+                ordinal: Some(p),
+            },
+        )])
+    });
     variant::RowResult {
         row_id: row_id.to_owned(),
         variant: variant.label(),

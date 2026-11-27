@@ -73,7 +73,7 @@ fn render(corpus: &Corpus, flow: Option<&FlowReport>) -> Generated {
             )],
         };
     }
-    let facts = flow.map(facts_by_id).unwrap_or_default();
+    let facts = flow.map_or_default(facts_by_id);
     let mut model_facts_unavailable = flow
         .is_none_or(|report| report.schema != "quire.flow-report/v1" || report.facts.is_empty());
     for activity in activities {
@@ -109,9 +109,7 @@ fn render_activity(
     body.push_str("| Entry | Content |\n| --- | --- |\n");
 
     let mut sources = BTreeSet::from([activity.id.clone()]);
-    let scoped = activity_fact
-        .map(|fact| outgoing(fact, "scopes"))
-        .unwrap_or_default();
+    let scoped = activity_fact.map_or_default(|fact| outgoing(fact, "scopes"));
     let authored_scopes = activity
         .edges
         .iter()
@@ -195,9 +193,7 @@ fn render_processor_activity(
     let own = field(activity, "processor")
         .and_then(Value::as_str)
         .unwrap_or("not stated");
-    let controllers = field(activity, "controller")
-        .map(values)
-        .unwrap_or_default();
+    let controllers = field(activity, "controller").map_or_default(values);
     let mut identity = vec![format!("Processor: {}", cell(own))];
     identity.extend(
         controllers
@@ -326,9 +322,7 @@ fn render_controller_activity(
         context.sources.insert(sink.id.clone());
         let processor = field_fact(sink, "processor").and_then(value_text);
         let kind = field_fact(sink, "kind").and_then(value_text);
-        let audience = field_fact(sink, "audience_roles")
-            .map(values)
-            .unwrap_or_default();
+        let audience = field_fact(sink, "audience_roles").map_or_default(values);
         if processor.is_none() || kind.is_none() || audience.is_empty() {
             add_gap(
                 context.gaps,
@@ -497,9 +491,8 @@ fn classifications<'a>(
                 continue;
             };
             sources.insert(classification.id.clone());
-            let category = field_fact(classification, "regulated_categories")
-                .map(values)
-                .unwrap_or_default();
+            let category =
+                field_fact(classification, "regulated_categories").map_or_default(values);
             if category.is_empty() {
                 missing.push((
                     carrier.id.clone(),
@@ -515,9 +508,7 @@ fn classifications<'a>(
             } else {
                 category.join(", ")
             };
-            let title = title
-                .map(|title| format!(" — {}", cell(&title)))
-                .unwrap_or_default();
+            let title = title.map_or_default(|title| format!(" — {}", cell(&title)));
             classes.insert(
                 classification.id.as_str(),
                 format!("{} ({}){}", cell(&classification.id), cell(&label), title),
@@ -554,14 +545,12 @@ fn transfer_entry(
     activity: &Document,
     sources: &mut BTreeSet<String>,
 ) -> (String, Vec<Gap>) {
-    let home = field(activity, "home_regions")
-        .map(values)
-        .unwrap_or_default();
+    let home = field(activity, "home_regions").map_or_default(values);
     let mut facts = Vec::new();
     let mut gaps = Vec::new();
     for sink in sinks {
         sources.insert(sink.id.clone());
-        let regions = field_fact(sink, "region").map(values).unwrap_or_default();
+        let regions = field_fact(sink, "region").map_or_default(values);
         let location = if regions.is_empty() {
             format!("{}: region not stated", cell(&sink.id))
         } else {
@@ -748,7 +737,7 @@ fn authored(document: &Document, name: &str) -> String {
 
 fn append_authored_fields(output: &mut Vec<String>, document: &Document, names: &[&str]) {
     for name in names {
-        let values = field(document, name).map(values).unwrap_or_default();
+        let values = field(document, name).map_or_default(values);
         if !values.is_empty() {
             output.push(format!(
                 "{name}: {}",
@@ -811,15 +800,12 @@ mod tests {
             id: id.to_owned(),
             repo: None,
             path: format!("spec/{id}.md"),
-            fields: fields
-                .as_object()
-                .map(|object| {
-                    object
-                        .iter()
-                        .map(|(key, value)| (key.clone(), value.clone()))
-                        .collect()
-                })
-                .unwrap_or_default(),
+            fields: fields.as_object().map_or_default(|object| {
+                object
+                    .iter()
+                    .map(|(key, value)| (key.clone(), value.clone()))
+                    .collect()
+            }),
             edges: edges
                 .iter()
                 .map(|(edge, direction, target)| FlowFactEdge {

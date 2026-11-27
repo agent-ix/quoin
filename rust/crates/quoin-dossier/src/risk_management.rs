@@ -415,7 +415,7 @@ fn render_decision_queue(body: &mut String, advice: &Advice) {
                 "| {} | {} | {} | {} | {} | {} |",
                 cell_text(&entry.record),
                 cell_text(entry.kind),
-                entry.estimate.as_deref().map(cell_text).unwrap_or_default(),
+                entry.estimate.as_deref().map_or_default(cell_text),
                 entry
                     .region
                     .as_deref()
@@ -716,7 +716,7 @@ mod tests {
                 .body
                 .contains("| RR-1 | accepted | A. Person | Benefit outweighs the risk. |")
         );
-        assert!(first.gaps.is_empty());
+        assert_eq!(first.gaps, [] as [crate::gap::Gap; 0]);
         assert!(!first.body.to_ascii_lowercase().contains("score"));
         assert!(!first.body.to_ascii_lowercase().contains("rank"));
     }
@@ -768,7 +768,7 @@ mod tests {
     fn overall_evaluation_findings_become_their_own_gaps_and_a_clean_one_none() {
         let mut advice = advice();
         let clean = render(&summary_with_evaluation(), &advice);
-        assert!(clean.gaps.is_empty());
+        assert_eq!(clean.gaps, [] as [crate::gap::Gap; 0]);
         advice.overall_evaluation_checks = vec![quoin_risk_advice::OverallCheck {
             evaluation: "ORE-1".to_owned(),
             product: Some("Pump".to_owned()),

@@ -70,8 +70,7 @@ pub fn parse_sarif(raw: &str) -> Result<FindingResult, EvidenceError> {
         for result in run
             .get("results")
             .and_then(Value::as_array)
-            .map(Vec::as_slice)
-            .unwrap_or_default()
+            .map_or_default(Vec::as_slice)
         {
             let rule_id = result
                 .get("ruleId")
@@ -176,8 +175,7 @@ pub fn parse_cargo_audit(raw: &str) -> Result<FindingResult, EvidenceError> {
     for entry in vulnerabilities
         .get("list")
         .and_then(Value::as_array)
-        .map(Vec::as_slice)
-        .unwrap_or_default()
+        .map_or_default(Vec::as_slice)
     {
         push(entry, "vulnerability");
     }
@@ -204,7 +202,7 @@ pub fn parse_cargo_audit(raw: &str) -> Result<FindingResult, EvidenceError> {
             let Some(entries) = warnings.get(&kind) else {
                 continue;
             };
-            for entry in entries.as_array().map(Vec::as_slice).unwrap_or_default() {
+            for entry in entries.as_array().map_or_default(Vec::as_slice) {
                 push(entry, &kind);
             }
         }

@@ -262,7 +262,10 @@ fn tc_1492_037_a_module_whose_clause_sets_do_not_load_fails_install() {
     let resolver = FixedResolver(src);
     let gate = PermissiveGate;
     let installer = ModuleInstaller::new(sb.paths.clone(), &resolver, &gate, &MarkerProbe);
-    assert!(installer.list().unwrap().is_empty());
+    assert_eq!(
+        installer.list().unwrap(),
+        [] as [quoin_modules::InstalledModule; 0]
+    );
 }
 
 #[trace("FR-138-AC-1", "FR-138-AC-4")]
@@ -321,6 +324,9 @@ fn tc_1492_042_ensure_defaults_refuses_a_pack_entry_and_registers_nothing() {
     let text = error.to_string();
     assert!(text.contains("widget-pack"), "{text}");
     assert!(!text.contains(SENTINEL), "{text}");
-    assert!(installer.list().unwrap().is_empty());
+    assert_eq!(
+        installer.list().unwrap(),
+        [] as [quoin_modules::InstalledModule; 0]
+    );
     assert!(!sb.paths.target_root.exists());
 }

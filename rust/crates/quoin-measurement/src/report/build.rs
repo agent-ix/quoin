@@ -205,15 +205,13 @@ pub fn build_measurement_report_from(
         let summary = collection
             .map(|found| summary_of(repo, found))
             .transpose()?;
-        let observations: Vec<&MeasurementObservation> = collection
-            .map(|found| {
-                found
-                    .observations
-                    .iter()
-                    .filter(|observation| observation.metric.as_str() == plan.metric.as_str())
-                    .collect()
-            })
-            .unwrap_or_default();
+        let observations: Vec<&MeasurementObservation> = collection.map_or_default(|found| {
+            found
+                .observations
+                .iter()
+                .filter(|observation| observation.metric.as_str() == plan.metric.as_str())
+                .collect()
+        });
         // `observations.length > 0 ? observations : [null]`: a plan with no
         // observation is still a row.
         let row = |observation: Option<&MeasurementObservation>| CurrentRow {
@@ -269,8 +267,7 @@ fn summary_of(
         unverified_artifacts: collection
             .verification_stack
             .as_ref()
-            .map(|stack| stack.unverified_artifacts.clone())
-            .unwrap_or_default(),
+            .map_or_default(|stack| stack.unverified_artifacts.clone()),
     })
 }
 

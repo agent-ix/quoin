@@ -173,9 +173,7 @@ fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, Measu
     lines.push("| Metric | State/value | Plan | Collection |".to_owned());
     lines.push("| --- | --- | --- | --- |".to_owned());
 
-    let rows = measurements
-        .map(|report| report.current.as_slice())
-        .unwrap_or_default();
+    let rows = measurements.map_or_default(|report| report.current.as_slice());
     if rows.is_empty() {
         lines.push("| not_computed | no active MeasurementPlan | n/a | n/a |".to_owned());
     } else {
@@ -199,9 +197,7 @@ fn readable(repository: &PortfolioRepositoryReport) -> Result<Vec<String>, Measu
     lines.push(String::new());
     // Present only when a plan carries a `ratchet`/`target` objective
     // (PLAT-958); a repository with none renders the bytes it did before.
-    let vanished = measurements
-        .map(|report| report.vanished_slices.as_slice())
-        .unwrap_or_default();
+    let vanished = measurements.map_or_default(|report| report.vanished_slices.as_slice());
     let verdicts = stage_verdict_table(rows, vanished)?;
     if !verdicts.is_empty() {
         lines.extend(verdicts);

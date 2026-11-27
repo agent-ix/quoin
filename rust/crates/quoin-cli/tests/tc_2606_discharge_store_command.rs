@@ -306,7 +306,7 @@ fn tc_211_approval_subject_prints_the_identity_a_person_signs() {
 
     let refused = subject(&other);
     assert!(!refused.status.success());
-    assert!(refused.stdout.is_empty());
+    assert_eq!(refused.stdout, [] as [u8; 0]);
 }
 
 /// `--facts` beside `--repo` takes the facts from the file, ignores the stored
@@ -347,7 +347,10 @@ fn tc_211_facts_beside_repo_resolve_against_the_store_and_alone_are_no_store() {
     assert_eq!(with_store["binding"]["direct"][0]["clauseId"], "C-1");
 
     let alone = report(&[]);
-    assert!(alone["binding"]["direct"].as_array().unwrap().is_empty());
+    assert_eq!(
+        alone["binding"]["direct"].as_array().unwrap().as_slice(),
+        []
+    );
     let open = alone["binding"]["open"]
         .as_array()
         .unwrap()
@@ -389,7 +392,10 @@ fn tc_211_facts_beside_repo_resolve_against_the_store_and_alone_are_no_store() {
         ],
     );
     let ignored: serde_json::Value = serde_json::from_str(&text(&output)).unwrap();
-    assert!(ignored["binding"]["direct"].as_array().unwrap().is_empty());
+    assert_eq!(
+        ignored["binding"]["direct"].as_array().unwrap().as_slice(),
+        []
+    );
 }
 
 /// After `quoin evidence gc` removes a record a stored fact cites, the next
@@ -477,7 +483,10 @@ fn tc_211_a_collected_record_reopens_the_clause_and_leaves_the_stored_fact_alone
     let collected = quoin(home.path(), &["evidence", "gc", "--repo", repo]);
     assert!(collected.status.success(), "{collected:?}");
     let after = report();
-    assert!(after["binding"]["direct"].as_array().unwrap().is_empty());
+    assert_eq!(
+        after["binding"]["direct"].as_array().unwrap().as_slice(),
+        []
+    );
     let reason = after["binding"]["open"]
         .as_array()
         .unwrap()
@@ -559,5 +568,5 @@ fn tc_211_a_record_id_over_the_bound_prints_no_subject() {
         ],
     );
     assert!(!output.status.success(), "{output:?}");
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
 }

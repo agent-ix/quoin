@@ -242,8 +242,7 @@ impl Inputs {
             support: arguments.get_one::<String>("support").map(PathBuf::from),
             modules: arguments
                 .get_many::<String>("module")
-                .map(|roots| roots.cloned().collect())
-                .unwrap_or_default(),
+                .map_or_default(|roots| roots.cloned().collect()),
             out: PathBuf::from(text("out")?),
             records,
             repo,

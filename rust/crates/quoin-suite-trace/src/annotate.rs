@@ -251,7 +251,7 @@ mod tests {
         let xml = r#"<testsuite><testcase name="t" classname="pkg"/></testsuite>"#;
         let done = annotate(xml, &index(&[("pkg", "t", &["FR-9-AC-3"])]));
         let run = quoin_evidence::adapters::parse_junit(&done.xml);
-        let entries = run.map(|result| result.entries).unwrap_or_default();
+        let entries = run.map_or_default(|result| result.entries);
         assert_eq!(entries.len(), 1, "the adapter reads the annotated report");
         assert_eq!(
             entries[0].trace_ids.as_deref(),

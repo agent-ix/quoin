@@ -599,7 +599,7 @@ fn token_gate_and_unowned_headings_are_prose() {
     let (_, prose, _) = run_fixture("prose-headings");
     assert!(diagnostics(&prose).is_empty());
     assert!(prose.get("record").is_none() || prose["record"].is_null());
-    assert!(record_source_keys(&prose).is_empty());
+    assert_eq!(record_source_keys(&prose), [] as [&str; 0]);
     for key in ["notes", "thresholds", "requires", "endianness"] {
         assert!(prose["record"].get(key).is_none(), "{key}");
         assert!(!record_source_keys(&prose).contains(&key), "{key}");
@@ -615,7 +615,7 @@ fn token_gate_and_unowned_headings_are_prose() {
     );
     assert!(diagnostics(&headings).is_empty());
     assert!(headings.get("record").is_none() || headings["record"].is_null());
-    assert!(record_source_keys(&headings).is_empty());
+    assert_eq!(record_source_keys(&headings), [] as [&str; 0]);
 
     let endian_schema = json!({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -634,7 +634,7 @@ fn token_gate_and_unowned_headings_are_prose() {
     );
     assert!(diagnostics(&endian).is_empty());
     assert!(endian.get("record").is_none() || endian["record"].is_null());
-    assert!(record_source_keys(&endian).is_empty());
+    assert_eq!(record_source_keys(&endian), [] as [&str; 0]);
 }
 
 fn record_source_keys(output: &Value) -> Vec<&str> {
@@ -833,7 +833,7 @@ fn another_declared_table_mapping_owns_its_heading() {
         diagnostics(&output)
     );
     assert!(output["record"].get("thresholds").is_none());
-    assert!(record_source_keys(&output).is_empty());
+    assert_eq!(record_source_keys(&output), [] as [&str; 0]);
 }
 
 #[trace("FR-121-AC-15")]

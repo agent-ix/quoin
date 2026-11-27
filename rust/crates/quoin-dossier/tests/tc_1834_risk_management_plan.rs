@@ -191,7 +191,7 @@ fn a_plan_that_names_no_policy_in_scope_is_reported_with_the_plan_as_subject() {
 #[test]
 fn an_ix_relationship_target_is_read_as_a_reference_to_its_last_segment() {
     let (report, markdown) = generate_with(&plan_document("ix://owner/repo/POL-1"));
-    assert!(report.documents[0].gaps.is_empty());
+    assert_eq!(report.documents[0].gaps, [] as [quoin_dossier::Gap; 0]);
     assert!(markdown.contains("Plan RMP-001 references the acceptability criteria POL-1."));
 }
 

@@ -363,9 +363,7 @@ pub(crate) fn r1_probabilities(row: &Row, answered: &[Answered]) -> Option<[f64;
 }
 
 fn r1_derive(row: &Row, answered: &[Answered]) -> Predictions {
-    r1_probabilities(row, answered)
-        .map(|p| derive_checks(&p))
-        .unwrap_or_default()
+    r1_probabilities(row, answered).map_or_default(|p| derive_checks(&p))
 }
 
 /// R0's `P(checkable)` on a row it answered.
@@ -374,9 +372,7 @@ pub(crate) fn r0_probability(row: &Row, answered: &[Answered]) -> Option<f64> {
 }
 
 fn r0_derive(row: &Row, answered: &[Answered]) -> Predictions {
-    r0_probability(row, answered)
-        .map(|p| holistic_predictions(SOUND, p))
-        .unwrap_or_default()
+    r0_probability(row, answered).map_or_default(|p| holistic_predictions(SOUND, p))
 }
 
 /// The holistic baseline.
@@ -507,8 +503,7 @@ pub(crate) fn dump(rows: &[Row], output: &RunOutput, variants: &[&Variant]) -> V
     let r0 = variants
         .iter()
         .find(|variant| variant.id == "R0")
-        .map(|variant| holistic_scores(rows, output, &variant.label(), r0_probability))
-        .unwrap_or_default();
+        .map_or_default(|variant| holistic_scores(rows, output, &variant.label(), r0_probability));
     let Some(r1) = variants.iter().find(|variant| variant.id == "R1") else {
         return Vec::new();
     };

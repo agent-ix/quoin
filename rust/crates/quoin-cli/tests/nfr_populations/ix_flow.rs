@@ -227,8 +227,7 @@ fn launch(
         },
     );
     let logged = std::fs::read_to_string(&log)
-        .map(|text| text.lines().map(str::to_owned).collect())
-        .unwrap_or_default();
+        .map_or_default(|text| text.lines().map(str::to_owned).collect());
     (output, logged)
 }
 

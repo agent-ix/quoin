@@ -231,7 +231,7 @@ fn names(row: &Value, token: &str) -> Vec<String> {
         .unwrap()
         .iter()
         .find(|f| f["finding"] == token)
-        .map(|f| {
+        .map_or_default(|f| {
             f["names"]
                 .as_array()
                 .unwrap()
@@ -239,7 +239,6 @@ fn names(row: &Value, token: &str) -> Vec<String> {
                 .map(|n| n.as_str().unwrap().to_owned())
                 .collect()
         })
-        .unwrap_or_default()
 }
 
 #[trace(
@@ -396,7 +395,10 @@ fn missing_links_give_rows_with_null_and_a_situation_of_two_hazards_gives_two_ro
         ),
         ["SIT-9"]
     );
-    assert!(tokens(&c.row(Some("HAZ-1"), Some("SIT-1"))).is_empty());
+    assert_eq!(
+        tokens(&c.row(Some("HAZ-1"), Some("SIT-1"))),
+        [] as [std::string::String; 0]
+    );
 }
 
 #[trace("FR-169-AC-4", "FR-170-AC-9")]

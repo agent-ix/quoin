@@ -112,8 +112,7 @@ fn stdout(output: &Output) -> String {
 
 fn files(dir: &Path) -> Vec<PathBuf> {
     let mut found: Vec<PathBuf> = std::fs::read_dir(dir)
-        .map(|entries| entries.flatten().map(|e| e.path()).collect())
-        .unwrap_or_default();
+        .map_or_default(|entries| entries.flatten().map(|e| e.path()).collect());
     found.sort();
     found
 }
@@ -334,7 +333,7 @@ fn multi_component_promotion_with_discharges_refuses_before_writing() {
         "{stderr}"
     );
     assert!(stderr.contains("3 soup_records"), "{stderr}");
-    assert!(files(&out).is_empty());
+    assert_eq!(files(&out), [] as [std::path::PathBuf; 0]);
 }
 
 #[trace("FR-141-AC-5", "FR-141-AC-7")]
@@ -445,7 +444,7 @@ fn a_record_in_another_records_directory_stops_a_second_one_being_written() {
     let out = work.path().join("out");
     let run = with_module(&sbom, &out, &["--records", records.to_str().unwrap()]);
     assert!(run.status.success());
-    assert!(files(&out).is_empty());
+    assert_eq!(files(&out), [] as [std::path::PathBuf; 0]);
     assert!(stdout(&run).lines().any(|l| l == "records unchanged: 1"));
 }
 

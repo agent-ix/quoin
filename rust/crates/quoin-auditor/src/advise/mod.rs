@@ -145,8 +145,7 @@ pub fn advise(catalog: &MethodCatalog, facts: &ObligationFacts) -> Advice {
 fn singleton(value: Option<&str>) -> BTreeSet<String> {
     value
         .filter(|value| !value.is_empty())
-        .map(|value| BTreeSet::from([value.to_owned()]))
-        .unwrap_or_default()
+        .map_or_default(|value| BTreeSet::from([value.to_owned()]))
 }
 
 /// Every applicability rule of one method that an observable fact satisfies.

@@ -533,7 +533,7 @@ fn two_records_with_one_purl_refuse_the_report_naming_both_files() {
     let stderr = text(&output.stderr);
     assert!(stderr.contains(first.to_str().unwrap()), "{stderr}");
     assert!(stderr.contains(second.to_str().unwrap()), "{stderr}");
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
 }
 
 #[trace("FR-144-AC-7", "FR-144-AC-8", "FR-144-AC-9")]
@@ -568,7 +568,7 @@ fn the_json_has_no_score_rank_class_or_percentage_key() {
     let (repo, binding) = standard();
     let mut found = Vec::new();
     keys(&report_json(&repo, &binding, &[]), &mut found);
-    assert!(!found.is_empty());
+    assert_ne!(found, [] as [std::string::String; 0]);
     // The report has a closed set of keys. A new field cannot emit a score,
     // rank, or class under a less obvious name and slip past fragment checks.
     const REPORT_KEYS: &[&str] = &[
@@ -820,7 +820,7 @@ fn a_record_outside_the_support_vocabulary_refuses_the_report_naming_the_record(
     let binding = repo.binding(&["C-DISP"]);
     let output = repo.report(&binding, &[]);
     assert!(!output.status.success());
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
     let stderr = text(&output.stderr);
     assert!(stderr.contains(bad.to_str().unwrap()), "{stderr}");
 }
@@ -1078,7 +1078,7 @@ fn a_records_directory_that_does_not_exist_refuses_naming_it() {
         stderr.contains("spec/typo") && stderr.contains("soup.path_missing"),
         "{stderr}"
     );
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
 }
 
 #[trace("FR-144-AC-14")]
@@ -1100,7 +1100,7 @@ fn a_soup_record_with_no_purl_refuses_naming_its_file() {
         stderr.contains("nopurl.md") && stderr.contains("no purl"),
         "{stderr}"
     );
-    assert!(output.stdout.is_empty());
+    assert_eq!(output.stdout, [] as [u8; 0]);
 }
 
 #[trace("FR-144-AC-15")]
@@ -1127,7 +1127,7 @@ fn a_version_or_source_ref_of_the_wrong_type_refuses_instead_of_reading_as_not_s
             stderr.contains("soup.record_field_invalid") && stderr.contains(field),
             "{stderr}"
         );
-        assert!(output.stdout.is_empty());
+        assert_eq!(output.stdout, [] as [u8; 0]);
     }
 }
 

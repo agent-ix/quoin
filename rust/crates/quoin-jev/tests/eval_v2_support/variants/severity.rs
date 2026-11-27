@@ -460,8 +460,7 @@ fn whole_row(answered: &[Answered]) -> RawAnswers {
     answered
         .iter()
         .find(|answered| answered.unit.is_none())
-        .map(|answered| answered.answers.clone())
-        .unwrap_or_default()
+        .map_or_default(|answered| answered.answers.clone())
 }
 
 /// S1's questions for `mode`: one `noul` per fact [`Fact::asked_in`] names.
@@ -944,16 +943,14 @@ fn s2_derive(_row: &Row, answered: &[Answered]) -> Predictions {
     whole_row(answered)
         .get(SEVERITY)
         .and_then(expected_prediction)
-        .map(|prediction| Predictions::from([(SEVERITY, prediction)]))
-        .unwrap_or_default()
+        .map_or_default(|prediction| Predictions::from([(SEVERITY, prediction)]))
 }
 
 fn s2m_derive(_row: &Row, answered: &[Answered]) -> Predictions {
     whole_row(answered)
         .get(SEVERITY)
         .and_then(high_mass_prediction)
-        .map(|prediction| Predictions::from([(SEVERITY, prediction)]))
-        .unwrap_or_default()
+        .map_or_default(|prediction| Predictions::from([(SEVERITY, prediction)]))
 }
 
 /// S2 on full triples.

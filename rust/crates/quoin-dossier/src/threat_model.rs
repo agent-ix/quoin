@@ -698,7 +698,7 @@ mod tests {
         assert!(generated.body.contains("RISK-1: accepted, A. Person"));
         assert!(generated.body.contains("RISK-2: undecided, not stated"));
         assert!(generated.body.contains("Selected boundary."));
-        assert!(generated.gaps.is_empty());
+        assert_eq!(generated.gaps, [] as [crate::gap::Gap; 0]);
     }
 
     #[test]
@@ -954,7 +954,7 @@ mod tests {
         let second = render_threat_model(&records, Some(&report)).unwrap();
         assert_eq!(first, second);
         assert!(first.body.contains("### Open findings\n\nnone"));
-        assert!(first.gaps.is_empty());
+        assert_eq!(first.gaps, [] as [crate::gap::Gap; 0]);
     }
 
     #[test]

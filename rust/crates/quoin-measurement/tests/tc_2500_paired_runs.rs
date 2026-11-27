@@ -294,10 +294,9 @@ fn tc_2504_a_blocked_slice_makes_the_pair_incomparable() {
 fn tc_2505_a_plan_without_paired_run_yields_no_observation() {
     let plans = plans("", "");
     let first = run("a", &[("r1", 3.0), ("r2", 4.0)]);
-    assert!(
-        compare_paired_runs(&first, &first, &plans)
-            .expect("compares")
-            .is_empty()
+    assert_eq!(
+        compare_paired_runs(&first, &first, &plans).expect("compares"),
+        [] as [quoin_measurement::PairedRunObservation; 0]
     );
 }
 

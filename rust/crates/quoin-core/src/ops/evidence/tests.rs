@@ -740,7 +740,7 @@ fn tc_1671_031_a_refused_input_writes_no_record() {
         "{}",
         refused.message
     );
-    assert!(stored_paths(&host).is_empty());
+    assert_eq!(stored_paths(&host), [] as [std::string::String; 0]);
 }
 
 /// `--policy` on the sbom, a finding-shaped scanner or any other run adapter is
@@ -760,7 +760,7 @@ fn tc_1671_032_policy_on_any_other_adapter_is_refused() {
             error.message
         );
     }
-    assert!(stored_paths(&host).is_empty());
+    assert_eq!(stored_paths(&host), [] as [std::string::String; 0]);
 }
 
 fn discharge_binding() -> serde_json::Value {
@@ -831,7 +831,10 @@ fn a_report_from_supplied_facts_resolves_their_refs_against_the_store() {
     assert_eq!(held["binding"]["direct"][0]["clauseId"], "C-1");
 
     let missing = report(json!([run_fact("evidence://runs/SUITE-1/gone")]));
-    assert!(missing["binding"]["direct"].as_array().unwrap().is_empty());
+    assert_eq!(
+        missing["binding"]["direct"].as_array().unwrap().as_slice(),
+        []
+    );
     let reason = missing["binding"]["open"][0]["reason"].as_str().unwrap();
     assert!(
         reason.starts_with("unresolved: evidence://runs/SUITE-1/gone"),
@@ -863,12 +866,9 @@ fn record_discharge_refuses_the_whole_list_when_a_ref_does_not_resolve() {
     assert_eq!(error.code, CoreErrorCode::BadRequest);
     assert_eq!(error.context["refusal"], "discharge-facts-failed");
     assert!(error.to_string().contains("C-1: unresolved"), "{error}");
-    assert!(
-        host.store
-            .borrow()
-            .list_directories("discharge")
-            .unwrap()
-            .is_empty()
+    assert_eq!(
+        host.store.borrow().list_directories("discharge").unwrap(),
+        [] as [std::string::String; 0]
     );
 
     let written = record_discharge(

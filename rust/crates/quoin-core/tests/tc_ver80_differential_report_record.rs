@@ -261,7 +261,7 @@ fn tc_002_no_stated_obligation_leaves_the_entry_unbound() {
             .payload;
         assert_eq!(payload["bound"], json!([]), "{payload}");
         assert!(the_run(dir.path())["entries"][0].get("traceIds").is_none());
-        assert!(bindings(dir.path()).is_empty());
+        assert_eq!(bindings(dir.path()), [] as [serde_json::Value; 0]);
     }
 }
 
@@ -281,7 +281,7 @@ fn tc_002_only_a_passing_entry_binds() {
         assert_eq!(payload["bound"], json!([]), "{payload}");
         let run = the_run(dir.path());
         assert_eq!(run["entries"][0]["traceIds"], json!(["FR-001-AC-1"]));
-        assert!(bindings(dir.path()).is_empty());
+        assert_eq!(bindings(dir.path()), [] as [serde_json::Value; 0]);
     }
 }
 
@@ -300,7 +300,7 @@ fn tc_002_a_disagreement_stores_no_entry_and_binds_nothing() {
     assert_eq!(payload["bound"], json!([]), "{payload}");
     assert_eq!(payload["unrepresented"][0]["state"], "disagreement");
     assert_eq!(the_run(dir.path())["entries"], json!([]));
-    assert!(bindings(dir.path()).is_empty());
+    assert_eq!(bindings(dir.path()), [] as [serde_json::Value; 0]);
 }
 
 #[trace("FR-152-AC-6")]
@@ -347,7 +347,7 @@ fn tc_002_a_refused_report_with_stated_ids_writes_nothing() {
         );
         assert!(response.is_err(), "{results}");
         assert!(!dir.path().join("spec/evidence/runs").exists());
-        assert!(bindings(dir.path()).is_empty());
+        assert_eq!(bindings(dir.path()), [] as [serde_json::Value; 0]);
     }
 }
 

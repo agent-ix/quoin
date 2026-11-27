@@ -112,13 +112,11 @@ impl HostCatalog {
         let module_paths = std::env::var("QUOIN_MODULE_PATHS")
             .ok()
             .filter(|value| !value.is_empty());
-        let env_roots = std::env::var_os("QUOIN_MODULE_PATHS")
-            .map(|value| {
-                std::env::split_paths(&value)
-                    .filter(|path| !path.as_os_str().is_empty())
-                    .collect()
-            })
-            .unwrap_or_default();
+        let env_roots = std::env::var_os("QUOIN_MODULE_PATHS").map_or_default(|value| {
+            std::env::split_paths(&value)
+                .filter(|path| !path.as_os_str().is_empty())
+                .collect()
+        });
         Self {
             default_home,
             env_roots,

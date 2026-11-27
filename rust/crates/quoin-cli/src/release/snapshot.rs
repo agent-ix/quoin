@@ -57,8 +57,7 @@ fn declined(input: &str, response: &quoin_core::protocol::Response) -> Stop {
     let (code, message) = response
         .diagnostics
         .first()
-        .map(|diagnostic| (diagnostic.code.as_str(), diagnostic.message.as_str()))
-        .unwrap_or_default();
+        .map_or_default(|diagnostic| (diagnostic.code.as_str(), diagnostic.message.as_str()));
     Refusal::invalid(input, code, message).into()
 }
 
@@ -537,13 +536,13 @@ mod vulnerability_tests {
     #[trace("FR-167-AC-20")]
     #[test]
     fn no_open_lifecycle_records_produces_an_empty_section() {
-        assert!(
+        assert_eq!(
             render_vulnerabilities(&[
                 document("VULN-1", "remediated"),
                 document("VULN-2", "closed"),
             ])
-            .unwrap_or_else(|_| panic!("terminal vulnerability fixtures should render"))
-            .is_empty()
+            .unwrap_or_else(|_| panic!("terminal vulnerability fixtures should render")),
+            [] as [quoin_dossier::release_snapshot::SnapshotVulnerability; 0]
         );
     }
 }

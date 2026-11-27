@@ -605,14 +605,13 @@ impl Battery {
                     .collect();
                 let p: BTreeMap<&str, f64> = table
                     .get(row.id.as_str())
-                    .map(|p| {
+                    .map_or_default(|p| {
                         self.checks
                             .iter()
                             .zip(p)
                             .map(|(check, p)| (check.key, *p))
                             .collect()
-                    })
-                    .unwrap_or_default();
+                    });
                 json!({
                     "id": row.id,
                     "mode": row.mode.as_str(),

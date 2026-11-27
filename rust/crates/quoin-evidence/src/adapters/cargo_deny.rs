@@ -80,8 +80,7 @@ pub fn parse_cargo_deny(raw: &str) -> Result<FindingResult, EvidenceError> {
     let checks: Vec<(&String, &Value)> = summary
         .get("fields")
         .and_then(Value::as_object)
-        .map(|fields| fields.iter().filter(|(_, v)| v.is_object()).collect())
-        .unwrap_or_default();
+        .map_or_default(|fields| fields.iter().filter(|(_, v)| v.is_object()).collect());
     if checks.is_empty() {
         return Err(refuse(
             "the `summary` names no check — it proves nothing was evaluated",

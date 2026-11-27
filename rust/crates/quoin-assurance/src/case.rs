@@ -488,15 +488,12 @@ fn node_for(
     // `ancestors`, not `reached`: a child already rendered under a DIFFERENT
     // claim must still appear here, and only a child on this path is a cycle.
     // The map is keyed by child id, so iteration is already sorted.
-    let sub_edges: Vec<(&String, &BTreeSet<String>)> = children
-        .get(id)
-        .map(|edges| {
-            edges
-                .iter()
-                .filter(|(child, _)| !ancestors.contains(*child))
-                .collect()
-        })
-        .unwrap_or_default();
+    let sub_edges: Vec<(&String, &BTreeSet<String>)> = children.get(id).map_or_default(|edges| {
+        edges
+            .iter()
+            .filter(|(child, _)| !ancestors.contains(*child))
+            .collect()
+    });
 
     let sub_nodes: Vec<CaseNode> = sub_edges
         .iter()

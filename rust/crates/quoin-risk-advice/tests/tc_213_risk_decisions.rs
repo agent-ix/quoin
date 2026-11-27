@@ -104,7 +104,10 @@ fn a_residual_risk_missing_from_the_considered_list_is_named() {
         vec![("residual-risk-not-considered".to_owned(), names(&["RR-2"]))]
     );
     evaluation(&c, "ORE-1", "accepted", &["RR-1", "RR-2"]);
-    assert!(check_findings(&json(&c), "ORE-1").is_empty());
+    assert_eq!(
+        check_findings(&json(&c), "ORE-1"),
+        [] as [(std::string::String, std::vec::Vec<std::string::String>); 0]
+    );
 }
 
 #[trace("FR-107-AC-4", "FR-213-AC-2")]
@@ -140,7 +143,10 @@ fn an_accepted_evaluation_over_an_undecided_risk_is_named_and_over_accepted_risk
         )]
     );
     residual_by(&c, "RR-2", "accepted", "Pat", "r");
-    assert!(check_findings(&json(&c), "ORE-1").is_empty());
+    assert_eq!(
+        check_findings(&json(&c), "ORE-1"),
+        [] as [(std::string::String, std::vec::Vec<std::string::String>); 0]
+    );
 }
 
 #[trace("FR-107-AC-5", "FR-213-AC-4")]
@@ -171,8 +177,14 @@ fn an_evaluation_not_decided_as_accepted_raises_no_open_risk_finding() {
     evaluation(&c, "ORE-1", "undecided", &["RR-1", "RR-2"]);
     evaluation(&c, "ORE-2", "not_accepted", &["RR-1", "RR-2"]);
     let report = json(&c);
-    assert!(check_findings(&report, "ORE-1").is_empty());
-    assert!(check_findings(&report, "ORE-2").is_empty());
+    assert_eq!(
+        check_findings(&report, "ORE-1"),
+        [] as [(std::string::String, std::vec::Vec<std::string::String>); 0]
+    );
+    assert_eq!(
+        check_findings(&report, "ORE-2"),
+        [] as [(std::string::String, std::vec::Vec<std::string::String>); 0]
+    );
 }
 
 #[trace("FR-107-AC-3", "FR-213-AC-6")]
@@ -313,7 +325,7 @@ fn an_uncommitted_decision_is_pending_and_a_file_outside_git_is_not_applicable()
     let report = json(&c);
     let outside = attribution(&report, "RR-1");
     assert_eq!(outside["decision_change"]["state"], "not-applicable");
-    assert!(tokens(outside).is_empty());
+    assert_eq!(tokens(outside), [] as [&str; 0]);
 
     repo(&c);
     commit(&c, "Pat");
@@ -321,7 +333,7 @@ fn an_uncommitted_decision_is_pending_and_a_file_outside_git_is_not_applicable()
     let report = json(&c);
     let pending = attribution(&report, "RR-1");
     assert_eq!(pending["decision_change"]["state"], "pending");
-    assert!(tokens(pending).is_empty());
+    assert_eq!(tokens(pending), [] as [&str; 0]);
 }
 
 #[trace("FR-214-AC-6", "FR-214-AC-7")]

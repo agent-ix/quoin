@@ -201,7 +201,7 @@ fn tc_1546_report_renders_authored_facts_without_inference() {
     assert!(out.body.contains("CONTROL-2 (restricted access)"));
     assert_eq!(out.body.matches("CONTROL-1 (mutual TLS)").count(), 2);
     assert!(!out.body.to_ascii_lowercase().contains("adequate"));
-    assert!(out.gaps.is_empty());
+    assert_eq!(out.gaps, [] as [quoin_dossier::Gap; 0]);
 }
 
 #[trace(
@@ -238,10 +238,9 @@ fn tc_1546_report_renders_only_engine_findings_with_severity() {
     assert_eq!(out.gaps[0].gap_kind, GapKind::CrossingWithoutThreat);
     assert_eq!(out.gaps[1].gap_kind, GapKind::ClassifiedSinkWithoutThreat);
     assert_eq!(out.gaps[2].gap_kind, GapKind::ThreatWithoutTreatment);
-    assert!(
-        render(&complete_records(), Some(&flow(Vec::new())))
-            .gaps
-            .is_empty()
+    assert_eq!(
+        render(&complete_records(), Some(&flow(Vec::new()))).gaps,
+        [] as [quoin_dossier::Gap; 0]
     );
 }
 
@@ -285,7 +284,7 @@ fn tc_1546_complete_report_is_deterministic_and_has_no_gaps() {
     let second = render(&records, Some(&report));
     assert_eq!(first, second);
     assert!(first.body.contains("### Open findings\n\nnone"));
-    assert!(first.gaps.is_empty());
+    assert_eq!(first.gaps, [] as [quoin_dossier::Gap; 0]);
 }
 
 #[trace("FR-202-AC-9", "TC-609")]

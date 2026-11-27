@@ -285,7 +285,7 @@ fn fail_on_unassessed_exits_non_zero_and_names_each_anomaly() {
     assert_eq!(ids, ["AN-001", "AN-002", "AN-011"]);
     assert_eq!(failures[0]["path"], "spec/anomalies/AN-001.md");
     assert_eq!(json["gate"]["modes"], serde_json::json!(["unassessed"]));
-    assert!(!json["anomalies"].as_array().unwrap().is_empty());
+    assert_ne!(json["anomalies"].as_array().unwrap().as_slice(), []);
 }
 
 #[trace("FR-164-AC-3", "FR-164-AC-6")]
@@ -367,7 +367,7 @@ fn an_unknown_fail_on_value_is_refused_naming_the_modes_and_prints_no_report() {
         Some(3),
         "a parser refusal, not a gate failure"
     );
-    assert!(out.stdout.is_empty());
+    assert_eq!(out.stdout, [] as [u8; 0]);
     let err = String::from_utf8(out.stderr).unwrap();
     assert!(
         err.contains("unassessed") && err.contains("unjustified-impacting"),
