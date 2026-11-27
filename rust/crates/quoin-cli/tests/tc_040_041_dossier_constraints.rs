@@ -156,42 +156,117 @@ fn selected_docs(root: &Path) -> [String; 3] {
         .map(|name| fs::read_to_string(root.join("dossier").join(format!("{name}.md"))).unwrap())
 }
 
-#[test]
-fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
-    let work = tempfile::tempdir().unwrap();
-    write_fixture(work.path(), &["FR-002", "FR-001"]);
-    let docs = selected_docs(work.path());
-    for (name, document) in ["SRS", "architecture", "trace matrix"]
-        .into_iter()
-        .zip(docs)
-    {
-        assert!(
-            values_after_field(&document, "Criticality: ").all(|value| value == "unassigned"),
-            "{name} rendered an unrecorded criticality: {document}"
-        );
-        assert!(
-            values_after_field(&document, "Software safety class: ")
-                .all(|value| value == "unassigned"),
-            "{name} rendered an unrecorded software safety class: {document}"
-        );
-        let cells: Vec<_> = table_cells(&document).collect();
+fn all_generated_docs(root: &Path) -> BTreeMap<String, String> {
+    let path = repo(root);
+    let output = quoin(
+        root,
+        &[
+            "dossier",
+            "generate",
+            "--version",
+            "1",
+            "--as-of",
+            "2026-11-27T00:00:00Z",
+            "--doc",
+            "srs",
+            "--doc",
+            "architecture",
+            "--doc",
+            "trace-matrix",
+            "--doc",
+            "rmm",
+            "--doc",
+            "verification-report",
+            "--doc",
+            "soup",
+            "--doc",
+            "anomalies",
+            "--doc",
+            "risk-management",
+            "--doc",
+            "risk-management-plan",
+            "--doc",
+            "release-record",
+            "--doc",
+            "threat-model",
+            "--doc",
+            "software-description",
+            "--doc",
+            "documentation-level-decision",
+            "--doc",
+            "software-design-specification",
+            "--doc",
+            "device-description",
+            "--doc",
+            "records-of-processing",
+            "--doc",
+            "vulnerability-management-plan",
+            "--scope",
+            &path,
+            "--module",
+            &path,
+        ],
+    );
+    assert!(matches!(output.status.code(), Some(0 | 1)), "{output:?}");
+    fs::read_dir(root.join("dossier"))
+        .unwrap()
+        .map(|entry| {
+            let path = entry.unwrap().path();
+            let id = path.file_stem().unwrap().to_string_lossy().into_owned();
+            (id, fs::read_to_string(path).unwrap())
+        })
+        .collect()
+}
+
+fn assert_no_unrecorded_dossier_values(documents: &BTreeMap<String, String>) {
+    assert!(!documents.is_empty(), "no dossier documents were generated");
+    for (name, document) in documents {
+        for (field, allowed) in [
+            (
+                "Criticality: ",
+                ["unassigned", "not stated", "unknown"].as_slice(),
+            ),
+            (
+                "Software safety class: ",
+                ["unassigned", "not stated", "unknown"].as_slice(),
+            ),
+            ("Risk: ", ["not stated", "unknown", "none"].as_slice()),
+            ("Compliance: ", ["not stated", "unknown", "none"].as_slice()),
+            (
+                "Acceptability: ",
+                ["not stated", "unknown", "none"].as_slice(),
+            ),
+        ] {
+            for value in values_after_field(document, field) {
+                assert!(
+                    allowed.contains(&value),
+                    "{name} rendered an unrecorded {field}{value}: {document}"
+                );
+            }
+        }
+        let cells: Vec<_> = table_cells(document).collect();
         for unsupported in ["high", "critical", "compliant", "acceptable"] {
             assert!(
                 !cells.contains(&unsupported),
-                "{name} rendered unsourced value {unsupported:?}: {document}"
+                "{name} rendered an unrecorded table value {unsupported:?}: {document}"
             );
         }
         assert!(
             !cells.iter().any(|cell| cell.starts_with("class-")),
-            "{name} rendered an unrecorded class: {document}"
+            "{name} rendered an unrecorded class in a table: {document}"
         );
-        if name == "SRS" || name == "trace matrix" {
-            assert!(
-                document.contains("Authored statement"),
-                "{name} omitted authored requirement text: {document}"
-            );
-        }
     }
+}
+
+#[trace("NFR-040-AC-3", "NFR-040-M-3")]
+#[test]
+fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
+    let work = tempfile::tempdir().unwrap();
+    write_fixture(work.path(), &["FR-002", "FR-001"]);
+    let documents = all_generated_docs(work.path());
+    assert_no_unrecorded_dossier_values(&documents);
+    assert!(documents["DOS-SRS"].contains("Authored statement"));
+    assert!(documents["DOS-TRACE"].contains("Authored statement"));
 }
 
 #[trace("NFR-040-AC-4")]
