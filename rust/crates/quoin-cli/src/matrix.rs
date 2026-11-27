@@ -133,7 +133,7 @@ pub(crate) fn build(
         repo,
         run_observations,
         signature_verifier,
-        configured_request_limit(repo)?.unwrap_or(DEFAULT_MAX_REQUEST_BYTES),
+        configured_request_limit(repo).unwrap_or(DEFAULT_MAX_REQUEST_BYTES),
         false,
     )
 }
@@ -229,7 +229,7 @@ fn build_with_limit(
 #[implements("FR-027-AC-10", "FR-115-AC-27")]
 fn selected_request_limit(arguments: &ArgMatches, repo: &str) -> Result<usize, String> {
     let configured = if arguments.get_one::<usize>("max-request-bytes").is_none() {
-        configured_request_limit(repo)?
+        configured_request_limit(repo)
     } else {
         None
     };
@@ -240,14 +240,14 @@ fn selected_request_limit(arguments: &ArgMatches, repo: &str) -> Result<usize, S
 }
 
 #[implements("FR-027-AC-10")]
-fn configured_request_limit(repo: &str) -> Result<Option<usize>, String> {
+fn configured_request_limit(repo: &str) -> Option<usize> {
     let environment = ProcessEnvironment;
     let context = crate::config::context_for_repo(std::path::Path::new(repo));
     let service = ConfigService::<QuoinConfig>::for_plugin(&environment, &context);
-    Ok(service
+    service
         .get(&mut IncidentLog::new())
         .value
-        .matrix_max_request_bytes)
+        .matrix_max_request_bytes
 }
 
 fn select_request_limit(cli: Option<usize>, configured: Option<usize>) -> Result<usize, String> {
