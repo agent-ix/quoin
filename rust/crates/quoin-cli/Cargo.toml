@@ -68,6 +68,9 @@ semver = { workspace = true }
 time = { workspace = true, features = ["parsing"] }
 tempfile = { workspace = true }
 
+[build-dependencies]
+ix-trace-rs = { workspace = true }
+
 [dev-dependencies]
 serde_json_canonicalizer = { workspace = true }
 # The stub generators the dossier command tests drive (PLAT-1614); the feature
