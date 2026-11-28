@@ -3642,8 +3642,10 @@ dependencies = [
  "ix-trace-rs",
  "libc",
  "quire-canonical",
+ "serde",
  "serde_json",
  "sha2",
+ "tempfile",
  "thiserror",
 ]
 
