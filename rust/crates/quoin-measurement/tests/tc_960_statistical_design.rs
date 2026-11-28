@@ -131,6 +131,27 @@ fn observation(examined: Option<u32>) -> Value {
     observation
 }
 
+/// Remove the non-cell provenance annotation from a rendered Markdown table
+/// before checking the surrounding plan-cell content. NFR-023 has its own
+/// tests for the annotation and its binding.
+fn without_figure_provenance_comments(markdown: &str) -> String {
+    let mut cleaned = String::with_capacity(markdown.len());
+    let mut remaining = markdown;
+    while let Some(start) = remaining.find("<!-- ix-figure:") {
+        cleaned.push_str(&remaining[..start]);
+        let Some(relative_end) = remaining[start..].find("-->") else {
+            cleaned.push_str(&remaining[start..]);
+            return cleaned;
+        };
+        let end = start + relative_end + 3;
+        let following = &remaining[end..];
+        let whitespace = following.len() - following.trim_start().len();
+        remaining = &following[whitespace..];
+    }
+    cleaned.push_str(remaining);
+    cleaned
+}
+
 /// A complete, otherwise-admissible schema-v2 collection with `observations`.
 fn collection(observations: &[Value]) -> Value {
     json!({
@@ -330,8 +351,9 @@ fn tc_960_005_a_plan_without_the_fields_behaves_exactly_as_before() {
     )
     .expect("the report builds");
     let rendered = render_measurement_report(&report).expect("the report renders");
+    let report_without_figure_comments = without_figure_provenance_comments(&rendered);
     assert!(
-        rendered.contains(
+        report_without_figure_comments.contains(
             "| quality.gate | MP-900 (spec/assurance/MP-900.md) | ratchet | 0.9 fraction |"
         ),
         "a plan without ground_truth_kind renders its plan cell unchanged:\n{rendered}"
@@ -362,8 +384,9 @@ fn tc_960_006_the_report_states_the_plans_ground_truth_kind() {
     )
     .expect("the report builds");
     let rendered = render_measurement_report(&report).expect("the report renders");
+    let report_without_figure_comments = without_figure_provenance_comments(&rendered);
     assert!(
-        rendered.contains(
+        report_without_figure_comments.contains(
             "| quality.gate | MP-900 (spec/assurance/MP-900.md; ground truth: human-labelled) \
              | ratchet | 0.9 fraction |"
         ),
