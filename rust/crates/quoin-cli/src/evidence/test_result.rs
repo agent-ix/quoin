@@ -12,7 +12,7 @@ use clap::{Arg, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
 use ix_trace_rs::implements;
 use quoin_core::protocol::{Diagnostic, Response};
-use quoin_evidence::export::provenance::{Provenance, read_provenance};
+use quoin_evidence::export::provenance::{Provenance, check_signed_subjects, read_provenance};
 use quoin_evidence::export::test_result::{
     ExportError, ExportScope, build_statement, check_subject,
 };
@@ -49,7 +49,7 @@ pub(super) fn command() -> Command {
         )
 }
 
-#[implements("FR-185")]
+#[implements("FR-185-AC-11")]
 pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let subject_path = required(arguments, "subject")?;
     let output_path = PathBuf::from(required(arguments, "output")?);
@@ -87,6 +87,9 @@ pub(super) fn run(arguments: &ArgMatches) -> Result<Response, String> {
         Ok(provenance) => provenance,
         Err(message) => return Ok(refused("evidence_provenance_invalid", message)),
     };
+    if let Err(error) = check_signed_subjects(&subject, &provenance) {
+        return Ok(refused("evidence_provenance_invalid", error.to_string()));
+    }
 
     let source = DiskEvidence::at_path(&evidence_path);
     let bindings_path = evidence_path.join("bindings.json");

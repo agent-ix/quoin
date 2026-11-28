@@ -29,14 +29,15 @@ which this requirement adopts unchanged. The predicate fields conform to the
   caller-supplied digests bind the statement to artifact content; the revision
   annotation identifies the immutable candidate revision whose evidence is
   being exported. Quoin computes no digest and does not resolve the revision.
-- `--execution-provenance <provenance.json>`: the version-2 DSSE envelope
-  produced by the signed source release workflow and verified by the
-  Engineering Assurance release-evidence verifier under its existing trust
-  policy. Its payload contains `sourceRevision`, `suiteDeclarationsSha256`, the
-  complete computed Quire Test Matrix for that revision, and `runs`: a list of
-  suite id, record path, and SHA-256 or `null` when the expected run record is
-  absent. A caller-selected obligation list is not an accepted population
-  source.
+- `--execution-provenance <provenance.json>`: the JSON Sigstore bundle produced
+  by the signed source release workflow and authenticated by the Engineering
+  Assurance release-evidence verifier under its existing trust policy. Its
+  DSSE envelope contains an in-toto Statement v1 whose predicate type is
+  `application/vnd.agent-ix.execution-provenance.v2+json`. The closed predicate
+  contains `version`, `sourceRevision`, `suiteDeclarationsSha256`, the complete
+  computed Quire Test Matrix for that revision, and `runs`: a list of suite id,
+  record path, and SHA-256 or `null` when the expected run record is absent. A
+  caller-selected obligation list is not an accepted population source.
 - `--output <statement.json>`: the destination path for the statement.
 - `--evidence-dir <DIR>`: the retained evidence store to read; it defaults to
   `spec/evidence`.
@@ -73,23 +74,25 @@ which this requirement adopts unchanged. The predicate fields conform to the
   `suiteDeclarationsSha256` in the signed payload before deriving this
   population. Quoin SHALL NOT accept a caller-selected subset or infer the
   population from `bindings.json`.
-- The signed source release workflow SHALL produce the version-2 DSSE
-  execution-provenance envelope defined by FR-186. Its payload SHALL contain
+- The signed source release workflow SHALL produce the version-2 signed
+  execution-provenance Sigstore bundle defined by FR-186. The in-toto
+  statement's predicate SHALL contain
   the source revision, suite-declaration digest, complete Test Matrix, and
   expected suite/run paths and digests. An absent expected run SHALL be
   represented by a `null` run-record digest. The source revision SHALL be the
   revision used to compute the matrix and execute the declared suites.
-- The Engineering Assurance verifier SHALL authenticate the envelope's source
+- The Engineering Assurance verifier SHALL authenticate the bundle's source
   workflow identity and validate its revision and artifact provenance under
-  the FR-069 trust policy before passing the envelope to Quoin. Quoin SHALL
+  the FR-069 trust policy before passing the original bundle bytes to Quoin.
+  Quoin SHALL
   verify each run-record digest locally before using its population or run
-  records. The signature SHALL cover the complete `testMatrix` payload bytes.
-  Quoin does not itself verify the DSSE signature: authentication is the
-  Engineering Assurance verifier's, performed before the envelope reaches
-  Quoin, so Quoin's population is authenticated only to the extent the caller
-  ran that verifier. Quoin checks the envelope's shape (payload type, a
-  non-empty `signatures` list, the closed payload fields) and refuses a
-  malformed one.
+  records. The signature SHALL cover the complete in-toto statement predicate,
+  including `testMatrix`. Quoin does not itself verify the DSSE signature:
+  authentication is the Engineering Assurance verifier's, performed before
+  the bundle reaches Quoin, so Quoin's population is authenticated only to the
+  extent the caller ran that verifier. Quoin checks the bundle's DSSE envelope,
+  in-toto statement type, predicate type, subject, and closed predicate fields
+  and refuses a malformed one.
 - The `testMatrix` SHALL be the Quire coverage matrix rows
   `{document, id, criteria: [{id, status, ...}]}`. The required population SHALL
   be the `id` of every criterion whose `status` is not `retired`. A row or
