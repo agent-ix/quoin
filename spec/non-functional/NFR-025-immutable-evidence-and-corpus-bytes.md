@@ -8,8 +8,6 @@ relationships:
     type: "constrains"
   - target: "ix://agent-ix/quoin/FR-100"
     type: "constrains"
-  - target: "ix://agent-ix/quoin/FR-103"
-    type: "constrains"
 ---
 
 # NFR-025: Evidence and accepted-corpus bytes are immutable across the port
@@ -90,4 +88,4 @@ zero is reported as inconclusive rather than as clean.
 ## Dependencies
 
 - **Upstream**: [FR-098](../functional/FR-098-semantic-and-identity-parity.md) and [FR-100](../functional/FR-100-rust-evidence-measurement-change-assurance.md), which implement the single canonicalization path.
-- **Downstream**: [FR-103](../functional/FR-103-corpus-consolidation.md), whose consolidation this bounds.
+- **Downstream**: [FR-100](../functional/FR-100-rust-evidence-measurement-change-assurance.md), whose FR-100-CON-3 read-only corpus boundary this NFR constrains.

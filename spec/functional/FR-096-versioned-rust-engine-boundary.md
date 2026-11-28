@@ -113,7 +113,7 @@ are never reported as success.
 
 ## Dependencies
 
-- **Downstream**: [FR-098](./FR-098-semantic-and-identity-parity.md) through [FR-103](./FR-103-corpus-consolidation.md) all cross this boundary.
+- **Downstream**: [FR-098](./FR-098-semantic-and-identity-parity.md), [FR-099](./FR-099-rust-catalog-and-validation-capability.md), [FR-100](./FR-100-rust-evidence-measurement-change-assurance.md), and [FR-102](./FR-102-command-surface-and-oclif-retirement.md) cross this boundary.
 
 
 > **PLAT-989 change note (2026-10-05):** boundary canonical JSON SHALL be
