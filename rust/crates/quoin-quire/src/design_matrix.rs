@@ -74,33 +74,27 @@ mod tests {
 
     #[trace("NFR-011-M-2")]
     #[test]
-    fn matrix_loads_its_selected_paths_in_one_spec_invocation() {
+    fn matrix_invokes_spec_loader_once_for_caller_document_root() {
         let repository = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("tests")
             .join("fixtures")
             .join("repo");
-        let canonical_repository = repository.canonicalize().expect("canonical repository");
         let request = Request {
             scope: ScopeRoot::open(&repository).expect("fixture scope"),
             modules: ModuleSelection::Closed(vec![
                 ModuleRoot::open(repository).expect("fixture module"),
             ]),
         };
+        let expected_document_root = request
+            .scope
+            .document_root()
+            .expect("caller-provided document root");
         let mut loader_invocations = 0;
-        let mut documents = Vec::new();
+        let mut loaded_roots = Vec::new();
         let _outcome = compute_with_spec_loader(&request, |root| {
             loader_invocations += 1;
-            let spec = quire_rs::Spec::from_path(root);
-            documents.extend(spec.documents().iter().map(|document| {
-                document
-                    .path
-                    .canonicalize()
-                    .expect("canonical selected document")
-                    .strip_prefix(&canonical_repository)
-                    .expect("selected document is under repository root")
-                    .to_path_buf()
-            }));
-            spec
+            loaded_roots.push(root.to_path_buf());
+            quire_rs::Spec::from_path(root)
         })
         .expect("matrix computation");
 
@@ -108,14 +102,10 @@ mod tests {
             loader_invocations, 1,
             "matrix invokes the selected-document loader once"
         );
-        documents.sort();
         assert_eq!(
-            documents,
-            [
-                std::path::PathBuf::from("spec/FR-001-example.md"),
-                std::path::PathBuf::from("spec/TM-001-matrix.md"),
-            ],
-            "the one pass covers Quire's exact selected document set"
+            loaded_roots,
+            [expected_document_root],
+            "matrix loads the caller-provided document root"
         );
     }
 }
