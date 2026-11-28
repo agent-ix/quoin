@@ -81,6 +81,105 @@ fn invoke(result: &Path, output: &Path) -> std::process::Output {
         .expect("validation report command starts")
 }
 
+#[trace("FR-027-AC-13", "FR-217-AC-1", "FR-220-AC-2")]
+#[test]
+fn command_reports_each_external_tool_version_with_its_configuration_index_reference() {
+    let temp = tempfile::tempdir().expect("temporary fixture directory");
+    let result = write_run(temp.path(), "pass", false);
+    let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let index: Value = serde_json::from_slice(
+        &std::fs::read(repository.join("spec/validation/external-tools.v1.json"))
+            .expect("authoritative external-tools index reads"),
+    )
+    .expect("authoritative external-tools index parses");
+    let entries = index["entries"].as_array().expect("index entries");
+    let tools = entries
+        .iter()
+        .map(|entry| {
+            let id = entry["id"].as_str().expect("tool id");
+            json!({
+                "tool_id": id,
+                "executable": entry["executable"],
+                "version_invocation": entry["version_invocation"],
+                "observed_version_output": format!("{id} fixture version 1.2.3"),
+                "observed_version_stream": "stdout",
+                "index_path": "spec/validation/external-tools.v1.json",
+                "index_format_version": "1",
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut record: Value =
+        serde_json::from_slice(&std::fs::read(&result).expect("run record reads"))
+            .expect("run record parses");
+    record["externalTools"] = json!(tools);
+    std::fs::write(
+        &result,
+        serde_json::to_vec(&record).expect("run record serializes"),
+    )
+    .expect("external tool evidence writes");
+
+    let output_directory = temp.path().join("report");
+    let output = invoke(&result, &output_directory);
+    assert!(
+        output.status.success(),
+        "command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(
+        &std::fs::read(output_directory.join("validation-report.json"))
+            .expect("JSON report is written"),
+    )
+    .expect("report JSON parses");
+    assert_eq!(report["status"], "complete");
+    assert_eq!(
+        report["externalToolsIndex"]["path"],
+        "spec/validation/external-tools.v1.json"
+    );
+    assert_eq!(report["externalToolsIndex"]["formatVersion"], "1");
+    let reported_tools = report["externalTools"].as_array().expect("tool rows");
+    assert_eq!(reported_tools.len(), entries.len());
+    for entry in entries {
+        let id = entry["id"].as_str().expect("tool id");
+        let row = reported_tools
+            .iter()
+            .find(|row| row["toolId"] == id)
+            .expect("every configured tool has a report row");
+        assert_eq!(row["status"], "observed");
+        assert_eq!(row["executable"], entry["executable"]);
+        assert_eq!(row["versionInvocation"], entry["version_invocation"]);
+        assert_eq!(
+            row["observedVersionOutput"],
+            format!("{id} fixture version 1.2.3")
+        );
+        assert_eq!(row["indexPath"], "spec/validation/external-tools.v1.json");
+        assert_eq!(row["indexFormatVersion"], "1");
+    }
+
+    let mut incorrect_reference = record;
+    incorrect_reference["externalTools"][0]["index_path"] = json!("spec/validation/wrong.json");
+    std::fs::write(
+        &result,
+        serde_json::to_vec(&incorrect_reference).expect("mutated run record serializes"),
+    )
+    .expect("incorrect-reference case writes");
+    let negative_output = invoke(&result, &temp.path().join("negative-report"));
+    assert_eq!(negative_output.status.code(), Some(1));
+    let negative_report: Value = serde_json::from_slice(
+        &std::fs::read(temp.path().join("negative-report/validation-report.json"))
+            .expect("negative JSON report is written"),
+    )
+    .expect("negative report parses");
+    assert_eq!(negative_report["status"], "incomplete");
+    let invalid_tool_id = tools[0]["tool_id"].as_str().expect("tool id");
+    let invalid_tool = negative_report["externalTools"]
+        .as_array()
+        .expect("negative tool rows")
+        .iter()
+        .find(|row| row["toolId"] == invalid_tool_id)
+        .expect("invalid tool remains in the report");
+    assert_eq!(invalid_tool["status"], "not provided");
+}
+
 #[trace(
     "FR-217-AC-1",
     "FR-217-AC-3",
