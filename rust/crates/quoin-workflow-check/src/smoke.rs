@@ -1498,9 +1498,9 @@ mod tests {
         review_scenarios(&harness, &started).expect("review contract scenarios");
     }
 
+    #[cfg(feature = "workflow-test")]
     #[trace("FR-020-AC-6")]
     #[test]
-    #[ignore = "run by make workflow-test with the current ix-flow host package"]
     fn design_gate_context_is_seeded_and_protected() {
         let binary = std::env::var("QUOIN_BINARY").expect("QUOIN_BINARY from workflow-test");
         let runner = std::env::var("IX_FLOW_RUNNER").expect("IX_FLOW_RUNNER from workflow-test");
