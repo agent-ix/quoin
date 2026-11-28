@@ -228,4 +228,24 @@ mod tests {
             DEFAULT_MANIFEST_URL
         );
     }
+
+    #[trace("FR-022-AC-3")]
+    #[test]
+    fn tc_373_753_update_with_registry_uses_explicit_manifest_endpoint() {
+        let registry = "http://localhost/manifest.json";
+        let matches = command()
+            .try_get_matches_from(["update", "--registry", registry])
+            .expect("grammar parses the explicit registry");
+        let transport = RecordingTransport {
+            requested: RefCell::new(Vec::new()),
+        };
+        let _response = run_with(&matches, Path::new("/usr/local/bin/quoin"), &transport)
+            .expect("update reaches its injected transport");
+
+        assert_eq!(
+            *transport.requested.borrow(),
+            [registry],
+            "--registry must select the endpoint used by the transport"
+        );
+    }
 }
