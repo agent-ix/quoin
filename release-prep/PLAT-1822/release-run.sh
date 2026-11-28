@@ -29,7 +29,7 @@ if [[ "$actual_sha" != "$RELEASE_SHA" ]]; then
   printf 'release SHA mismatch: expected %s, got %s\n' "$RELEASE_SHA" "$actual_sha" >&2
   exit 2
 fi
-for executable in "$LOCKED_BUILD" "$QUOIN_BIN" "$EA_BIN" "$QUIRE_BIN" "$IX_FLOW_RUNNER" "$FILAMENT_ANALYZE_BIN" "$PDFTOTEXT"; do
+for executable in "$LOCKED_BUILD" "$EA_BIN" "$QUIRE_BIN" "$IX_FLOW_RUNNER" "$FILAMENT_ANALYZE_BIN" "$PDFTOTEXT"; do
   if [[ ! -x "$executable" ]]; then
     printf 'required executable is missing: %s\n' "$executable" >&2
     exit 2
