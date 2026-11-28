@@ -1493,7 +1493,12 @@ mod tests {
             .expect_err("allowed-signers refusal is not a report");
         assert!(
             matches!(&error, super::StatusError::Invalid(_)),
-            "allowed-signers refusal must retain its dedicated error class"
+            "allowed-signers refusal must retain its dedicated error class; got {}",
+            match &error {
+                super::StatusError::Invalid(message) | super::StatusError::Unavailable(message) => {
+                    message
+                }
+            }
         );
         let shell = status_shell_error(error);
         assert_eq!(shell.exit, 2);
@@ -1920,6 +1925,29 @@ mod tests {
     #[trace("FR-188-AC-20")]
     #[test]
     fn signature_verify_refusals_return_no_report_with_the_contract_exit_code() {
+        const CHILD: &str = "QUOIN_FORMAL_RULE_REFUSAL_TEST_CHILD";
+        if std::env::var_os(CHILD).is_none() {
+            let ix_home = tempfile::tempdir().expect("isolated IX_HOME");
+            let output = Command::new(std::env::current_exe().expect("test binary path"))
+                .args([
+                    "--exact",
+                    "formal_rules::tests::signature_verify_refusals_return_no_report_with_the_contract_exit_code",
+                    "--nocapture",
+                ])
+                .env(CHILD, "1")
+                .env("IX_HOME", ix_home.path())
+                .env("HOME", ix_home.path())
+                .output()
+                .expect("run refusal test with isolated home");
+            assert!(
+                output.status.success(),
+                "isolated refusal test failed:\n{}\n{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            );
+            return;
+        }
+
         let (repo, _ea, allowed) = command_fixture();
         git(
             repo.path(),

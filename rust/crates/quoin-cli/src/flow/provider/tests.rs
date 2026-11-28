@@ -308,7 +308,7 @@ fn design_gate_binds_to_explicit_quire_flow_json_and_denials_override_exit_statu
 #[cfg(unix)]
 #[trace("FR-209-AC-1")]
 #[test]
-fn design_gate_preserves_order_for_multiple_denials_and_remediations() {
+fn design_gate_orders_denials_deterministically_and_preserves_remediation_order() {
     let mut first = flow_denial();
     first["remediations"] = json!([
         {"name":"first-remediation","description":"First","change":{"order":1}},
@@ -321,7 +321,9 @@ fn design_gate_preserves_order_for_multiple_denials_and_remediations() {
     second["remediations"] = json!([
         {"name":"third-remediation","description":"Third","change":{"order":3}}
     ]);
-    let report = flow_report(json!([first, second]));
+    // Quire may enumerate independent denials from an unordered collection.
+    // The provider response must impose its own stable order.
+    let report = flow_report(json!([second, first]));
     let (_directory, request, _, _) = design_gate_fixture(&report, 0);
     prime_design_gate_proposal(&request);
     let input = serde_json::to_vec(&request).expect("request");
@@ -336,6 +338,27 @@ fn design_gate_preserves_order_for_multiple_denials_and_remediations() {
     assert_eq!(denials[0]["remediations"][0]["name"], "first-remediation");
     assert_eq!(denials[0]["remediations"][1]["name"], "second-remediation");
     assert_eq!(denials[1]["remediations"][0]["name"], "third-remediation");
+}
+
+#[cfg(unix)]
+#[trace("FR-209-AC-1")]
+#[test]
+fn design_gate_denial_ties_use_rfc8785_utf16_member_order() {
+    let mut utf8_first = flow_denial();
+    utf8_first["\u{e000}"] = json!("a");
+    utf8_first["\u{10000}"] = json!("z");
+    let mut utf16_first = flow_denial();
+    utf16_first["\u{e000}"] = json!("z");
+    utf16_first["\u{10000}"] = json!("a");
+    let mut report = json!({"denials":[utf8_first, utf16_first]});
+
+    super::sort_flow_denials(&mut report).expect("canonical denial keys");
+
+    let denials = report["denials"].as_array().expect("denials array");
+    assert_eq!(denials[0]["\u{10000}"], "a");
+    assert_eq!(denials[0]["\u{e000}"], "z");
+    assert_eq!(denials[1]["\u{10000}"], "z");
+    assert_eq!(denials[1]["\u{e000}"], "a");
 }
 
 #[cfg(unix)]

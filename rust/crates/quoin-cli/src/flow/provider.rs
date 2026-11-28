@@ -880,6 +880,7 @@ fn write_design_gate_state(path: &Path, state: &DesignGateRunState) -> Check {
     Ok(())
 }
 
+#[implements("FR-209-AC-1")]
 fn design_gate_report(
     request: &DesignGateRequest,
     context: &Context,
@@ -911,7 +912,13 @@ fn design_gate_report(
             "design gate check count is out of range",
         )
     })?;
-    let report = run_design_evaluator(request, &root, &design_root, &module_roots)?;
+    let mut report = run_design_evaluator(request, &root, &design_root, &module_roots)?;
+    sort_flow_denials(&mut report).map_err(|error| {
+        fail(
+            Code::DataflowCheckUnavailable,
+            format!("could not deterministically order evaluator denials: {error}"),
+        )
+    })?;
     state.checks.push(DesignGateCheck {
         attempt,
         state_version,
@@ -925,6 +932,54 @@ fn design_gate_report(
         )
     })?;
     Ok((attempt, report))
+}
+
+fn sort_flow_denials(report: &mut Value) -> Result<(), String> {
+    let Some(denials) = report.get_mut("denials").and_then(Value::as_array_mut) else {
+        return Ok(());
+    };
+    let mut keyed_denials = denials
+        .iter()
+        .map(|denial| {
+            Ok((
+                denial
+                    .get("rule")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+                denial
+                    .get("check")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+                denial
+                    .pointer("/subject/archetype")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+                denial
+                    .pointer("/subject/id")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned(),
+                quoin_core::protocol::canonical_json(denial).map_err(|error| error.to_string())?,
+                denial.clone(),
+            ))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    keyed_denials.sort_by(|left, right| {
+        left.0
+            .cmp(&right.0)
+            .then_with(|| left.1.cmp(&right.1))
+            .then_with(|| left.2.cmp(&right.2))
+            .then_with(|| left.3.cmp(&right.3))
+            .then_with(|| left.4.cmp(&right.4))
+    });
+    *denials = keyed_denials
+        .into_iter()
+        .map(|(_, _, _, _, _, denial)| denial)
+        .collect();
+    Ok(())
 }
 
 fn design_gate_paths(
