@@ -75,9 +75,36 @@ use crate::protocol::Response;
 pub use self::taxonomy::{declarations_dropped, map_error};
 pub use self::wire::{
     CoveragePayload, CoverageRequest, DesignJoinRequest, DesignMatrixPayload, DesignMatrixRequest,
-    FormalizationIdentity, MAX_REQUEST_BYTES, MAX_SCALAR_BYTES, PropertiesPayload,
-    PropertiesRequest,
+    DocumentSnapshotEntry, DocumentSnapshotPayload, DocumentSnapshotRequest, FormalizationIdentity,
+    MAX_REQUEST_BYTES, MAX_SCALAR_BYTES, PropertiesPayload, PropertiesRequest,
 };
+
+/// Return the canonical `spec/` document contents loaded by Quire's walker.
+///
+/// Consumers such as `quoin completeness` reuse selected content instead of
+/// reopening a document already read for this invocation.
+#[implements("NFR-011-M-2")]
+pub fn document_snapshot(
+    request: &serde_json::Value,
+    capabilities: &Capabilities<'_>,
+) -> Result<Response, CoreError> {
+    const OP: &str = "quire.document_snapshot";
+    let request: DocumentSnapshotRequest = read(request, OP)?;
+    check_bound(OP, "scope", &request.scope)?;
+    let reads = host(capabilities, OP)?
+        .document_snapshot(Path::new(&request.scope))
+        .map_err(|error| map_error(&error, OP))?;
+    ok(&DocumentSnapshotPayload {
+        documents: reads
+            .into_iter()
+            .map(|read| DocumentSnapshotEntry {
+                path: read.path.display().to_string(),
+                content: read.content,
+                error: read.error,
+            })
+            .collect(),
+    })
+}
 
 /// Answer a `quire.coverage`.
 ///

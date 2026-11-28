@@ -3,12 +3,13 @@
 
 //! Rust adapter for retained `quoin completeness`.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use ix_cli_kit::exit::Outcome;
-use quoin_core::protocol::Response;
+use ix_trace_rs::implements;
+use quoin_core::{ops::quire::DocumentSnapshotPayload, protocol::Response};
 
 use crate::core_runtime::invoke;
 
@@ -22,13 +23,24 @@ pub(crate) fn command() -> Command {
         .arg(Arg::new("json").long("json").action(ArgAction::SetTrue))
 }
 
+#[implements("NFR-011-M-2")]
 pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let repo = required(arguments, "repo")?;
     let bundle = arguments
         .get_one::<String>("bundle")
         .cloned()
         .unwrap_or_else(|| format!("{repo}/spec"));
-    let (documents, unreadable) = bundle_snapshot(Path::new(&bundle));
+    let snapshot = invoke(
+        "quire.document_snapshot",
+        &serde_json::json!({ "scope": repo }),
+    )?;
+    if !snapshot.outcome.carries_payload() {
+        return Ok(snapshot);
+    }
+    let snapshot: DocumentSnapshotPayload = serde_json::from_value(snapshot.payload)
+        .map_err(|error| format!("quire.document_snapshot returned an invalid payload: {error}"))?;
+    let (documents, unreadable) =
+        bundle_snapshot_with_selected(Path::new(&bundle), &snapshot.documents)?;
     let roots = arguments
         .get_one::<String>("module")
         .map_or_else(default_roots, |root| vec![root.clone()]);
@@ -73,17 +85,41 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
 
 /// Read bundle frontmatter through the sole parser shared with assurance.
 pub(crate) fn read_frontmatter(root: &Path) -> Result<Response, String> {
-    let (documents, unreadable) = bundle_snapshot(root);
+    let (documents, unreadable) = bundle_snapshot(root)?;
     invoke(
         "completeness.read_frontmatter",
         &serde_json::json!({ "documents": documents, "unreadable": unreadable }),
     )
 }
 
-fn bundle_snapshot(root: &Path) -> (Vec<serde_json::Value>, Vec<serde_json::Value>) {
+fn bundle_snapshot(
+    root: &Path,
+) -> Result<(Vec<serde_json::Value>, Vec<serde_json::Value>), String> {
     let mut files = Vec::new();
     walk(root, &mut files);
     files.sort();
+    bundle_sources(root, files, &[], |path| std::fs::read_to_string(path))
+}
+
+#[implements("NFR-011-M-2")]
+fn bundle_snapshot_with_selected(
+    root: &Path,
+    selected: &[quoin_core::ops::quire::DocumentSnapshotEntry],
+) -> Result<(Vec<serde_json::Value>, Vec<serde_json::Value>), String> {
+    let mut files = Vec::new();
+    walk(root, &mut files);
+    files.sort();
+    bundle_sources(root, files, selected, |path| std::fs::read_to_string(path))
+}
+
+#[implements("NFR-011-M-2")]
+fn bundle_sources(
+    root: &Path,
+    files: Vec<PathBuf>,
+    selected: &[quoin_core::ops::quire::DocumentSnapshotEntry],
+    mut read: impl FnMut(&Path) -> std::io::Result<String>,
+) -> Result<(Vec<serde_json::Value>, Vec<serde_json::Value>), String> {
+    let selected = index_snapshot(selected)?;
     let mut documents = Vec::new();
     let mut unreadable = Vec::new();
     for path in files {
@@ -91,14 +127,46 @@ fn bundle_snapshot(root: &Path) -> (Vec<serde_json::Value>, Vec<serde_json::Valu
             || path.display().to_string(),
             |path| path.to_string_lossy().replace('\\', "/"),
         );
-        match std::fs::read_to_string(&path) {
+        let identity = path.canonicalize().unwrap_or_else(|_| path.clone());
+        let contents = selected.get(&identity).map_or_else(
+            || read(&path).map_err(|error| error.to_string()),
+            |entry| match (&entry.content, &entry.error) {
+                (Some(content), None) => Ok(content.clone()),
+                (None, Some(error)) => Err(error.clone()),
+                _ => Err("document snapshot entry must contain content or an error".to_owned()),
+            },
+        );
+        match contents {
             Ok(raw) => documents.push(serde_json::json!({"path":relative,"raw":raw})),
-            Err(error) => {
-                unreadable.push(serde_json::json!({"path":relative,"reason":error.to_string()}));
+            Err(reason) => {
+                unreadable.push(serde_json::json!({"path":relative,"reason":reason}));
             }
         }
     }
-    (documents, unreadable)
+    Ok((documents, unreadable))
+}
+
+#[implements("NFR-011-M-2")]
+fn index_snapshot(
+    selected: &[quoin_core::ops::quire::DocumentSnapshotEntry],
+) -> Result<HashMap<PathBuf, &quoin_core::ops::quire::DocumentSnapshotEntry>, String> {
+    let mut indexed = HashMap::with_capacity(selected.len());
+    for entry in selected {
+        if entry.content.is_some() == entry.error.is_some() {
+            return Err(format!(
+                "quire.document_snapshot entry `{}` must have exactly one read result",
+                entry.path
+            ));
+        }
+        let path = PathBuf::from(&entry.path);
+        if indexed.insert(path.clone(), entry).is_some() {
+            return Err(format!(
+                "quire.document_snapshot returned duplicate selected path `{}`",
+                path.display()
+            ));
+        }
+    }
+    Ok(indexed)
 }
 
 fn walk(path: &Path, files: &mut Vec<PathBuf>) {
@@ -295,8 +363,13 @@ fn number(payload: &serde_json::Value, key: &str) -> u64 {
     reason = "test fixtures use expect to report malformed local test data"
 )]
 mod tests {
-    use super::{command, render};
+    use std::cell::RefCell;
+    use std::path::PathBuf;
+
+    use super::{bundle_sources, command, index_snapshot, render};
     use ix_trace_rs::trace;
+    use quoin_core::ops::quire::DocumentSnapshotEntry;
+    use tempfile::tempdir;
 
     #[trace("FR-037", "FR-062")]
     #[test]
@@ -359,5 +432,86 @@ mod tests {
         );
         assert!(matches.get_flag("strict"));
         assert!(matches.get_flag("json"));
+    }
+
+    #[trace("NFR-011-M-2")]
+    #[test]
+    fn tc_nfr011_document_snapshot_is_reused_without_reopening_selected_documents() {
+        let root = tempdir().expect("temporary bundle root");
+        let selected_path = root.path().join("selected.md");
+        let bundle_only_path = root.path().join("bundle-only.md");
+        let unreadable_path = root.path().join("unreadable.md");
+        std::fs::write(&selected_path, "filesystem value must not be read")
+            .expect("selected file exists for canonical path lookup");
+        std::fs::write(&bundle_only_path, "bundle-only placeholder")
+            .expect("bundle-only file exists");
+        std::fs::write(&unreadable_path, "unreadable placeholder")
+            .expect("unreadable file exists for canonical path lookup");
+        let selected_path = selected_path
+            .canonicalize()
+            .expect("selected canonical path");
+        let unreadable_path = unreadable_path
+            .canonicalize()
+            .expect("unreadable canonical path");
+        let snapshot = vec![
+            DocumentSnapshotEntry {
+                path: selected_path.display().to_string(),
+                content: Some("snapshot bytes".to_owned()),
+                error: None,
+            },
+            DocumentSnapshotEntry {
+                path: unreadable_path.display().to_string(),
+                content: None,
+                error: Some("permission denied".to_owned()),
+            },
+        ];
+        let selected_paths = snapshot
+            .iter()
+            .map(|entry| PathBuf::from(&entry.path))
+            .collect::<Vec<_>>();
+        let mut expected_selected = vec![selected_path.clone(), unreadable_path.clone()];
+        expected_selected.sort();
+        assert_eq!(selected_paths, expected_selected);
+        assert!(
+            snapshot
+                .iter()
+                .all(|entry| entry.content.is_some() ^ entry.error.is_some())
+        );
+        let mut files = vec![
+            selected_path.clone(),
+            bundle_only_path
+                .canonicalize()
+                .expect("bundle canonical path"),
+            unreadable_path,
+        ];
+        files.sort();
+        let reads = RefCell::new(Vec::new());
+
+        let (documents, unreadable) = bundle_sources(root.path(), files, &snapshot, |path| {
+            reads.borrow_mut().push(path.to_path_buf());
+            Ok("bundle-only bytes".to_owned())
+        })
+        .expect("valid snapshot entries");
+
+        assert_eq!(
+            reads.into_inner(),
+            vec![bundle_only_path],
+            "selected and selected-unreadable paths must not be reopened"
+        );
+        assert_eq!(
+            documents,
+            vec![
+                serde_json::json!({"path":"bundle-only.md","raw":"bundle-only bytes"}),
+                serde_json::json!({"path":"selected.md","raw":"snapshot bytes"}),
+            ]
+        );
+        assert_eq!(
+            unreadable,
+            vec![serde_json::json!({"path":"unreadable.md","reason":"permission denied"})]
+        );
+        assert!(
+            index_snapshot(&[snapshot[0].clone(), snapshot[0].clone()]).is_err(),
+            "duplicate selected paths must be rejected"
+        );
     }
 }

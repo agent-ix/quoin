@@ -43,6 +43,17 @@ pub struct Outcome {
     pub notices: Vec<Notice>,
 }
 
+/// One full-content read made while Quire loads the selected document set.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DocumentRead {
+    /// Canonical path of the selected document.
+    pub path: std::path::PathBuf,
+    /// Verbatim text when the read succeeded.
+    pub content: Option<String>,
+    /// Read or UTF-8 failure when the document could not be loaded.
+    pub error: Option<String>,
+}
+
 /// Compute the coverage report for one scope.
 ///
 /// # Errors
@@ -66,6 +77,42 @@ pub fn compute(request: &Request) -> Result<Outcome> {
     let report = quire_rs::compute_coverage(&spec, &registry, &graph, request.scope.as_path())
         .map_err(coverage_error)?;
     Ok(Outcome { report, notices })
+}
+
+/// Load the canonical document set selected by Quire's repository walker.
+///
+/// This is the same full-content path used by [`compute`], exposed to command
+/// consumers that need to share those bytes rather than reopen selected files.
+///
+/// # Errors
+/// [`Error::DocumentRootMissing`] when `<scope>/spec` does not exist.
+#[implements("NFR-011-M-2")]
+pub fn document_snapshot(scope: &ScopeRoot) -> Result<Vec<DocumentRead>> {
+    let root = scope.document_root()?;
+    let spec = quire_rs::Spec::from_path(&root);
+    let mut reads = spec
+        .documents()
+        .iter()
+        .map(|document| DocumentRead {
+            path: document
+                .path
+                .canonicalize()
+                .unwrap_or_else(|_| document.path.clone()),
+            content: Some(document.raw().to_owned()),
+            error: None,
+        })
+        .collect::<Vec<_>>();
+    for diagnostic in spec.diagnostics() {
+        if let quire_rs::Diagnostic::DocumentUnreadable { path, reason } = diagnostic {
+            reads.push(DocumentRead {
+                path: path.canonicalize().unwrap_or_else(|_| path.clone()),
+                content: None,
+                error: Some(reason.clone()),
+            });
+        }
+    }
+    reads.sort_by(|left, right| left.path.cmp(&right.path));
+    Ok(reads)
 }
 
 /// What one coverage run reads before it reconciles.
@@ -228,6 +275,57 @@ pub fn test_traces(request: &Request) -> Result<(Vec<TestTrace>, Vec<Notice>)> {
 mod tests {
     use super::*;
     use ix_trace_rs::trace;
+    use tempfile::tempdir;
+
+    #[trace("NFR-011-M-2")]
+    #[test]
+    fn document_snapshot_matches_the_quire_selected_path_set_once() {
+        let repository = tempdir().expect("temporary repository");
+        let spec = repository.path().join("spec");
+        std::fs::create_dir_all(&spec).expect("spec root");
+        let selected_a = spec.join("FR-001.md");
+        let selected_b = spec.join("FR-002.md");
+        let unreadable = spec.join("FR-003.md");
+        let ignored = spec.join("ignored.md");
+        let hidden = spec.join(".hidden.md");
+        let doc_a = "---\nid: FR-001\ntype: FR\n---\n# First\n";
+        let doc_b = "---\nid: FR-002\ntype: FR\n---\n# Second\n";
+        std::fs::write(&selected_a, doc_a).expect("write first selected doc");
+        std::fs::write(&selected_b, doc_b).expect("write second selected doc");
+        std::fs::write(&unreadable, [0xff]).expect("write invalid UTF-8 doc");
+        std::fs::write(&ignored, "---\nid: FR-004\ntype: FR\n---\n").expect("write ignored doc");
+        std::fs::write(&hidden, "---\nid: FR-005\ntype: FR\n---\n").expect("write hidden doc");
+        std::fs::write(spec.join(".gitignore"), "ignored.md\n").expect("write ignore rule");
+
+        let reads = document_snapshot(&ScopeRoot::open(repository.path()).expect("scope root"))
+            .expect("document snapshot");
+        let paths = reads
+            .iter()
+            .map(|read| read.path.clone())
+            .collect::<Vec<_>>();
+        let mut expected = vec![selected_a, selected_b, unreadable];
+        expected.iter_mut().for_each(|path| {
+            *path = path.canonicalize().expect("canonical selected path");
+        });
+        expected.sort();
+
+        assert_eq!(paths, expected, "the snapshot must match Quire's exact set");
+        assert_eq!(reads.len(), 3, "each selected path has one read result");
+        assert!(
+            reads
+                .iter()
+                .all(|read| { read.content.is_some() ^ read.error.is_some() })
+        );
+        assert_eq!(reads[0].content.as_deref(), Some(doc_a));
+        assert_eq!(reads[1].content.as_deref(), Some(doc_b));
+        assert!(reads[2].content.is_none());
+        assert!(
+            reads[2]
+                .error
+                .as_deref()
+                .is_some_and(|error| !error.is_empty())
+        );
+    }
 
     /// FR-029-AC-15: the engine's coverage drop error is the typed `QQ-1022`
     /// refusal carrying the engine's records, in the engine's kind tokens.

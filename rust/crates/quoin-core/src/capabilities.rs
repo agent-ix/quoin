@@ -342,9 +342,19 @@ pub trait EvidenceHost {
 /// the host does the one thing the library half may not, which is touch the
 /// disk.
 ///
-/// Implemented for real in `main.rs` over `quoin_quire::coverage::compute` and
-/// `quoin_quire::properties::classify`.
+/// Implemented for real in `runtime.rs` over `quoin_quire::coverage`, including
+/// the shared document snapshot, and `quoin_quire::properties::classify`.
 pub trait QuireHost {
+    /// Load each selected spec document once and return its content or read
+    /// failure for command-local consumers to share.
+    ///
+    /// A missing scope or `spec/` root yields an empty selected set so a command
+    /// with an explicit independent bundle root preserves its existing behavior.
+    fn document_snapshot(
+        &self,
+        scope: &Path,
+    ) -> Result<Vec<quoin_quire::coverage::DocumentRead>, quoin_quire::Error>;
+
     /// The coverage report for one scope, under a closed or ambient module set.
     ///
     /// `modules` empty means ambient discovery — the resolution order
