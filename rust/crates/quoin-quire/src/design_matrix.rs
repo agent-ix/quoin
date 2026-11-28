@@ -87,15 +87,18 @@ mod tests {
         };
         let mut passes = 0;
         let mut documents = Vec::new();
+        let canonical_repository = repository.canonicalize().expect("canonical repository");
         let _outcome = compute_with_spec_loader(&request, |root| {
             passes += 1;
             let spec = quire_rs::Spec::from_path(root);
             documents.extend(spec.documents().iter().map(|document| {
                 document
                     .path
-                    .file_name()
-                    .expect("document filename")
-                    .to_owned()
+                    .canonicalize()
+                    .expect("canonical selected document")
+                    .strip_prefix(&canonical_repository)
+                    .expect("selected document is under repository root")
+                    .to_path_buf()
             }));
             spec
         })
@@ -105,7 +108,10 @@ mod tests {
         documents.sort();
         assert_eq!(
             documents,
-            ["FR-001-example.md", "TM-001-matrix.md"],
+            [
+                std::path::PathBuf::from("spec/FR-001-example.md"),
+                std::path::PathBuf::from("spec/TM-001-matrix.md"),
+            ],
             "the one pass covers Quire's exact selected document set"
         );
     }

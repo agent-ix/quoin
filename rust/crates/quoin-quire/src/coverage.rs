@@ -150,6 +150,7 @@ fn walk_with_dropped_relation_policy(
     )
 }
 
+#[implements("NFR-011-M-2")]
 pub(crate) fn walk_with_dropped_relation_policy_and_spec_loader(
     request: &Request,
     allow_dropped_required_relations: bool,

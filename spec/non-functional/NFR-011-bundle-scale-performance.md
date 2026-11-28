@@ -81,19 +81,29 @@ under those inputs. Evidence-store records and matrix run observations are not
 members of that set.
 
 Quoin's host read boundary is Quire's repository loader, exposed through
-`quire_rs::Spec::from_path` and its loaded-document view. The invocation-scoped
-snapshot retains each selected path's full contents and identity; command
-consumers receive that data rather than reopening a selected path. Completeness
-returns its loaded snapshot to the CLI, which also reuses it for the overlap with
-its `--bundle` corpus. Matrix loads one Quire `Spec` and reuses that parsed
-document set for coverage and design-matrix computation. Advise and evidence
-audit still need to adopt and test an invocation-scoped snapshot.
+`quire_rs::Spec::from_path` and its loaded-document view. At the Quire revision
+pinned by Quoin (`12bacfb04838cd335f756f41a218862a0844c567`),
+`Spec::from_path` delegates to `load_repo`; `load_repo_with` discovers Markdown
+files and `parse_one` performs one `read_to_string` for each discovered file. A
+loaded document retains that complete text in `raw()`, and `body()` is
+parsed lazily from the retained text without another filesystem read. Quire's
+`corpus::spec::tests::every_query_avoids_corpus_filesystem_reads_after_construction`
+checks that queries after construction do not access corpus files. Quoin's
+matrix test checks that it calls this loader once and that the returned Spec's
+canonical relative document paths equal the fixture's exact selected set; it
+does not instrument the loader's filesystem syscalls. Completeness returns its
+loaded snapshot to the CLI, which also reuses it for the overlap with its
+`--bundle` corpus. Matrix reuses one Quire `Spec` for coverage and design-matrix
+computation. Advise and evidence audit still need to adopt and test an
+invocation-scoped snapshot.
 
 Tests compare the selected path set with the existing `quire.coverage` rules.
 Snapshot-backed routes assert one complete-content read per selected path and
-that consumers do not reopen selected documents. Matrix asserts that its
-single `Spec` loader pass covers Quire's selected path set and that the parsed
-set is retained for coverage and design-matrix computation. Tests fail if a
+that consumers do not reopen selected documents. Matrix asserts one Quire
+`Spec` loader pass over the exact canonical path set and reuses that parsed set
+for coverage and design-matrix computation. The exact-once filesystem-read
+claim for matrix depends on the pinned Quire loader implementation above; its
+single-loader-pass test alone does not measure file syscalls. Tests fail if a
 selected path is omitted or a route performs an additional document load.
 
 **Implementation status:** completeness reuses the selected snapshot, including
