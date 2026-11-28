@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use super::EMBEDDED_EXTERNAL_TOOLS_INDEX;
+use super::RunEnvironment;
 
 const SIGNATURE_REQUEST: &str = "engineering-assurance.signature-verify-request/v1";
 const SIGNATURE_RESULT: &str = "engineering-assurance.signature-verify-result/v1";
@@ -138,6 +139,8 @@ struct RunRecord {
     anomaly_set: Option<AnomalySet>,
     #[serde(default)]
     external_tools: Vec<ExternalToolEvidence>,
+    #[serde(default)]
+    run_environment: Option<RunEnvironment>,
     retained_location: Option<String>,
 }
 
@@ -230,6 +233,7 @@ struct ToolRun {
     suite: String,
     timestamp: String,
     retained_location: String,
+    run_environment: Option<RunEnvironment>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -684,6 +688,8 @@ fn read_run_records(paths: &[PathBuf]) -> Result<Vec<RunRecord>, String> {
 #[implements("FR-217-AC-1")]
 #[implements("FR-218-AC-1")]
 #[implements("FR-218-AC-3")]
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 fn summarize_runs(
     records: &[RunRecord],
     intended_use: &[IntendedUse],
@@ -723,6 +729,7 @@ fn summarize_runs(
                 .retained_location
                 .clone()
                 .unwrap_or_else(|| "not stated".to_owned()),
+            run_environment: record.run_environment.clone(),
         });
         required_tools.remove(&record.tool);
         for case in &record.results {
@@ -1156,8 +1163,11 @@ fn external_tool_report(
 }
 
 #[implements("FR-217-AC-12")]
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 fn render_markdown(report: &ValidationReport) -> String {
     let mut lines = render_tool_section(report);
+    append_run_environments(report, &mut lines);
     append_intended_use(report, &mut lines);
     append_results(report, &mut lines);
     append_coverage(report, &mut lines);
@@ -1166,6 +1176,50 @@ fn render_markdown(report: &ValidationReport) -> String {
     append_incomplete_reasons(report, &mut lines);
     append_signoff(&mut lines);
     lines.join("\n")
+}
+
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
+fn append_run_environments(report: &ValidationReport, lines: &mut Vec<String>) {
+    lines.extend([
+        String::new(),
+        "## Run environments".to_owned(),
+        String::new(),
+    ]);
+    for tool in &report.tools {
+        lines.push(format!("### {} — {}", cell(&tool.name), cell(&tool.suite)));
+        let Some(environment) = &tool.run_environment else {
+            lines.extend([String::new(), "not provided".to_owned()]);
+            continue;
+        };
+        lines.extend([
+            String::new(),
+            "| Required checkout | Observed repository | Revision | Checkout path | Available |"
+                .to_owned(),
+            "| --- | --- | --- | --- | --- |".to_owned(),
+        ]);
+        for checkout in &environment.checkouts {
+            lines.push(format!(
+                "| {} | {} | {} | {} | {} |",
+                cell(&checkout.expected_repository),
+                cell(checkout.repository.as_deref().unwrap_or("not available")),
+                cell(checkout.revision.as_deref().unwrap_or("not available")),
+                cell(checkout.path.as_deref().unwrap_or("not available")),
+                checkout.available
+            ));
+        }
+        lines.push(format!(
+            "Temporary directory: {}; writable: {}",
+            cell(
+                environment
+                    .temporary_directory
+                    .path
+                    .as_deref()
+                    .unwrap_or("not available")
+            ),
+            environment.temporary_directory.writable
+        ));
+    }
 }
 
 #[implements("FR-217-AC-1")]

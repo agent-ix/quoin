@@ -81,6 +81,118 @@ fn invoke(result: &Path, output: &Path) -> std::process::Output {
         .expect("validation report command starts")
 }
 
+fn add_environment_record(record: &mut Value, safety_available: bool, temp_writable: bool) {
+    record["runEnvironment"] = json!({
+        "checkouts": [
+            {
+                "expectedRepository": "agent-ix/spec-objects-safety",
+                "repository": if safety_available { json!("agent-ix/spec-objects-safety") } else { Value::Null },
+                "revision": if safety_available { json!("a".repeat(40)) } else { Value::Null },
+                "path": if safety_available { json!("/suite/.ci-deps/spec-objects-safety") } else { Value::Null },
+                "available": safety_available,
+            },
+            {
+                "expectedRepository": "agent-ix/spec-objects-security",
+                "repository": "agent-ix/spec-objects-security",
+                "revision": "b".repeat(40),
+                "path": "/suite/.ci-deps/spec-objects-security",
+                "available": true,
+            },
+        ],
+        "temporaryDirectory": {
+            "path": "/runner/temp",
+            "writable": temp_writable,
+        },
+    });
+}
+
+fn write_run_with_environment(
+    root: &Path,
+    status: &str,
+    safety_available: bool,
+    temp_writable: bool,
+) -> std::path::PathBuf {
+    let path = write_run(root, status, false);
+    let mut record: Value = serde_json::from_slice(
+        &std::fs::read(&path).expect("run record is readable for environment fixture update"),
+    )
+    .expect("run record parses for environment fixture update");
+    add_environment_record(&mut record, safety_available, temp_writable);
+    std::fs::write(
+        &path,
+        serde_json::to_vec(&record).expect("run record with environment serializes"),
+    )
+    .expect("run record with environment is written");
+    path
+}
+
+#[trace("FR-217-AC-13")]
+#[test]
+fn command_reports_canonical_checkouts_revisions_paths_and_temp_writability() {
+    let temp = tempfile::tempdir().expect("temporary fixture directory");
+    let result = write_run_with_environment(temp.path(), "pass", true, true);
+    let output_directory = temp.path().join("report");
+    let output = invoke(&result, &output_directory);
+    assert!(
+        output.status.success(),
+        "command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(
+        &std::fs::read(output_directory.join("validation-report.json"))
+            .expect("JSON report is written"),
+    )
+    .expect("report JSON parses");
+    let environment = &report["tools"][0]["runEnvironment"];
+    assert_eq!(environment["checkouts"][0]["available"], true);
+    assert_eq!(
+        environment["checkouts"][0]["repository"],
+        "agent-ix/spec-objects-safety"
+    );
+    assert_eq!(environment["checkouts"][0]["revision"], "a".repeat(40));
+    assert_eq!(
+        environment["checkouts"][0]["path"],
+        "/suite/.ci-deps/spec-objects-safety"
+    );
+    assert_eq!(environment["temporaryDirectory"]["path"], "/runner/temp");
+    assert_eq!(environment["temporaryDirectory"]["writable"], true);
+    let markdown = std::fs::read_to_string(output_directory.join("validation-report.md"))
+        .expect("Markdown report is written");
+    assert!(markdown.contains("agent-ix/spec-objects-safety"));
+    assert!(markdown.contains("/suite/.ci-deps/spec-objects-safety"));
+    assert!(markdown.contains("Temporary directory: /runner/temp; writable: true"));
+}
+
+#[trace("FR-217-AC-14")]
+#[test]
+fn unavailable_environment_facts_do_not_change_case_results_or_coverage() {
+    let temp = tempfile::tempdir().expect("temporary fixture directory");
+    let result = write_run_with_environment(temp.path(), "fail", false, false);
+    let output_directory = temp.path().join("report");
+    let output = invoke(&result, &output_directory);
+    assert!(
+        output.status.success(),
+        "evidence completeness is separate from case outcome: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(
+        &std::fs::read(output_directory.join("validation-report.json"))
+            .expect("JSON report is written"),
+    )
+    .expect("report JSON parses");
+    assert_eq!(report["status"], "complete");
+    assert_eq!(report["results"][0]["result"], "fail");
+    assert_eq!(report["coverage"][0]["result"], "uncovered");
+    let environment = &report["tools"][0]["runEnvironment"];
+    assert_eq!(
+        environment["checkouts"][0]["expectedRepository"],
+        "agent-ix/spec-objects-safety"
+    );
+    assert_eq!(environment["checkouts"][0]["available"], false);
+    assert_eq!(environment["checkouts"][0]["repository"], Value::Null);
+    assert_eq!(environment["temporaryDirectory"]["writable"], false);
+}
+
 #[trace("FR-027-AC-13", "FR-217-AC-1", "FR-220-AC-2")]
 #[test]
 fn command_reports_each_external_tool_version_with_its_configuration_index_reference() {
