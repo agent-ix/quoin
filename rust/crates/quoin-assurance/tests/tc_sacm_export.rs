@@ -125,7 +125,7 @@ fn shape_export() -> Export {
 /// Provenance: PLAT-1649
 #[trace("FR-226-AC-12")]
 #[test]
-#[ignore = "external SACM importer fixture; run via make test-sacm-interop"]
+#[cfg(feature = "e2e-sacm-interop")]
 fn export_external_interop_fixture() {
     let output = std::env::var_os("QUOIN_SACM_INTEROP_FIXTURE")
         .expect("QUOIN_SACM_INTEROP_FIXTURE must name the generated XMI path");
