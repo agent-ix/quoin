@@ -4,7 +4,7 @@ set -euo pipefail
 RUN_DIR=/home/peter/dev/.scratchpad/plat-1822-real-tool-runs
 REPO=/home/peter/dev/worktrees/quoin-plat1822-release-exact
 RUST_DIR="$REPO/rust"
-RELEASE_SHA=315afbec3935a9a29dae29f2a596c74b6df0e738
+RELEASE_SHA=2cd06c5401bdb8a333d6d3035bd743f19bfb700d
 RELEASE_SHORT=${RELEASE_SHA:0:7}
 TARGET_DIR=/builds/PLAT-1822/target
 LOCKED_BUILD=/home/peter/.local/bin/locked-build
