@@ -65,7 +65,7 @@ jobs:
       contents: read
       id-token: write
       attestations: write
-    uses: agent-ix/engineering-assurance/.github/workflows/release-attestation.yml@v0.9.0
+    uses: agent-ix/engineering-assurance/.github/workflows/release-attestation.yml@v0.10.1
     with:
       tag: ${{ github.ref_name }}
       ea_tooling_tag: v0.9.0
