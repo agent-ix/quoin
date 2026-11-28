@@ -341,6 +341,27 @@ fn design_gate_orders_denials_deterministically_and_preserves_remediation_order(
 }
 
 #[cfg(unix)]
+#[trace("FR-209-AC-1")]
+#[test]
+fn design_gate_denial_ties_use_rfc8785_utf16_member_order() {
+    let mut utf8_first = flow_denial();
+    utf8_first["\u{e000}"] = json!("a");
+    utf8_first["\u{10000}"] = json!("z");
+    let mut utf16_first = flow_denial();
+    utf16_first["\u{e000}"] = json!("z");
+    utf16_first["\u{10000}"] = json!("a");
+    let mut report = json!({"denials":[utf8_first, utf16_first]});
+
+    super::sort_flow_denials(&mut report).expect("canonical denial keys");
+
+    let denials = report["denials"].as_array().expect("denials array");
+    assert_eq!(denials[0]["\u{10000}"], "a");
+    assert_eq!(denials[0]["\u{e000}"], "z");
+    assert_eq!(denials[1]["\u{10000}"], "z");
+    assert_eq!(denials[1]["\u{e000}"], "a");
+}
+
+#[cfg(unix)]
 #[trace("FR-209-AC-2")]
 #[test]
 fn installed_plat_flow_rule_checks_a_seeded_connection_and_protecting_control() {
