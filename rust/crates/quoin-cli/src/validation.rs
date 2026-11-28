@@ -4,6 +4,11 @@
 //! Supplier feature-rating and retained validation-report commands (PLAT-1636, PLAT-1641).
 
 mod report;
+mod run_environment;
+
+#[cfg(test)]
+pub(crate) use run_environment::{RepositoryCheckout, TemporaryDirectory};
+pub(crate) use run_environment::{RunEnvironment, capture_run_environment};
 
 use std::{collections::BTreeMap, path::Path};
 

@@ -131,6 +131,7 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let selected = select_cases(arguments)?;
     let working_directory =
         std::env::current_dir().map_err(|error| format!("resolve current directory: {error}"))?;
+    let run_environment = crate::validation::capture_run_environment(&working_directory);
     let evidence_store = find_evidence_store(&working_directory);
     let requested_output = arguments.get_one::<String>("out").map(PathBuf::from);
     require_retained_destination(evidence_store.as_deref(), requested_output.as_deref())?;
@@ -157,7 +158,13 @@ pub(crate) fn run(arguments: &ArgMatches) -> Result<Response, String> {
     let retained_location = retained_location
         .to_str()
         .ok_or_else(|| "self-test run record destination is not valid UTF-8".to_owned())?;
-    let record = run_record(&tool_version, &timestamp, &results, retained_location);
+    let record = run_record(
+        &tool_version,
+        &timestamp,
+        &results,
+        retained_location,
+        &run_environment,
+    );
     let mut bytes = serde_json::to_string_pretty(&record)
         .map_err(|error| format!("serialize self-test run record: {error}"))?
         .into_bytes();
@@ -193,6 +200,7 @@ fn run_record(
     timestamp: &str,
     results: &[CaseResult],
     retained_location: &str,
+    run_environment: &crate::validation::RunEnvironment,
 ) -> serde_json::Value {
     run_record_with_anomaly_documents(
         tool_version,
@@ -200,15 +208,19 @@ fn run_record(
         results,
         retained_location,
         crate::validation::EMBEDDED_ANOMALIES,
+        run_environment,
     )
 }
 
+#[implements("FR-217-AC-13")]
+#[implements("FR-217-AC-14")]
 fn run_record_with_anomaly_documents(
     tool_version: &str,
     timestamp: &str,
     results: &[CaseResult],
     retained_location: &str,
     anomaly_documents: Option<&[crate::validation::EmbeddedFile]>,
+    run_environment: &crate::validation::RunEnvironment,
 ) -> serde_json::Value {
     serde_json::json!({
         "schemaVersion": 1,
@@ -220,6 +232,7 @@ fn run_record_with_anomaly_documents(
         "timestamp": timestamp,
         "results": results,
         "retainedLocation": retained_location,
+        "runEnvironment": run_environment,
         "validationInputs": crate::validation::embedded_inputs_value(),
         "anomalySet": crate::validation::anomaly_set_value(tool_version, anomaly_documents),
     })
@@ -826,6 +839,30 @@ fn terminate_process_group(_child: &mut std::process::Child) -> Result<(), Strin
 )]
 mod tests {
     use super::*;
+
+    fn unavailable_run_environment() -> crate::validation::RunEnvironment {
+        crate::validation::RunEnvironment {
+            checkouts: [
+                "agent-ix/spec-objects-safety",
+                "agent-ix/spec-objects-security",
+            ]
+            .into_iter()
+            .map(
+                |expected_repository| crate::validation::RepositoryCheckout {
+                    expected_repository: expected_repository.to_owned(),
+                    repository: None,
+                    revision: None,
+                    path: None,
+                    available: false,
+                },
+            )
+            .collect(),
+            temporary_directory: crate::validation::TemporaryDirectory {
+                path: None,
+                writable: false,
+            },
+        }
+    }
     use ix_trace_rs::trace;
 
     #[trace("FR-235-AC-6")]
@@ -1087,6 +1124,7 @@ mod tests {
             "2026-11-25T12:00:00Z",
             &results,
             "/repo/spec/evidence/runs/SELFTEST/run.json",
+            &unavailable_run_environment(),
         );
 
         assert_eq!(record["tool"], "quoin");
@@ -1096,6 +1134,7 @@ mod tests {
         assert_eq!(record["suite"], "SELFTEST");
         assert_eq!(record["timestamp"], "2026-11-25T12:00:00Z");
         assert_eq!(record["results"].as_array().expect("case results").len(), 2);
+        assert!(record["runEnvironment"].is_object());
         assert_eq!(record["results"][0]["status"], "pass");
         assert_eq!(record["results"][1]["status"], "not-executed");
         assert_eq!(record["results"][1]["detail"], "required tool unavailable");
@@ -1131,6 +1170,7 @@ mod tests {
             &[],
             "/repo/spec/evidence/runs/SELFTEST/run.json",
             Some(&authored_documents),
+            &unavailable_run_environment(),
         );
         let empty = run_record_with_anomaly_documents(
             version,
@@ -1138,6 +1178,7 @@ mod tests {
             &[],
             "/repo/spec/evidence/runs/SELFTEST/empty.json",
             Some(&[]),
+            &unavailable_run_environment(),
         );
         let absent = run_record_with_anomaly_documents(
             version,
@@ -1145,6 +1186,7 @@ mod tests {
             &[],
             "/repo/spec/evidence/runs/SELFTEST/absent.json",
             None,
+            &unavailable_run_environment(),
         );
 
         let retained_bytes = serde_json::to_vec(&retained).expect("the retained record serializes");
