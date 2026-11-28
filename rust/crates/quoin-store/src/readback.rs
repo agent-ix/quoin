@@ -221,7 +221,9 @@ fn enumerate_files(
         let root_path = repo.join(root);
         let metadata = match fs::symlink_metadata(&root_path) {
             Ok(metadata) => metadata,
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Err(inventory_invalid(&root_path, "inventory root is absent"));
+            }
             Err(source) => {
                 return Err(StoreError::Io {
                     operation: "inspect store root",
@@ -427,5 +429,23 @@ mod tests {
         .unwrap();
         let result = read_back(dir.path(), None);
         assert!(result.is_err());
+    }
+
+    #[trace("NFR-025-AC-1")]
+    #[test]
+    fn a_missing_inventoried_root_refuses_a_partial_population() {
+        let dir = fixture();
+        std::fs::write(
+            dir.path().join(super::INVENTORY_PATH),
+            br#"{"schema_version":1,"roots":["spec/evidence","spec/other-store"]}"#,
+        )
+        .unwrap();
+
+        let result = read_back(dir.path(), None);
+        assert!(matches!(
+            result,
+            Err(crate::error::StoreError::ReadbackInventoryInvalid { reason, .. })
+                if reason == "inventory root is absent"
+        ));
     }
 }
