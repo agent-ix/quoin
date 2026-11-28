@@ -6,13 +6,13 @@ REPO=/home/peter/dev/worktrees/quoin-plat1822-release-exact
 RUST_DIR="$REPO/rust"
 RELEASE_SHA=315afbec3935a9a29dae29f2a596c74b6df0e738
 RELEASE_SHORT=${RELEASE_SHA:0:7}
-TARGET_DIR=/home/peter/.cargo-target
+TARGET_DIR=/builds/PLAT-1822/target
 LOCKED_BUILD=/home/peter/.local/bin/locked-build
 QUOIN_BIN="$TARGET_DIR/debug/quoin"
 EA_BIN=/home/peter/dev/engineering-assurance/.worktrees/plat-1822-ea-0111-hotfix/target/debug/engineering-assurance
-QUIRE_BIN=/tmp/quoin-v0381-tools/node_modules/.bin/quire
-IX_FLOW_BIN=/tmp/quoin-v0381-tools/node_modules/.bin
-IX_FLOW_RUNNER=/tmp/quoin-v0381-tools/node_modules/@agent-ix/ix-flow/bin/ix-flow.js
+QUIRE_BIN=/builds/PLAT-1822/tools/node_modules/.bin/quire
+IX_FLOW_BIN=/builds/PLAT-1822/tools/node_modules/.bin
+IX_FLOW_RUNNER=/builds/PLAT-1822/tools/node_modules/@agent-ix/ix-flow/bin/ix-flow.js
 FILAMENT_ANALYZE_BIN=/home/peter/dev/filament-analyze/.worktrees/codex-modules-plat1822-main/target/debug/filament-analyze
 SPEC_ARTIFACTS_PROCESS_DIR=/home/peter/dev/worktrees/plat1822-process-v0380-exact
 SPEC_OBJECTS_SAFETY_DIR=/home/peter/dev/spec-objects-safety
@@ -20,7 +20,7 @@ SPEC_OBJECTS_SECURITY_DIR=/home/peter/dev/worktrees/quoin-release-modules-202611
 PDFTOTEXT=/home/peter/.local/bin/pdftotext
 OPENVEX_SCHEMA_PATH="$RUN_DIR/openvex-0.2.0-schema.json"
 CYCLONEDX_SCHEMA_PATH="$RUN_DIR/cyclonedx-1.7-bom-schema.json"
-TMPDIR="${TMPDIR:-/run/user/1000/quoin-v0381-tmp}"
+TMPDIR="${TMPDIR:-/builds/PLAT-1822/tmp}"
 CLEAN_HOME="$RUN_DIR/clean-home-$RELEASE_SHORT"
 CLEAN_IX_HOME="$CLEAN_HOME/.ix"
 
@@ -36,8 +36,8 @@ for executable in "$LOCKED_BUILD" "$QUOIN_BIN" "$EA_BIN" "$QUIRE_BIN" "$IX_FLOW_
   fi
 done
 
-mkdir -p "$TMPDIR" "$CLEAN_HOME"
-export TMPDIR IX_FLOW_RUNNER QUIRE_DRIVER_BIN="$QUIRE_BIN" QUIRE_E2E_QUIRE="$QUIRE_BIN"
+mkdir -p "$TMPDIR" "$TARGET_DIR" "$CLEAN_HOME"
+export TMPDIR TZ=UTC IX_FLOW_RUNNER QUIRE_DRIVER_BIN="$QUIRE_BIN" QUIRE_E2E_QUIRE="$QUIRE_BIN"
 export QUOIN_E2E_EA="$EA_BIN" FILAMENT_ANALYZE_BIN PDFTOTEXT OPENVEX_SCHEMA_PATH CYCLONEDX_SCHEMA_PATH
 export SPEC_ARTIFACTS_PROCESS_DIR SPEC_OBJECTS_SAFETY_DIR SPEC_OBJECTS_SECURITY_DIR
 export QUOIN_SACM_METAMODEL=/home/peter/dev/.scratchpad/OMG-SACM-2.3-SACM.xml
