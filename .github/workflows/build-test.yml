@@ -101,6 +101,10 @@ jobs:
           curl --fail --location --silent --show-error \
             https://raw.githubusercontent.com/CycloneDX/specification/349314a9d7671d7d2ca5b711a725f49a73979da6/schema/spdx.schema.json \
             --output "$RUNNER_TEMP/spdx.schema.json"
+      - name: Install strace for syscall isolation tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes strace
       - name: Test
         env:
           SPEC_OBJECTS_SAFETY_DIR: ${{ github.workspace }}/.ci-deps/spec-objects-safety
