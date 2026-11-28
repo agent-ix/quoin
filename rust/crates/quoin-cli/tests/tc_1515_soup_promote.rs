@@ -636,7 +636,7 @@ fn promoted(sbom: &Value) -> (tempfile::TempDir, PathBuf, Output) {
     (work, out, run)
 }
 
-#[trace("FR-141-AC-1", "NFR-030-AC-1")]
+#[trace("FR-141-AC-1", "NFR-030-AC-1", "NFR-030-M-1")]
 #[test]
 fn optional_values_absent_from_the_sbom_stay_absent_in_the_promoted_record() {
     let purl = "pkg:npm/bare@1";

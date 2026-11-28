@@ -19,7 +19,7 @@ mod pack_support;
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
-use std::process::Output;
+use std::process::{Command, Output};
 
 use ix_trace_rs::trace;
 use pack_support::{SENTINEL, quoin, scratch, snapshot, text, write_module};
@@ -556,6 +556,40 @@ fn a_run_is_byte_identical_offline_and_changes_nothing() {
     let files = |dir: &Path| snapshot(dir).into_values().collect::<Vec<_>>();
     assert_eq!(files(&out_a), files(&out_b));
     assert_eq!(before, watched(&env));
+}
+
+#[cfg(target_os = "linux")]
+#[trace("NFR-037-M-2")]
+#[test]
+fn a_run_makes_no_network_syscall() {
+    let env = env();
+    env.select("profile: p\n");
+    let trace_path = env.base.join("network.trace");
+    let semantic = pack_support::semantic_root(&env.home);
+    let output = Command::new("strace")
+        .args([
+            "-f",
+            "-qq",
+            "-e",
+            "trace=%network",
+            "-e",
+            "signal=none",
+            "-e",
+            "inject=%network:error=ENETDOWN",
+            "-o",
+        ])
+        .arg(&trace_path)
+        .arg("--")
+        .arg(env!("CARGO_BIN_EXE_quoin"))
+        .args(["profile", "evaluate"])
+        .current_dir(&env.cwd)
+        .env("IX_HOME", &env.home)
+        .env("QUOIN_SEMANTIC_ROOT", semantic)
+        .output()
+        .expect("strace runs the native Quoin command");
+    assert!(output.status.success(), "{}", text(&output));
+    let trace = std::fs::read_to_string(&trace_path).expect("strace creates its syscall log");
+    assert!(trace.is_empty(), "profile evaluate used the network:\n{trace}");
 }
 
 #[trace("FR-181-AC-11")]

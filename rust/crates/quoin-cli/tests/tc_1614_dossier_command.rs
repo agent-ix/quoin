@@ -449,7 +449,7 @@ fn check_matches_then_differs_after_an_edit_then_differs_when_deleted_and_writes
     assert!(!file.exists(), "check recreated the file");
 }
 
-#[trace("NFR-040-AC-1", "NFR-040-M-1")]
+#[trace("NFR-040-AC-1")]
 #[test]
 fn two_generate_runs_produce_identical_files_and_json() {
     let work = tempfile::tempdir().unwrap();

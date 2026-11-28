@@ -1344,40 +1344,7 @@ fn the_output_never_calls_anything_accepted_and_has_no_verdict_keys() {
     assert_accept_only_in_copied_values(&markdown, &clean);
 }
 
-#[trace("NFR-035-AC-5")]
-#[test]
-fn output_bytes_repeat_for_each_fail_on_configuration() {
-    let repo = corpus_with(&[
-        ("AN-001", "valid", "closed-wont-fix-rationale"),
-        ("AN-002", "valid", "identified"),
-        ("AN-003", "invalid", "closed-unassessed"),
-    ]);
-    let unassessed = [GateMode::Unassessed];
-    let unjustified = [GateMode::UnjustifiedImpacting];
-    let both = [GateMode::Unassessed, GateMode::UnjustifiedImpacting];
-    let configurations: [&[GateMode]; 4] = [&[], &unassessed, &unjustified, &both];
-
-    for modes in configurations {
-        let first = report_with(&repo, modes);
-        let second = report_with(&repo, modes);
-        let first_json = first.to_json().unwrap();
-        let second_json = second.to_json().unwrap();
-        let first_markdown = first.to_markdown();
-        let second_markdown = second.to_markdown();
-        assert_eq!(
-            first_json.as_bytes(),
-            second_json.as_bytes(),
-            "JSON differs for {modes:?}"
-        );
-        assert_eq!(
-            first_markdown.as_bytes(),
-            second_markdown.as_bytes(),
-            "Markdown differs for {modes:?}"
-        );
-    }
-}
-
-#[trace("NFR-035-M-4")]
+#[trace("NFR-035-AC-5", "NFR-035-M-4")]
 #[test]
 fn output_bytes_repeat_for_each_fail_on_configuration() {
     let repo = corpus_with(&[
