@@ -67,11 +67,10 @@ the elapsed time asserted against the threshold. For NFR-011-M-2, one invocation
 scoped document snapshot owns the selected module document set. Its loader reads
 each selected document's complete contents once and shares those contents with
 the command's consumers; directory enumeration, metadata checks, and evidence
-store reads are not document reads for this metric. All four commands, including
-`quoin evidence audit`, use this same snapshot because the audit obtains its
-obligations from module coverage before joining them to the evidence store. A
-zero-read audit therefore fails the metric rather than being treated as a
-corpus-independent exception.
+store reads are not document reads for this metric. The same selected-document
+population applies to all four commands. Evidence audit includes its coverage
+obligations before joining them to the evidence store, so its document reads are
+part of the metric; a zero-read audit is not a corpus-independent exception.
 
 The selected population is command-specific only through its repository and
 module roots: `advise` uses its `--repo` and `--module` roots; evidence audit
@@ -84,28 +83,26 @@ members of that set.
 Quoin's host read boundary is Quire's repository loader, exposed through
 `quire_rs::Spec::from_path` and its loaded-document view. The invocation-scoped
 snapshot retains each selected path's full contents and identity; command
-consumers receive that data rather than reopening a selected path. The first
-completeness slice returns the loaded snapshot to the CLI, which also reuses it
-for the overlap with its `--bundle` corpus. The other three routes must adopt
-the same boundary before NFR-011-M-2 is met.
+consumers receive that data rather than reopening a selected path. Completeness
+returns its loaded snapshot to the CLI, which also reuses it for the overlap with
+its `--bundle` corpus. Matrix loads one Quire `Spec` and reuses that parsed
+document set for coverage and design-matrix computation. Advise and evidence
+audit still need to adopt and test an invocation-scoped snapshot.
 
-Tests instrument the sole read boundary. For each command, they compare the
-observed path set with the path set selected by the existing `quire.coverage`
-rules and assert exactly one complete-content read per selected path. Because
-all selected-document reads must pass through the instrumented boundary, a
-consumer that omits the snapshot or reopens a selected document also increments
-the observed count and fails the exact-once assertion. The tests fail if a path
-is omitted, read more than once, or read outside the selected set.
+Tests compare the selected path set with the existing `quire.coverage` rules.
+Snapshot-backed routes assert one complete-content read per selected path and
+that consumers do not reopen selected documents. Matrix asserts that its
+single `Spec` loader pass covers Quire's selected path set and that the parsed
+set is retained for coverage and design-matrix computation. Tests fail if a
+selected path is omitted or a route performs an additional document load.
 
-**Implementation status:** the first bounded slice implements the snapshot reuse
-for `quoin completeness`, including selected documents that overlap its
-`--bundle` corpus. Its tests assert Quire's exact selected path set and one read
-result per selected path, then assert that completeness does not reopen selected
-or selected-unreadable paths and reads a bundle-only path once. Per-route
-exact-read tests for `advise`, `evidence audit`, and `matrix` remain open;
-NFR-011-M-2 is not met until those routes use the same snapshot and their tests
-pass. The 250-document timing measurements also remain open. The gap is
-`agent-ix/quoin#133`.
+**Implementation status:** completeness reuses the selected snapshot, including
+documents that overlap its `--bundle` corpus. Matrix loads Quire's selected
+document set once and reuses that `Spec` for coverage and design-matrix
+computation; a traced test asserts one loader pass over the exact fixture
+selection. Advise and evidence audit remain open and NFR-011-M-2 is not met
+until those routes use and test the shared snapshot boundary. The 250-document
+timing measurements also remain open. The gap is `agent-ix/quoin#133`.
 
 ## Dependencies
 
