@@ -217,6 +217,12 @@ pub fn read_provenance(envelope: &[u8], suites_md: &[u8]) -> Result<Provenance, 
 }
 
 /// Compare the caller's artifact subject list with the exact signed subjects.
+///
+/// # Errors
+///
+/// Returns [`ProvenanceError::SubjectMismatch`] when the supplied value is not
+/// an array of unique, well-formed SHA-256 subjects or its subject set differs
+/// from the subjects authenticated by the provenance.
 #[implements("FR-185-AC-11")]
 pub fn check_signed_subjects(
     subject: &Value,
