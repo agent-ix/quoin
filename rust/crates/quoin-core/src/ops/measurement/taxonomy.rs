@@ -157,7 +157,8 @@ const fn measurement_code(code: MeasurementErrorCode) -> Option<CoreErrorCode> {
         | Code::IntervalMalformed
         | Code::IntervalUnstated
         | Code::IntervalLevelShort
-        | Code::ApparatusUndeclared => CoreErrorCode::BadRequest,
+        | Code::ApparatusUndeclared
+        | Code::FigureProvenanceAbsent => CoreErrorCode::BadRequest,
 
         // The repository declined: retained bytes that differ, a document that
         // cannot be read back, a plan or profile that is present and
@@ -269,7 +270,7 @@ mod tests {
     fn the_measurement_mapping_covers_every_code() {
         assert_eq!(
             MeasurementErrorCode::ALL.len(),
-            35,
+            36,
             "quoin-measurement gained or lost an error code; map it deliberately"
         );
 
@@ -291,6 +292,7 @@ mod tests {
             Code::IntervalUnstated,
             Code::IntervalLevelShort,
             Code::ApparatusUndeclared,
+            Code::FigureProvenanceAbsent,
         ];
         let refused = [
             Code::CollectionIdCollision,
