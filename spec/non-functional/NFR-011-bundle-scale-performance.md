@@ -68,13 +68,20 @@ obligations from module coverage before joining them to the evidence store. A
 zero-read audit therefore fails the metric rather than being treated as a
 corpus-independent exception.
 
-Tests instrument the snapshot loader at the full-document read boundary. For
-each command, they compare the loaded path set with the path set selected by the
-existing `quire.coverage` rules and assert exactly one complete-content read per
-selected path. The invocation-scoped snapshot is passed to coverage, advice,
-matrix, and audit consumers so they cannot independently reopen a selected
-document. The tests fail if a selected path is omitted, read more than once, or
-read by a consumer outside the snapshot.
+`DocumentReader::read_document(path)` is the sole full-content read boundary for
+selected module documents, including reads performed by Quire coverage. The
+invocation-scoped snapshot calls it once per selected path and shares the loaded
+content and document identity with `quoin completeness`, `quoin advise`,
+`quoin evidence audit`, and `quoin matrix`. These consumers receive the snapshot
+data rather than a document-root reader that could reopen a selected path.
+
+Tests instrument the sole read boundary. For each command, they compare the
+observed path set with the path set selected by the existing `quire.coverage`
+rules and assert exactly one complete-content read per selected path. Because
+all selected-document reads must pass through the instrumented boundary, a
+consumer that omits the snapshot or reopens a selected document also increments
+the observed count and fails the exact-once assertion. The tests fail if a path
+is omitted, read more than once, or read outside the selected set.
 
 **Not met at the time of writing** — no such measurement exists. Stated ahead of
 the implementation; the gap is `agent-ix/quoin#133`.
