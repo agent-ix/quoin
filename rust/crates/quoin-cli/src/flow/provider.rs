@@ -15,6 +15,8 @@ use filament_contract_model::{
     CatalogReadError, CheckedPackageReadLimits, ContractPackageReadResult, ContractPackageV1,
     ContractPackageWireV1,
 };
+#[cfg(unix)]
+use filament_analyze::{parse_run_package_arguments, run_package, RunPackageCommand};
 use ix_trace_rs::implements;
 use quoin_quire::{ModuleRoot, ModuleSelection, ScopeRoot, validate};
 use serde::{Deserialize, Serialize};
@@ -1674,9 +1676,89 @@ struct ClaimSpan {
 
 struct AnalysisTools<'a> {
     status: &'a Path,
-    analyzer: &'a Path,
+    runner: &'a dyn AnalysisRunner,
     z3: &'a Path,
     cvc5: &'a Path,
+}
+
+#[derive(Clone, Copy)]
+struct AnalysisInvocation<'a> {
+    package: &'a str,
+    output: &'a Path,
+    selection: &'a Path,
+    z3: &'a Path,
+    cvc5: &'a Path,
+    producer: &'a str,
+    mode: &'a str,
+}
+
+trait AnalysisRunner {
+    fn run(&self, invocation: &AnalysisInvocation<'_>) -> Result<i32, String>;
+}
+
+#[cfg(test)]
+impl AnalysisRunner for Path {
+    fn run(&self, invocation: &AnalysisInvocation<'_>) -> Result<i32, String> {
+        let output = ProcessCommand::new(self)
+            .args([
+                "--package",
+                invocation.package,
+                "--output",
+                invocation.output.to_str().ok_or("analysis report path is not UTF-8")?,
+                "--z3",
+                invocation.z3.to_str().ok_or("Z3 path is not UTF-8")?,
+                "--cvc5",
+                invocation.cvc5.to_str().ok_or("cvc5 path is not UTF-8")?,
+                "--producer-execute",
+                invocation.producer,
+                "--request",
+                invocation.mode,
+                "--select",
+                invocation.selection.to_str().ok_or("selection path is not UTF-8")?,
+            ])
+            .status()
+            .map_err(|error| error.to_string())?;
+        Ok(output.code().unwrap_or(4))
+    }
+}
+
+struct FilamentAnalysisRunner;
+
+#[cfg(unix)]
+impl AnalysisRunner for FilamentAnalysisRunner {
+    fn run(&self, invocation: &AnalysisInvocation<'_>) -> Result<i32, String> {
+        let arguments = [
+            "--package",
+            invocation.package,
+            "--output",
+            invocation.output.to_str().ok_or("analysis report path is not UTF-8")?,
+            "--z3",
+            invocation.z3.to_str().ok_or("Z3 path is not UTF-8")?,
+            "--cvc5",
+            invocation.cvc5.to_str().ok_or("cvc5 path is not UTF-8")?,
+            "--producer-execute",
+            invocation.producer,
+            "--request",
+            invocation.mode,
+            "--select",
+            invocation.selection.to_str().ok_or("selection path is not UTF-8")?,
+        ];
+        let command = parse_run_package_arguments(arguments.into_iter().map(Into::into))
+            .map_err(|error| error.to_string())?;
+        match command {
+            RunPackageCommand::Run(arguments) => {
+                run_package(&arguments).map(i32::from).map_err(|error| error.to_string())
+            }
+            RunPackageCommand::Help => Err("analysis runner returned help unexpectedly".to_owned()),
+        }
+    }
+}
+
+#[cfg(not(unix))]
+impl AnalysisRunner for FilamentAnalysisRunner {
+    fn run(&self, _invocation: &AnalysisInvocation<'_>) -> Result<i32, String> {
+        Err("filament analysis runner is unavailable on this platform".to_owned())
+    }
 }
 
 struct PreparedAnalysis {
@@ -1686,6 +1768,7 @@ struct PreparedAnalysis {
     peers: Vec<ClaimSpan>,
 }
 
+#[implements("FR-189-AC-16")]
 fn analysis_consistent_with_approved(
     request: &FormalizeInput,
     context: &Context,
@@ -1693,15 +1776,15 @@ fn analysis_consistent_with_approved(
     validate_analysis_package_path(request)?;
     let status = std::env::current_exe()
         .map_err(|error| fail(Code::FormalRuleStatusUnavailable, error.to_string()))?;
-    let analyzer = configured_tool("FILAMENT_ANALYZE_BIN", Code::AnalysisInconclusive)?;
     let z3 = configured_tool("Z3_BIN", Code::AnalysisInconclusive)?;
     let cvc5 = configured_tool("CVC5_BIN", Code::AnalysisInconclusive)?;
+    let runner = FilamentAnalysisRunner;
     analysis_consistent_with_tools(
         request,
         context,
         &AnalysisTools {
             status: &status,
-            analyzer: &analyzer,
+            runner: &runner,
             z3: &z3,
             cvc5: &cvc5,
         },
@@ -1908,16 +1991,16 @@ fn run_analysis_modes(
     producer: &str,
 ) -> Result<BTreeMap<String, Value>, Failure> {
     let mut reports = Vec::new();
-    let invocation = AnalyzerInvocation {
-        analyzer: tools.analyzer,
+    let invocation = AnalysisInvocation {
         package: &prepared.package_path,
         selection: selection_path,
-        directory: report_dir,
+        output: &report_dir.join("consistency.json"),
         z3: tools.z3,
         cvc5: tools.cvc5,
         producer,
+        mode: "consistency",
     };
-    let run = run_analysis(&invocation, "consistency")?;
+    let run = run_analysis(tools.runner, &invocation)?;
     reports.push(run.path.clone());
     if run.status == "refuted" {
         return Err(fail_with_details(
@@ -1928,7 +2011,12 @@ fn run_analysis_modes(
     }
     let mut classification = "consistent";
     if !prepared.peers.is_empty() {
-        let run = run_analysis(&invocation, "contradiction")?;
+        let invocation = AnalysisInvocation {
+            output: &report_dir.join("contradiction.json"),
+            mode: "contradiction",
+            ..invocation
+        };
+        let run = run_analysis(tools.runner, &invocation)?;
         reports.push(run.path.clone());
         if run.status == "satisfied" {
             return Err(fail_with_details(
@@ -1951,7 +2039,12 @@ fn run_analysis_modes(
             .len()
             == 1
         {
-            let run = run_analysis(&invocation, "redundancy")?;
+            let invocation = AnalysisInvocation {
+                output: &report_dir.join("redundancy.json"),
+                mode: "redundancy",
+                ..invocation
+            };
+            let run = run_analysis(tools.runner, &invocation)?;
             reports.push(run.path.clone());
             if run.status == "satisfied" {
                 classification = "redundant";
@@ -2334,50 +2427,17 @@ struct AnalysisRun {
     status: String,
     path: PathBuf,
 }
-struct AnalyzerInvocation<'a> {
-    analyzer: &'a Path,
-    package: &'a str,
-    selection: &'a Path,
-    directory: &'a Path,
-    z3: &'a Path,
-    cvc5: &'a Path,
-    producer: &'a str,
-}
-
-fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<AnalysisRun, Failure> {
-    let path = invocation.directory.join(format!("{mode}.json"));
-    let arguments = vec![
-        "run-package".to_owned(),
-        "--package".to_owned(),
-        invocation.package.to_owned(),
-        "--output".to_owned(),
-        path.to_string_lossy().into_owned(),
-        "--z3".to_owned(),
-        invocation.z3.to_string_lossy().into_owned(),
-        "--cvc5".to_owned(),
-        invocation.cvc5.to_string_lossy().into_owned(),
-        "--producer-execute".to_owned(),
-        invocation.producer.to_owned(),
-        "--request".to_owned(),
-        mode.to_owned(),
-        "--select".to_owned(),
-        invocation.selection.to_string_lossy().into_owned(),
-    ];
-    let arguments = arguments.iter().map(String::as_str).collect::<Vec<_>>();
-    let output = run_tool(
-        invocation.analyzer,
-        &arguments,
-        invocation.directory,
-        Instant::now() + Duration::from_secs(20),
-    )
-    .map_err(|error| fail(Code::AnalysisInconclusive, error))?;
-    let bytes = std::fs::read(&path).map_err(|error| {
+fn run_analysis(
+    runner: &dyn AnalysisRunner,
+    invocation: &AnalysisInvocation<'_>,
+) -> Result<AnalysisRun, Failure> {
+    let exit_status = runner
+        .run(invocation)
+        .map_err(|error| fail(Code::AnalysisInconclusive, error))?;
+    let bytes = std::fs::read(invocation.output).map_err(|error| {
         fail(
             Code::AnalysisInconclusive,
-            format!(
-                "analysis report unavailable: {error}; {}",
-                tool_message(&output)
-            ),
+            format!("analysis report unavailable: {error}"),
         )
     })?;
     let report: Value = serde_json::from_slice(&bytes).map_err(|error| {
@@ -2386,8 +2446,11 @@ fn run_analysis(invocation: &AnalyzerInvocation<'_>, mode: &str) -> Result<Analy
             format!("analysis report invalid: {error}"),
         )
     })?;
-    let status = analysis_report_status(&report, mode, output.status.code())?;
-    Ok(AnalysisRun { status, path })
+    let status = analysis_report_status(&report, invocation.mode, Some(exit_status))?;
+    Ok(AnalysisRun {
+        status,
+        path: invocation.output.to_path_buf(),
+    })
 }
 
 fn analysis_report_status(

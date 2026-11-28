@@ -1830,7 +1830,7 @@ fn analysis_tools<'a>(
 ) -> AnalysisTools<'a> {
     AnalysisTools {
         status,
-        analyzer,
+        runner: analyzer,
         z3,
         cvc5,
     }

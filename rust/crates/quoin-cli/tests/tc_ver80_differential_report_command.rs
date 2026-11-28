@@ -11,10 +11,13 @@
 )]
 
 use std::collections::BTreeMap;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-use filament_analyze::MAX_REPORT_BYTES;
+use filament_analyze::{
+    MAX_REPORT_BYTES, RunPackageCommand, parse_run_package_arguments, run_package,
+};
 use filament_contract_model::{
     CheckedNodeId, CheckedNodeTag, CheckedPackageEvidence, CheckedPackageReadLimits,
     CheckedPackageV2, CheckedPackageV2ReadResult, CompleteLoweringProfileV2, LoweringProfileRef,
@@ -397,16 +400,10 @@ fn tc_002_audit_reports_the_obligation_undischarged_until_it_is_stated() {
     assert!(!undischarged(&after, "FR-001-AC-1"), "{after}");
 }
 
-#[trace("FR-184-AC-26")]
+#[trace("FR-151-AC-1", "FR-184-AC-26")]
 #[test]
-fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consumer()
+fn a_runner_report_is_published_and_reaches_the_qualified_record_consumer()
 -> Result<(), String> {
-    let Some(binary) = std::env::var_os("FILAMENT_ANALYZE_BIN")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute() && path.is_file())
-    else {
-        return Err("FILAMENT_ANALYZE_BIN must name the real executable absolute path".to_owned());
-    };
     let Some(producer_execute) =
         std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
             .map(|directory| directory.join("engineering-assurance"))
@@ -444,32 +441,60 @@ fn a_real_run_package_report_is_recorded_and_reaches_the_qualified_record_consum
             work_limit: u64::MAX,
         },
     );
-    let package = lowered.package.canonical_bytes().unwrap();
-
     let fixture = fixture();
     let spec = SPEC.replace("|  |\n", "| Analysis |\n");
     std::fs::write(fixture.repo.path().join("spec/FR-001-example.md"), spec).unwrap();
     let package_path = fixture.home.path().join("contract-package.json");
-    let report_path = fixture.home.path().join("actual-report.json");
-    std::fs::write(&package_path, package).unwrap();
-    let produced = Command::new(binary)
+    let generated_path = fixture.home.path().join("generated-report.json");
+    let report_path = fixture.home.path().join("published-report.json");
+    std::fs::write(&package_path, lowered.package.canonical_bytes().unwrap()).unwrap();
+    let arguments = [
+        "--package",
+        package_path.to_str().unwrap(),
+        "--output",
+        generated_path.to_str().unwrap(),
+        "--z3",
+        "/usr/bin/false",
+        "--cvc5",
+        "/usr/bin/false",
+        "--producer-execute",
+        producer_execute.to_str().unwrap(),
+    ];
+    let command = parse_run_package_arguments(arguments.into_iter().map(OsString::from))
+        .map_err(|error| error.to_string())?;
+    let RunPackageCommand::Run(arguments) = command else {
+        return Err("package runner unexpectedly returned help".to_owned());
+    };
+    run_package(&arguments).map_err(|error| error.to_string())?;
+    assert!(generated_path.is_file(), "package runner did not write a report");
+
+    let Some(binary) = std::env::var_os("FILAMENT_ANALYZE_BIN")
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute() && path.is_file())
+    else {
+        return Err("FILAMENT_ANALYZE_BIN must name the real executable absolute path".to_owned());
+    };
+    let published = Command::new(binary)
         .current_dir(fixture.repo.path())
         .args([
-            "run-package",
-            "--package",
-            package_path.to_str().unwrap(),
+            "publish-report",
+            "--input",
+            generated_path.to_str().unwrap(),
             "--output",
             report_path.to_str().unwrap(),
-            "--z3",
-            "/usr/bin/false",
-            "--cvc5",
-            "/usr/bin/false",
-            "--producer-execute",
-            producer_execute.to_str().unwrap(),
         ])
         .output()
         .unwrap();
-    assert!(report_path.is_file(), "{}", stderr(&produced));
+    assert!(
+        published.status.success() || published.status.code() == Some(3),
+        "{}",
+        stderr(&published)
+    );
+    assert!(report_path.is_file(), "{}", stderr(&published));
+    assert_eq!(
+        std::fs::read(&report_path).unwrap(),
+        std::fs::read(&generated_path).unwrap()
+    );
     let actual_report: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&report_path).unwrap()).unwrap();
     assert_eq!(actual_report["schema"], "filament.differential-report/v2");
