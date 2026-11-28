@@ -28,8 +28,17 @@ pub struct Outcome {
 /// names no required relation.
 #[implements("FR-193-AC-10")]
 #[implements("FR-193-AC-11")]
+#[implements("NFR-011-M-2")]
 pub fn compute(request: &Request) -> Result<Outcome> {
-    let walked = coverage::walk_for_design_matrix(request)?;
+    compute_with_spec_loader(request, |root| quire_rs::Spec::from_path(root))
+}
+
+fn compute_with_spec_loader(
+    request: &Request,
+    load_spec: impl FnOnce(&std::path::Path) -> quire_rs::Spec,
+) -> Result<Outcome> {
+    let walked =
+        coverage::walk_with_dropped_relation_policy_and_spec_loader(request, true, load_spec)?;
     let report = quire_rs::coverage::compute_coverage_for_design_matrix(
         &walked.spec,
         &walked.registry,
@@ -48,6 +57,58 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         design_matrix,
         notices: walked.notices,
     })
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "test assertions report failures"
+)]
+mod tests {
+    use super::*;
+    use crate::coverage::Request;
+    use crate::ids::{ModuleRoot, ScopeRoot};
+    use crate::modules::ModuleSelection;
+    use ix_trace_rs::trace;
+
+    #[trace("NFR-011-M-2")]
+    #[test]
+    fn matrix_loads_its_selected_documents_in_one_spec_pass() {
+        let repository = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests")
+            .join("fixtures")
+            .join("repo");
+        let request = Request {
+            scope: ScopeRoot::open(&repository).expect("fixture scope"),
+            modules: ModuleSelection::Closed(vec![
+                ModuleRoot::open(repository).expect("fixture module"),
+            ]),
+        };
+        let mut passes = 0;
+        let mut documents = Vec::new();
+        let _outcome = compute_with_spec_loader(&request, |root| {
+            passes += 1;
+            let spec = quire_rs::Spec::from_path(root);
+            documents.extend(spec.documents().iter().map(|document| {
+                document
+                    .path
+                    .file_name()
+                    .expect("document filename")
+                    .to_owned()
+            }));
+            spec
+        })
+        .expect("matrix computation");
+
+        assert_eq!(passes, 1, "matrix has one selected-document load pass");
+        documents.sort();
+        assert_eq!(
+            documents,
+            ["FR-001-example.md", "TM-001-matrix.md"],
+            "the one pass covers Quire's exact selected document set"
+        );
+    }
 }
 
 #[implements("FR-193-AC-10")]

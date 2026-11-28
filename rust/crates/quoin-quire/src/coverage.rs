@@ -131,14 +131,29 @@ pub(crate) fn walk(request: &Request) -> Result<Walked> {
 /// Walk the inputs for design-matrix coverage, where the engine keeps valid
 /// entries when only required-relation declarations were dropped.
 #[implements("FR-193-AC-10", "FR-193-AC-11")]
+#[implements("NFR-011-M-2")]
 pub(crate) fn walk_for_design_matrix(request: &Request) -> Result<Walked> {
-    walk_with_dropped_relation_policy(request, true)
+    walk_with_dropped_relation_policy_and_spec_loader(request, true, |root| {
+        quire_rs::Spec::from_path(root)
+    })
 }
 
 #[implements("FR-193-AC-10", "FR-193-AC-11")]
 fn walk_with_dropped_relation_policy(
     request: &Request,
     allow_dropped_required_relations: bool,
+) -> Result<Walked> {
+    walk_with_dropped_relation_policy_and_spec_loader(
+        request,
+        allow_dropped_required_relations,
+        |root| quire_rs::Spec::from_path(root),
+    )
+}
+
+pub(crate) fn walk_with_dropped_relation_policy_and_spec_loader(
+    request: &Request,
+    allow_dropped_required_relations: bool,
+    load_spec: impl FnOnce(&std::path::Path) -> quire_rs::Spec,
 ) -> Result<Walked> {
     let mut notices = Vec::new();
     let registry = request.modules.resolve(&request.scope, &mut notices)?;
@@ -160,7 +175,7 @@ fn walk_with_dropped_relation_policy(
     };
 
     let document_root = request.scope.document_root()?;
-    let spec = quire_rs::Spec::from_path(&document_root);
+    let spec = load_spec(&document_root);
     crate::modules::collect(NoticeKind::Corpus, spec.diagnostics(), &mut notices);
 
     // The code walk covers the scope minus the document root, and the
