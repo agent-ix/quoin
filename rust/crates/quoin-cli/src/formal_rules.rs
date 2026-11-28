@@ -1565,7 +1565,7 @@ mod tests {
     }
 
     #[cfg(unix)]
-    #[trace("FR-188-AC-17", "FR-188-AC-19")]
+    #[trace("FR-188-AC-17", "FR-188-AC-19", "FR-188-CON-2")]
     #[test]
     fn status_command_is_read_only_and_gate_ack_without_signature_is_not_approval() {
         let (repo, ea, allowed) = command_fixture();
@@ -1592,6 +1592,71 @@ mod tests {
         assert_eq!(report["rules"][0]["reason"], "no_approval");
         assert_eq!(git(repo.path(), &["log", "--format=%H"]), head_before);
         assert_eq!(git(repo.path(), &["status", "--porcelain"]), status_before);
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-188-CON-3")]
+    #[test]
+    fn status_verifies_only_commits_with_a_formal_rule_trailer() {
+        let (repo, ea, allowed) = command_fixture();
+        let symbol = formal_rule_symbol("a.native", "P1");
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "Formal rule approval",
+                "-m",
+                &format!("Formal-rule: {symbol}"),
+            ],
+        );
+        let candidate = git(repo.path(), &["rev-parse", "HEAD"]);
+
+        let capture = tempfile::tempdir().expect("verifier call capture");
+        let calls = capture.path().join("calls");
+        let result = signature(&candidate, &symbol);
+        executable(
+            repo.path(),
+            "engineering-assurance",
+            &format!(
+                "printf '%s\\n' invoked >> '{}'; cat >/dev/null; printf '%s\\n' '{}'; exit 0",
+                calls.display(),
+                result
+            ),
+        );
+        git(
+            repo.path(),
+            &[
+                "commit",
+                "--allow-empty",
+                "-q",
+                "-m",
+                "Workflow gate acknowledged",
+                "-m",
+                "Gate-Acknowledged: formalize-requirement",
+            ],
+        );
+
+        let response =
+            super::run(&status_matches(repo.path(), &ea, &allowed)).expect("status report");
+        let rendered = response.payload["rendered"].as_str().expect("status JSON");
+        let report: Value = serde_json::from_str(rendered).expect("status report JSON");
+
+        assert_eq!(report["rules"][0]["state"], "approved");
+        assert_eq!(
+            report["rules"][0]["approval"]["commit"], candidate,
+            "the candidate selected from the formal-rule trailer is verified"
+        );
+        assert_eq!(
+            fs::read_to_string(calls)
+                .expect("verifier invocation log")
+                .lines()
+                .count(),
+            1,
+            "the unrelated gate-acknowledgment commit is not sent to the verifier"
+        );
     }
 
     #[cfg(unix)]
@@ -1662,6 +1727,47 @@ mod tests {
         assert_eq!(span["start"], rule["declaration_range"]["start"]);
         assert_eq!(span["end"], rule["declaration_range"]["end"]);
         assert_eq!(&source.as_bytes()[start..end], b"rule P1 { check x }");
+    }
+
+    #[cfg(unix)]
+    #[trace("FR-190-AC-5")]
+    #[test]
+    fn select_out_orders_paths_by_utf8_bytes() {
+        let (repo, ea, allowed) = command_fixture();
+        let source = |id: &str, label: &str| {
+            format!("language qsl\nprofile core\n// formalizes: {id}\nrule {label} {{ check x }}\n")
+        };
+        let e_source = source("FR-003-AC-1", "E");
+        let z_source = source("FR-002-AC-1", "Z");
+        let b_source = source("FR-001-AC-1", "B");
+        committed_sources(
+            repo.path(),
+            &[
+                ("rules/é.native", &e_source),
+                ("rules/z.native", &z_source),
+                ("rules/b.native", &b_source),
+            ],
+        );
+        let symbols = [
+            formal_rule_symbol("rules/é.native", "E"),
+            formal_rule_symbol("rules/z.native", "Z"),
+            formal_rule_symbol("rules/b.native", "B"),
+        ];
+        approve_symbols(repo.path(), &ea, &symbols);
+        let output = repo.path().join("selection.json");
+
+        let (_, selection) = run_with_selection(repo.path(), &ea, &allowed, &output);
+
+        let identities = selection["spans"]
+            .as_array()
+            .expect("selection spans")
+            .iter()
+            .map(|span| span["identity"].as_str().expect("span identity"))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            identities,
+            ["rules/b.native", "rules/z.native", "rules/é.native"]
+        );
     }
 
     #[cfg(unix)]

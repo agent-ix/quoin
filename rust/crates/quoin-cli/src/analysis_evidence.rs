@@ -1197,7 +1197,6 @@ mod tests {
     /// FR-153-AC-16: actor evidence is admitted only for the commit adding the
     /// exact run/projection pair and matching both currently read byte strings.
     #[trace("FR-153-AC-16")]
-    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
     #[test]
     fn exact_pair_introduction_commit_admits_mapped_actor() {
         let (repo, commit, _keys, verifier) = signed_pair_repo();
@@ -1262,7 +1261,6 @@ mod tests {
     }
 
     #[trace("FR-153-AC-16")]
-    #[ignore = "real verifier integration; set QUOIN_TEST_ENGINEERING_ASSURANCE and pass --ignored"]
     #[test]
     fn actor_admission_uses_the_parsed_pair_and_mapped_actor() {
         use quoin_evidence::qualify::{
