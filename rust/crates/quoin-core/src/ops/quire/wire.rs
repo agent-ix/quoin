@@ -55,6 +55,39 @@ pub struct CoverageRequest {
     pub include_formalization_identities: bool,
 }
 
+/// The request accepted by `quire.document_snapshot`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DocumentSnapshotRequest {
+    /// The repository whose canonical `spec/` document set is loaded.
+    pub scope: String,
+}
+
+/// One selected document and its single full-content read result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DocumentSnapshotEntry {
+    /// Canonical absolute path of the selected document.
+    pub path: String,
+    /// Verbatim document text when the read succeeded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    /// The reason the selected document could not be read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+/// The payload `quire.document_snapshot` returns to command-local consumers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct DocumentSnapshotPayload {
+    /// Every document selected by Quire's canonical repository walker.
+    pub documents: Vec<DocumentSnapshotEntry>,
+}
+
 /// The strict request accepted by `quire.design_matrix`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]

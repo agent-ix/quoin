@@ -28,6 +28,11 @@ figure SHALL come from a measurement rather than an estimate.
   requirement and evidence documents selected for those roots by the existing
   `quire.coverage` document-selection rules. Policy files, catalog metadata and
   evidence-store records are separate inputs, not members of this population.
+- For `quoin completeness`, the `--bundle` Markdown corpus remains a separate
+  FR-037 input. Its intersection with the selected module-document population
+  reuses the snapshot contents; bundle-only Markdown files are read once by the
+  completeness scanner and are outside NFR-011-M-2. This applies to the default
+  bundle root and any non-default `--bundle` path.
 - Operational context: a CI gate and an interactive terminal run.
 - Excluded: `quire-rs` engine time, which the engine's own NFRs govern.
 
@@ -68,12 +73,21 @@ obligations from module coverage before joining them to the evidence store. A
 zero-read audit therefore fails the metric rather than being treated as a
 corpus-independent exception.
 
-`DocumentReader::read_document(path)` is the sole full-content read boundary for
-selected module documents, including reads performed by Quire coverage. The
-invocation-scoped snapshot calls it once per selected path and shares the loaded
-content and document identity with `quoin completeness`, `quoin advise`,
-`quoin evidence audit`, and `quoin matrix`. These consumers receive the snapshot
-data rather than a document-root reader that could reopen a selected path.
+The selected population is command-specific only through its repository and
+module roots: `advise` uses its `--repo` and `--module` roots; evidence audit
+uses the roots captured in `AuditOptions`; matrix uses the same roots as its
+shared audit assembly; completeness uses its `--repo` and `--module` roots.
+Each command's exact path set is the canonical set Quire selects for coverage
+under those inputs. Evidence-store records and matrix run observations are not
+members of that set.
+
+Quoin's host read boundary is Quire's repository loader, exposed through
+`quire_rs::Spec::from_path` and its loaded-document view. The invocation-scoped
+snapshot retains each selected path's full contents and identity; command
+consumers receive that data rather than reopening a selected path. The first
+completeness slice returns the loaded snapshot to the CLI, which also reuses it
+for the overlap with its `--bundle` corpus. The other three routes must adopt
+the same boundary before NFR-011-M-2 is met.
 
 Tests instrument the sole read boundary. For each command, they compare the
 observed path set with the path set selected by the existing `quire.coverage`
@@ -83,8 +97,15 @@ consumer that omits the snapshot or reopens a selected document also increments
 the observed count and fails the exact-once assertion. The tests fail if a path
 is omitted, read more than once, or read outside the selected set.
 
-**Not met at the time of writing** — no such measurement exists. Stated ahead of
-the implementation; the gap is `agent-ix/quoin#133`.
+**Implementation status:** the first bounded slice implements the snapshot reuse
+for `quoin completeness`, including selected documents that overlap its
+`--bundle` corpus. Its tests assert Quire's exact selected path set and one read
+result per selected path, then assert that completeness does not reopen selected
+or selected-unreadable paths and reads a bundle-only path once. Per-route
+exact-read tests for `advise`, `evidence audit`, and `matrix` remain open;
+NFR-011-M-2 is not met until those routes use the same snapshot and their tests
+pass. The 250-document timing measurements also remain open. The gap is
+`agent-ix/quoin#133`.
 
 ## Dependencies
 

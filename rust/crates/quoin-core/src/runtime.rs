@@ -764,6 +764,17 @@ impl HostQuire {
 }
 
 impl QuireHost for HostQuire {
+    #[implements("NFR-011-M-2")]
+    fn document_snapshot(
+        &self,
+        scope: &Path,
+    ) -> Result<Vec<quoin_quire::coverage::DocumentRead>, quoin_quire::Error> {
+        if !scope.is_dir() || !scope.join("spec").is_dir() {
+            return Ok(Vec::new());
+        }
+        quoin_quire::coverage::document_snapshot(&ScopeRoot::open(scope)?)
+    }
+
     fn coverage(
         &self,
         scope: &Path,

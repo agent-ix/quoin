@@ -57,6 +57,7 @@ struct FakeEngine {
     failure: Option<quoin_quire::ErrorCode>,
     design_matrix_failure: bool,
     design_result: Option<quoin_quire::design_matrix::DesignMatrix>,
+    snapshot: Vec<quoin_quire::coverage::DocumentRead>,
     seen: std::cell::RefCell<Vec<Call>>,
 }
 
@@ -85,6 +86,14 @@ impl FakeEngine {
 }
 
 impl QuireHost for FakeEngine {
+    fn document_snapshot(
+        &self,
+        scope: &Path,
+    ) -> Result<Vec<quoin_quire::coverage::DocumentRead>, quoin_quire::Error> {
+        self.record(scope, &[]);
+        Ok(self.snapshot.clone())
+    }
+
     fn coverage(
         &self,
         scope: &Path,
@@ -203,6 +212,47 @@ fn design_matrix_is_registered_and_keeps_coverage_available() {
         None,
         "quire.coverage keeps its existing shape"
     );
+}
+
+#[trace("NFR-011-M-2")]
+#[test]
+fn document_snapshot_returns_the_host_selected_paths_and_read_results() {
+    let engine = FakeEngine {
+        snapshot: vec![
+            quoin_quire::coverage::DocumentRead {
+                path: PathBuf::from("/repo/spec/FR-001.md"),
+                content: Some("requirement bytes".to_owned()),
+                error: None,
+            },
+            quoin_quire::coverage::DocumentRead {
+                path: PathBuf::from("/repo/spec/FR-002.md"),
+                content: None,
+                error: Some("permission denied".to_owned()),
+            },
+        ],
+        ..FakeEngine::default()
+    };
+    assert!(crate::dispatch::OPERATIONS.contains(&"quire.document_snapshot"));
+    let response = crate::dispatch::dispatch(
+        "quire.document_snapshot",
+        &json!({ "scope": "/repo" }),
+        &Capabilities::with_quire(&engine),
+    )
+    .unwrap();
+
+    assert_eq!(
+        response.payload,
+        json!({
+            "documents": [
+                {"path":"/repo/spec/FR-001.md", "content":"requirement bytes"},
+                {"path":"/repo/spec/FR-002.md", "error":"permission denied"}
+            ]
+        })
+    );
+    let calls = engine.seen.borrow();
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0].scope, PathBuf::from("/repo"));
+    assert!(calls[0].modules.is_empty());
 }
 
 /// Partial design results preserve dropped-relation errors beside valid entries.
