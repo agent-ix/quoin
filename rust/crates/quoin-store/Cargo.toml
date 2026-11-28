@@ -19,6 +19,9 @@ thiserror = { workspace = true }
 sha2 = "=0.10.9"
 quire-canonical = { workspace = true }
 engineering-assurance = { workspace = true, features = ["atomic-publish"] }
+ix-trace-rs = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 # Unix only: the Windows release target has neither flag, and takes its own
 # path in `read_regular_file_bounded`. Already resolves once in the graph (aws-lc-sys's
@@ -31,5 +34,6 @@ libc = "=0.2.189"
 
 [dev-dependencies]
 ix-trace-rs = { workspace = true }
+tempfile = { workspace = true }
 # Exercise the shared Value adapter under both serde_json map feature sets.
 serde_json = { workspace = true }

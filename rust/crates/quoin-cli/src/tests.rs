@@ -49,6 +49,7 @@ const NATIVE_OWNED_ROUTES: &[&str] = &[
     "quoin evidence",
     "quoin evidence approval-subject",
     "quoin evidence audit",
+    "quoin evidence read-back",
     "quoin evidence export-test-result",
     "quoin evidence facts-from-mappings",
     "quoin evidence gc",

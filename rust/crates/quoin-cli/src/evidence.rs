@@ -17,7 +17,7 @@ mod mapping_facts;
 mod test_result;
 
 const DESCRIPTION: &str = "The artifact of record for verification (FR-030). quoin TRANSCRIBES; the\nconsumer's CI executes — nothing here runs a test.\n\nLayout, under spec/evidence/:\n\n  suites.md        authored suite registry     (validated corpus document)\n  inspections.md   authored inspection acts    (validated corpus document)\n  bindings.json    obligation -> evidence\n  runs/<SUITE-N>/<timestamp>.json  one file = one run of one suite\n  customer-artifacts/<artifact-id>.json  customer-supplied record or document\n  experiments/<recordId>.json      experiment records\n  operational/<recordId>.json       operational evidence\n  discharge/<authority>/<set>/<version>/<clause>.json  attested discharge facts\n\nSubcommands:\n  quoin evidence record     transcribe a suite run\n  quoin evidence trust      record a use-specific producer trust decision\n  quoin evidence record-experiment  publish an immutable experiment record\n  quoin evidence record-operational publish immutable operational evidence\n  quoin evidence record-customer-artifact  retain a record or document the customer supplied\n  quoin evidence record-discharge  store attested clause-discharge facts\n  quoin evidence approval-subject  print the record id and digest an approval tag signs\n  quoin evidence facts-from-mappings  propose discharge facts from effective controls
-  quoin evidence audit      read the store and report\n  quoin evidence gc         drop run records superseded by a newer one\n  quoin evidence export-test-result  export runs as an in-toto Test Result statement";
+  quoin evidence audit      read the store and report\n  quoin evidence read-back  enumerate and verify the complete inventoried store\n  quoin evidence gc         drop run records superseded by a newer one\n  quoin evidence export-test-result  export runs as an in-toto Test Result statement";
 
 #[implements("FR-030-AC-17")]
 fn validate_tool_identity(tool: &str) -> Result<(), String> {
@@ -118,6 +118,17 @@ pub(crate) fn command() -> Command {
         .subcommand(crate::discharge::record_command())
         .subcommand(crate::discharge::approval_subject_command())
         .subcommand(mapping_facts::command())
+        .subcommand(
+            Command::new("read-back")
+                .about("Capture or verify every byte in the inventoried evidence store")
+                .arg(repo_arg())
+                .arg(
+                    Arg::new("baseline")
+                        .long("baseline")
+                        .value_name("FILE")
+                        .help("compare against a previously captured read-back snapshot"),
+                ),
+        )
         .subcommand(test_result::command())
         .subcommand(audit::command())
 }
@@ -146,10 +157,42 @@ pub(crate) fn run(matches: &ArgMatches) -> Result<Response, String> {
         "record-discharge" => crate::discharge::record(arguments),
         "approval-subject" => crate::discharge::approval_subject(arguments),
         "facts-from-mappings" => mapping_facts::run(arguments),
+        "read-back" => read_back(arguments),
         "export-test-result" => test_result::run(arguments),
         "audit" => audit::run(arguments),
         _ => Err("an unknown evidence command reached dispatch".to_owned()),
     }
+}
+
+#[implements("NFR-025-AC-1")]
+#[implements("NFR-025-AC-2")]
+#[implements("NFR-025-AC-5")]
+fn read_back(arguments: &ArgMatches) -> Result<Response, String> {
+    let repo_path = required(arguments, "repo")?;
+    let repo = std::path::Path::new(&repo_path);
+    let baseline = arguments
+        .get_one::<String>("baseline")
+        .map(|path| quoin_store::readback::read_snapshot(std::path::Path::new(path)))
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    let report = quoin_store::readback::read_back(repo, baseline.as_ref())
+        .map_err(|error| error.to_string())?;
+    let fails = matches!(
+        &report.status,
+        quoin_store::readback::ReadbackStatus::Changed
+            | quoin_store::readback::ReadbackStatus::Inconclusive
+    );
+    let rendered = serde_json::to_string_pretty(&report)
+        .map_err(|error| format!("read-back report serialization failed: {error}"))?;
+    Ok(Response {
+        payload: serde_json::json!({ "rendered": rendered }),
+        diagnostics: Vec::new(),
+        outcome: if fails {
+            ix_cli_kit::exit::Outcome::Partial
+        } else {
+            ix_cli_kit::exit::Outcome::Ok
+        },
+    })
 }
 
 #[implements("FR-030-AC-28")]

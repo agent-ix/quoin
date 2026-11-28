@@ -49,6 +49,7 @@ pub mod bounded_read;
 pub mod error;
 pub mod instant;
 pub mod json;
+pub mod readback;
 pub mod store;
 
 pub use bounded_read::read_regular_file_bounded;

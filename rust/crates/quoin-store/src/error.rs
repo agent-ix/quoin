@@ -65,6 +65,10 @@ pub enum StoreErrorCode {
     ReadSourceTooLarge,
     /// A file changed size while it was being read.
     ReadSourceChangedWhileReading,
+    /// A checked-in store inventory could not be read or validated.
+    ReadbackInventoryInvalid,
+    /// A read-back snapshot could not be read or validated.
+    ReadbackSnapshotInvalid,
 }
 
 impl StoreErrorCode {
@@ -95,6 +99,8 @@ impl StoreErrorCode {
         Self::ReadSourceNotRegularFile,
         Self::ReadSourceTooLarge,
         Self::ReadSourceChangedWhileReading,
+        Self::ReadbackInventoryInvalid,
+        Self::ReadbackSnapshotInvalid,
     ];
 
     /// The stable wire spelling of this code.
@@ -126,6 +132,8 @@ impl StoreErrorCode {
             Self::ReadSourceNotRegularFile => "QSTORE-READ-SOURCE-NOT-REGULAR-FILE",
             Self::ReadSourceTooLarge => "QSTORE-READ-SOURCE-TOO-LARGE",
             Self::ReadSourceChangedWhileReading => "QSTORE-READ-SOURCE-CHANGED",
+            Self::ReadbackInventoryInvalid => "QSTORE-READBACK-INVENTORY-INVALID",
+            Self::ReadbackSnapshotInvalid => "QSTORE-READBACK-SNAPSHOT-INVALID",
         }
     }
 
@@ -358,6 +366,23 @@ pub enum StoreError {
         /// The size actually read.
         actual: u64,
     },
+
+    /// The checked-in store inventory was absent, malformed, or named an unsafe root.
+    #[error("store read-back inventory {path} is invalid: {reason}")]
+    ReadbackInventoryInvalid {
+        /// Inventory file path.
+        path: PathBuf,
+        /// Stable human-readable reason for the refusal.
+        reason: String,
+    },
+    /// A previous read-back snapshot was malformed or incompatible.
+    #[error("store read-back snapshot {path} is invalid: {reason}")]
+    ReadbackSnapshotInvalid {
+        /// Snapshot file path.
+        path: PathBuf,
+        /// Stable human-readable reason for the refusal.
+        reason: String,
+    },
 }
 
 impl StoreError {
@@ -392,6 +417,8 @@ impl StoreError {
             Self::ReadSourceChangedWhileReading { .. } => {
                 StoreErrorCode::ReadSourceChangedWhileReading
             }
+            Self::ReadbackInventoryInvalid { .. } => StoreErrorCode::ReadbackInventoryInvalid,
+            Self::ReadbackSnapshotInvalid { .. } => StoreErrorCode::ReadbackSnapshotInvalid,
         }
     }
 }
