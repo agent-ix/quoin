@@ -35,6 +35,13 @@ jobs:
           ref: main
           path: .ci-deps/spec-objects-security
           persist-credentials: false
+      - name: Check out the pinned signature verifier used by FR-153-AC-16 tests
+        uses: actions/checkout@v7
+        with:
+          repository: agent-ix/engineering-assurance
+          ref: v0.10.1
+          path: .ci-deps/engineering-assurance
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
         with:
           version: 11.20.0
@@ -66,6 +73,9 @@ jobs:
         run: make rust-lint
       - name: Build
         run: make rust-build
+      - name: Build the pinned signature verifier for signed-evidence tests
+        working-directory: .ci-deps/engineering-assurance
+        run: cargo build --locked --release --features full --bin engineering-assurance
       - name: Install default spec modules for Rust integration tests
         run: rust/target/debug/quoin module ensure-defaults
       - name: Install Quire for dossier PDF and DOCX integration tests
@@ -112,6 +122,7 @@ jobs:
           SPEC_ARTIFACTS_PROCESS_DIR: ${{ github.workspace }}/.ci-deps/spec-artifacts-process
           OPENVEX_SCHEMA_PATH: ${{ runner.temp }}/openvex_json_schema_0.2.0.json
           CYCLONEDX_SCHEMA_PATH: ${{ runner.temp }}/cyclonedx_bom_1.7.schema.json
+          QUOIN_TEST_ENGINEERING_ASSURANCE: ${{ github.workspace }}/.ci-deps/engineering-assurance/target/release/engineering-assurance
         run: make rust-test
       - name: Installed workflow behavior
         run: make workflow-test
