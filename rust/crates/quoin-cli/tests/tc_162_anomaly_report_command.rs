@@ -285,7 +285,10 @@ fn fail_on_unassessed_exits_non_zero_and_names_each_anomaly() {
     assert_eq!(ids, ["AN-001", "AN-002", "AN-011"]);
     assert_eq!(failures[0]["path"], "spec/anomalies/AN-001.md");
     assert_eq!(json["gate"]["modes"], serde_json::json!(["unassessed"]));
-    assert_ne!(json["anomalies"].as_array().unwrap().as_slice(), [] as [serde_json::Value; 0]);
+    assert_ne!(
+        json["anomalies"].as_array().unwrap().as_slice(),
+        [] as [serde_json::Value; 0]
+    );
 }
 
 #[trace("FR-164-AC-3", "FR-164-AC-6")]

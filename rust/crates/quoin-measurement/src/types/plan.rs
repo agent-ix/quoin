@@ -8,10 +8,10 @@
 use std::collections::BTreeSet;
 use std::num::NonZeroU32;
 
-use ix_trace_rs::implements;
 use engineering_assurance::measurement::{
     AnswerFamilies, DecisionRule, Estimator, NegativeControls, Objective, ProtectedApparatus,
 };
+use ix_trace_rs::implements;
 
 use crate::types::ids::NonEmptyText;
 
