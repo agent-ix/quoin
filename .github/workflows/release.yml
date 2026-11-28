@@ -229,16 +229,33 @@ jobs:
           if [ "$TARGET" = linux-x64 ]; then
             npm install --global --prefix "$PREFIX" --userconfig "$NPMRC" \
               --registry=https://registry.npmjs.org/ @agent-ix/ix-flow@0.3.4
-            rust/target/debug/quoin-workflow-check smoke \
+            smoke_log="$RUNNER_TEMP/quoin-workflow-smoke-${TARGET}.log"
+            if rust/target/debug/quoin-workflow-check smoke \
               "$PREFIX/bin/quoin" \
               "$PREFIX/lib/node_modules/@agent-ix/ix-flow/bin/ix-flow.js" \
-              "$GITHUB_WORKSPACE"
+              "$GITHUB_WORKSPACE" >"$smoke_log" 2>&1; then
+              cat "$smoke_log"
+            else
+              smoke_status=$?
+              cat "$smoke_log" >&2
+              echo "::error::workflow smoke check failed for $TARGET (exit $smoke_status); see output above" >&2
+              exit "$smoke_status"
+            fi
           fi
-          "$PREFIX/bin/quoin" update 2>update.err && {
+
+          update_log="$RUNNER_TEMP/quoin-update-${TARGET}.log"
+          if "$PREFIX/bin/quoin" update >"$update_log" 2>&1; then
+            cat "$update_log"
             echo "::error::quoin update exited 0 under an npm install; it must defer to npm instead" >&2
             exit 1
-          }
-          grep -q "npm install -g @agent-ix/quoin@latest" update.err
+          else
+            update_status=$?
+          fi
+          cat "$update_log"
+          if ! grep -q "npm install -g @agent-ix/quoin@latest" "$update_log"; then
+            echo "::error::quoin update exited $update_status but did not name the npm command to run" >&2
+            exit 1
+          fi
 
       - name: Install and verify the published package on Windows
         if: runner.os == 'Windows'
@@ -270,3 +287,6 @@ jobs:
           if (-not (Select-String -Path (Join-Path $env:RUNNER_TEMP 'update.err') -Pattern 'npm install -g @agent-ix/quoin@latest')) {
             throw 'quoin update stderr did not name the npm command to run'
           }
+          # The expected nonzero result from quoin update must not become the
+          # PowerShell step's final process exit code after Select-String succeeds.
+          $global:LASTEXITCODE = 0
