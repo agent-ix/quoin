@@ -113,7 +113,7 @@ test-sacm-interop:
 	@set -e; export_file="$(CARGO_TARGET)/sacm-interop/full-case.xmi"; \
 	  import_file="$(CARGO_TARGET)/sacm-interop/full-case.sacm.xml"; \
 	  rm -f "$$export_file" "$$import_file"; \
-	  cd "$(RUST_DIR)" && QUOIN_SACM_INTEROP_FIXTURE="$$export_file" cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-assurance --test tc_sacm_export export_external_interop_fixture -- --ignored --exact; \
+	  cd "$(RUST_DIR)" && QUOIN_SACM_INTEROP_FIXTURE="$$export_file" cargo test --locked $(CARGO_TARGET_FLAG) -p quoin-assurance --features e2e-sacm-interop --test tc_sacm_export export_external_interop_fixture -- --exact; \
 	  cp "$$export_file" "$$import_file"; \
 	  cd "$(CURDIR)" && QUOIN_SACM_TOOL="$(QUOIN_SACM_TOOL)" QUOIN_SACM_INTEROP_FIXTURE="$$import_file" python3 tests/scripts/test_sacm_interop.py
 

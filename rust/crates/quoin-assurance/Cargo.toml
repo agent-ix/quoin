@@ -51,3 +51,4 @@ engineering-assurance = { workspace = true, features = ["source-audit"] }
 # default is a feature nobody ever proves works when it is off.
 schema = ["dep:schemars", "quoin-quire-types/schema"]
 e2e-sacm-metamodel = []
+e2e-sacm-interop = []
