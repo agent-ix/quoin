@@ -28,8 +28,17 @@ pub struct Outcome {
 /// names no required relation.
 #[implements("FR-193-AC-10")]
 #[implements("FR-193-AC-11")]
+#[implements("NFR-011-M-2")]
 pub fn compute(request: &Request) -> Result<Outcome> {
-    let walked = coverage::walk_for_design_matrix(request)?;
+    compute_with_spec_loader(request, |root| quire_rs::Spec::from_path(root))
+}
+
+fn compute_with_spec_loader(
+    request: &Request,
+    load_spec: impl FnOnce(&std::path::Path) -> quire_rs::Spec,
+) -> Result<Outcome> {
+    let walked =
+        coverage::walk_with_dropped_relation_policy_and_spec_loader(request, true, load_spec)?;
     let report = quire_rs::coverage::compute_coverage_for_design_matrix(
         &walked.spec,
         &walked.registry,
@@ -48,6 +57,57 @@ pub fn compute(request: &Request) -> Result<Outcome> {
         design_matrix,
         notices: walked.notices,
     })
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::indexing_slicing,
+    reason = "test assertions report failures"
+)]
+mod tests {
+    use super::*;
+    use crate::coverage::Request;
+    use crate::ids::{ModuleRoot, ScopeRoot};
+    use crate::modules::ModuleSelection;
+    use ix_trace_rs::trace;
+
+    #[trace("NFR-011-M-2")]
+    #[test]
+    fn matrix_invokes_spec_loader_once_for_caller_document_root() {
+        let repository = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("tests")
+            .join("fixtures")
+            .join("repo");
+        let request = Request {
+            scope: ScopeRoot::open(&repository).expect("fixture scope"),
+            modules: ModuleSelection::Closed(vec![
+                ModuleRoot::open(repository).expect("fixture module"),
+            ]),
+        };
+        let expected_document_root = request
+            .scope
+            .document_root()
+            .expect("caller-provided document root");
+        let mut loader_invocations = 0;
+        let mut loaded_roots = Vec::new();
+        let _outcome = compute_with_spec_loader(&request, |root| {
+            loader_invocations += 1;
+            loaded_roots.push(root.to_path_buf());
+            quire_rs::Spec::from_path(root)
+        })
+        .expect("matrix computation");
+
+        assert_eq!(
+            loader_invocations, 1,
+            "matrix invokes the selected-document loader once"
+        );
+        assert_eq!(
+            loaded_roots,
+            [expected_document_root],
+            "matrix loads the caller-provided document root"
+        );
+    }
 }
 
 #[implements("FR-193-AC-10")]
