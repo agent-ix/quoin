@@ -288,8 +288,11 @@ fn all_generated_docs(root: &Path) -> BTreeMap<String, String> {
         .collect()
 }
 
-fn assert_no_unrecorded_dossier_values(documents: &BTreeMap<String, String>) {
-    assert!(!documents.is_empty(), "no dossier documents were generated");
+fn unrecorded_dossier_value_violations(documents: &BTreeMap<String, String>) -> Vec<String> {
+    let mut violations = Vec::new();
+    if documents.is_empty() {
+        violations.push("no dossier documents were generated".to_owned());
+    }
     for (name, document) in documents {
         for (field, allowed) in [
             (
@@ -308,24 +311,55 @@ fn assert_no_unrecorded_dossier_values(documents: &BTreeMap<String, String>) {
             ),
         ] {
             for value in values_after_field(document, field) {
-                assert!(
-                    allowed.contains(&value),
-                    "{name} rendered an unrecorded {field}{value}: {document}"
-                );
+                if !allowed.contains(&value) {
+                    violations.push(format!(
+                        "{name} rendered an unrecorded {field}{value}: {document}"
+                    ));
+                }
             }
         }
         let cells: Vec<_> = table_cells(document).collect();
         for unsupported in ["high", "critical", "compliant", "acceptable"] {
-            assert!(
-                !cells.contains(&unsupported),
-                "{name} rendered an unrecorded table value {unsupported:?}: {document}"
-            );
+            if cells.contains(&unsupported) {
+                violations.push(format!(
+                    "{name} rendered an unrecorded table value {unsupported:?}: {document}"
+                ));
+            }
         }
-        assert!(
-            !cells.iter().any(|cell| cell.starts_with("class-")),
-            "{name} rendered an unrecorded class in a table: {document}"
-        );
+        if cells.iter().any(|cell| cell.starts_with("class-")) {
+            violations.push(format!(
+                "{name} rendered an unrecorded class in a table: {document}"
+            ));
+        }
     }
+    violations
+}
+
+fn assert_no_unrecorded_dossier_values(documents: &BTreeMap<String, String>) {
+    let violations = unrecorded_dossier_value_violations(documents);
+    assert!(violations.is_empty(), "{}", violations.join("\n"));
+}
+
+fn replace_document_line(document: &str, line_index: usize, replacement: String) -> String {
+    let mut lines: Vec<_> = document.lines().map(str::to_owned).collect();
+    lines[line_index] = replacement;
+    lines.join("\n")
+}
+
+fn replace_table_cell(
+    document: &str,
+    line_index: usize,
+    cell_index: usize,
+    replacement: &str,
+) -> String {
+    let mut lines: Vec<_> = document.lines().map(str::to_owned).collect();
+    let mut cells: Vec<_> = lines[line_index].split('|').map(str::to_owned).collect();
+    let original = &cells[cell_index];
+    let start = original.len() - original.trim_start().len();
+    let end = original.trim_end().len();
+    cells[cell_index] = format!("{}{}{}", &original[..start], replacement, &original[end..]);
+    lines[line_index] = cells.join("|");
+    lines.join("\n")
 }
 
 #[trace("NFR-040-AC-3", "NFR-040-M-3")]
@@ -337,6 +371,64 @@ fn outputs_do_not_supply_unrecorded_criticality_or_safety_values() {
     assert_no_unrecorded_dossier_values(&documents);
     assert!(documents["DOS-SRS"].contains("Authored statement"));
     assert!(documents["DOS-TRACE"].contains("Authored statement"));
+}
+
+#[trace("NFR-040-AC-3", "NFR-040-M-3")]
+#[test]
+fn unrecorded_values_in_any_generated_field_or_table_cell_are_rejected() {
+    let work = tempfile::tempdir().unwrap();
+    write_fixture(work.path(), &["FR-002", "FR-001"]);
+    let documents = all_generated_docs(work.path());
+    assert_no_unrecorded_dossier_values(&documents);
+
+    let mut mutations = 0;
+    for (name, document) in &documents {
+        for (line_index, line) in document.lines().enumerate() {
+            for field in [
+                "Criticality: ",
+                "Software safety class: ",
+                "Risk: ",
+                "Compliance: ",
+                "Acceptability: ",
+            ] {
+                if line.starts_with(field) {
+                    let mut mutated = documents.clone();
+                    mutated.insert(
+                        name.clone(),
+                        replace_document_line(document, line_index, format!("{field}critical")),
+                    );
+                    assert!(
+                        !unrecorded_dossier_value_violations(&mutated).is_empty(),
+                        "{name} accepted fabricated {field}critical"
+                    );
+                    mutations += 1;
+                }
+            }
+
+            if line.starts_with('|') {
+                for (cell_index, cell) in line.split('|').enumerate() {
+                    let trimmed = cell.trim();
+                    if trimmed.is_empty() || trimmed.chars().all(|character| character == '-') {
+                        continue;
+                    }
+                    let mut mutated = documents.clone();
+                    mutated.insert(
+                        name.clone(),
+                        replace_table_cell(document, line_index, cell_index, "critical"),
+                    );
+                    assert!(
+                        !unrecorded_dossier_value_violations(&mutated).is_empty(),
+                        "{name} accepted fabricated table value in column {cell_index}"
+                    );
+                    mutations += 1;
+                }
+            }
+        }
+    }
+    assert!(
+        mutations > 0,
+        "fixture generated no fields or table cells to mutate"
+    );
 }
 
 #[trace("NFR-040-AC-4")]
