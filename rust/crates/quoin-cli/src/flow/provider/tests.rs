@@ -308,7 +308,7 @@ fn design_gate_binds_to_explicit_quire_flow_json_and_denials_override_exit_statu
 #[cfg(unix)]
 #[trace("FR-209-AC-1")]
 #[test]
-fn design_gate_preserves_order_for_multiple_denials_and_remediations() {
+fn design_gate_orders_denials_deterministically_and_preserves_remediation_order() {
     let mut first = flow_denial();
     first["remediations"] = json!([
         {"name":"first-remediation","description":"First","change":{"order":1}},
@@ -321,7 +321,9 @@ fn design_gate_preserves_order_for_multiple_denials_and_remediations() {
     second["remediations"] = json!([
         {"name":"third-remediation","description":"Third","change":{"order":3}}
     ]);
-    let report = flow_report(json!([first, second]));
+    // Quire may enumerate independent denials from an unordered collection.
+    // The provider response must impose its own stable order.
+    let report = flow_report(json!([second, first]));
     let (_directory, request, _, _) = design_gate_fixture(&report, 0);
     prime_design_gate_proposal(&request);
     let input = serde_json::to_vec(&request).expect("request");

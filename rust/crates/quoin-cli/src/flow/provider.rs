@@ -880,6 +880,7 @@ fn write_design_gate_state(path: &Path, state: &DesignGateRunState) -> Check {
     Ok(())
 }
 
+#[implements("FR-209-AC-1")]
 fn design_gate_report(
     request: &DesignGateRequest,
     context: &Context,
@@ -911,7 +912,8 @@ fn design_gate_report(
             "design gate check count is out of range",
         )
     })?;
-    let report = run_design_evaluator(request, &root, &design_root, &module_roots)?;
+    let mut report = run_design_evaluator(request, &root, &design_root, &module_roots)?;
+    sort_flow_denials(&mut report);
     state.checks.push(DesignGateCheck {
         attempt,
         state_version,
@@ -925,6 +927,37 @@ fn design_gate_report(
         )
     })?;
     Ok((attempt, report))
+}
+
+fn sort_flow_denials(report: &mut Value) {
+    let Some(denials) = report.get_mut("denials").and_then(Value::as_array_mut) else {
+        return;
+    };
+    denials.sort_by_key(|denial| {
+        (
+            denial
+                .get("rule")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned(),
+            denial
+                .get("check")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned(),
+            denial
+                .pointer("/subject/archetype")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned(),
+            denial
+                .pointer("/subject/id")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned(),
+            denial.to_string(),
+        )
+    });
 }
 
 fn design_gate_paths(

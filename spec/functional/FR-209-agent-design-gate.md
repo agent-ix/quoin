@@ -78,8 +78,11 @@ evidence artifact. A transcript is a run log only.
   `check`, `subject`, and `matched` values; the matched data categories
   resolved from the referenced classification facts' `regulated_categories`;
   and every remediation's `name`, `description`, and `change` value as
-  supplied by FR-025 and PLAT-1479. The workflow SHALL preserve the report's
-  denial and remediation ordering and SHALL NOT invent or apply a remediation.
+  supplied by FR-025 and PLAT-1479. The workflow SHALL order denials
+  deterministically by `rule`, `check`, subject archetype, and subject id,
+  using the canonical JSON denial as a tie-breaker. It SHALL preserve the
+  remediation order within each denial and SHALL NOT invent or apply a
+  remediation.
 - If the evaluator cannot be launched, exits without a usable report, emits
   malformed JSON, reports another schema, or omits a required member, the
   invariant SHALL fail as `dataflow_check_unavailable`. It SHALL NOT pass,
