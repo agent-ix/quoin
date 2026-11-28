@@ -52,6 +52,10 @@ jobs:
 
   build:
     name: Build native release artifacts and evidence
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     uses: ./.github/workflows/native-release-build.yml
     with:
       tag: ${{ github.ref_name }}
@@ -73,3 +77,4 @@ jobs:
       record_path: ${{ needs.validate.outputs.record_path }}
       allowed_signers_path: ${{ needs.validate.outputs.allowed_signers_path }}
       artifact_name: release-artifacts
+      evidence_artifact: release-evidence

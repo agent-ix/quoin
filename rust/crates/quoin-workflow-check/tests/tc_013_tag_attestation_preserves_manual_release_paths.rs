@@ -107,3 +107,53 @@ fn tc_013_tag_attestation_preserves_manual_release_paths() {
             )
     );
 }
+
+#[trace("FR-186-AC-2")]
+#[test]
+fn tc_fr186_shared_consumer_receives_uploaded_release_evidence() {
+    let tag_attestation = workflow("tag-attestation.yml");
+    let build = &tag_attestation["jobs"]["build"];
+    assert_eq!(build["with"]["include_evidence"].as_bool(), Some(true));
+
+    let attest = &tag_attestation["jobs"]["attest"];
+    let dependencies = attest["needs"]
+        .as_sequence()
+        .expect("attestation job dependencies");
+    assert!(
+        dependencies
+            .iter()
+            .any(|dependency| dependency.as_str() == Some("build")),
+        "the shared consumer waits for the release-evidence producer"
+    );
+    assert_eq!(
+        attest["with"]["evidence_artifact"].as_str(),
+        Some("release-evidence"),
+        "the shared consumer receives the uploaded retained evidence"
+    );
+    assert!(
+        attest.get("if").is_none(),
+        "failed evidence production must skip the consumer"
+    );
+
+    let native_build = workflow("native-release-build.yml");
+    let steps = native_build["jobs"]["evidence"]["steps"]
+        .as_sequence()
+        .expect("native package steps");
+    let run_evidence = steps
+        .iter()
+        .position(|step| {
+            step["name"].as_str() == Some("Run and validate retained release evidence")
+        })
+        .expect("retained evidence producer step exists");
+    let upload = steps
+        .iter()
+        .position(|step| {
+            step["uses"].as_str() == Some("actions/upload-artifact@v7")
+                && step["with"]["name"].as_str() == Some("release-evidence")
+        })
+        .expect("release evidence upload exists");
+    assert!(
+        run_evidence < upload,
+        "the evidence artifact uploads only after the suite attempt and provenance are prepared"
+    );
+}

@@ -12,16 +12,27 @@
 
 use base64::Engine as _;
 use ix_trace_rs::trace;
-use quoin_evidence::export::provenance::{PAYLOAD_TYPE, ProvenanceError, read_provenance};
+use quoin_evidence::export::provenance::{
+    DSSE_TYPE, PAYLOAD_TYPE, ProvenanceError, STATEMENT_TYPE, check_signed_subjects,
+    read_provenance,
+};
 use serde_json::{Value, json};
 
 const SUITES: &[u8] = b"# suites\n";
 
 fn envelope(payload: &Value) -> Vec<u8> {
     json!({
-        "payloadType": PAYLOAD_TYPE,
-        "payload": base64::engine::general_purpose::STANDARD.encode(payload.to_string()),
-        "signatures": [{ "sig": "AAAA" }]
+        "dsseEnvelope": {
+            "payloadType": DSSE_TYPE,
+            "payload": base64::engine::general_purpose::STANDARD.encode(json!({
+                "_type": STATEMENT_TYPE,
+                "subject": [{"name":"artifact","digest":{"sha256":"a".repeat(64)}}],
+                "predicateType": PAYLOAD_TYPE,
+                "predicate": payload,
+            }).to_string()),
+            "signatures": [{ "sig": "AAAA" }]
+        },
+        "verificationMaterial": {}
     })
     .to_string()
     .into_bytes()
@@ -60,6 +71,11 @@ fn tc_1792_010_valid_provenance_yields_population_and_runs() {
     );
     assert_eq!(provenance.runs.len(), 2);
     assert!(provenance.runs[1].sha256.is_none());
+    check_signed_subjects(
+        &json!([{"name":"artifact","digest":{"sha256":"a".repeat(64)}}]),
+        &provenance,
+    )
+    .expect("caller subject is bound by the signed bundle");
 }
 
 #[trace("FR-185-AC-11", "FR-185-AC-12")]
@@ -100,12 +116,28 @@ fn tc_1792_011_each_defect_refuses() {
     // Each envelope defect alone, over an otherwise valid payload.
     let valid: Value = serde_json::from_slice(&envelope(&payload())).unwrap();
     let mut wrong_type = valid.clone();
-    wrong_type["payloadType"] = json!("application/json");
+    wrong_type["dsseEnvelope"]["payloadType"] = json!("application/json");
     assert!(read_provenance(wrong_type.to_string().as_bytes(), SUITES).is_err());
     let mut not_base64 = valid.clone();
-    not_base64["payload"] = json!("%%%");
+    not_base64["dsseEnvelope"]["payload"] = json!("%%%");
     assert!(read_provenance(not_base64.to_string().as_bytes(), SUITES).is_err());
     let mut no_signatures = valid;
-    no_signatures.as_object_mut().unwrap().remove("signatures");
+    no_signatures["dsseEnvelope"]
+        .as_object_mut()
+        .unwrap()
+        .remove("signatures");
     assert!(read_provenance(no_signatures.to_string().as_bytes(), SUITES).is_err());
+}
+
+#[trace("FR-185-AC-11", "FR-186-AC-7")]
+#[test]
+fn tc_1792_012_signed_subject_mismatch_is_refused() {
+    let provenance = read_provenance(&envelope(&payload()), SUITES).expect("valid");
+    assert_eq!(
+        check_signed_subjects(
+            &json!([{"name":"artifact","digest":{"sha256":"b".repeat(64)}}]),
+            &provenance,
+        ),
+        Err(ProvenanceError::SubjectMismatch)
+    );
 }

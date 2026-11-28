@@ -31,10 +31,11 @@ and generated bindings are never committed. [FR-030](./FR-030-evidence-store.md)
 keeps run facts separate from authored suite declarations and does not add a
 commit field to a run record. The artifact provenance identifies the signed
 tag, its resolved source commit, and the workflow run that produced the
-evidence. The artifact also contains a version-2 DSSE execution-provenance
-envelope, signed by the source release workflow, that binds that commit to the
-complete computed Test Matrix and exact run-record bytes. The shared consumer
-authenticates this envelope under
+evidence. The artifact also contains a version-2 execution-provenance Sigstore
+bundle, signed by the source release workflow, whose DSSE envelope contains an
+in-toto Statement v1. Its predicate binds that commit to the complete computed
+Test Matrix and exact run-record bytes. The shared consumer authenticates this
+bundle under
 [Engineering Assurance FR-069](ix://agent-ix/engineering-assurance/FR-069)
 before passing it to Quoin's export. The consumer produces no Test Result when
 the artifact or provenance is missing, unreadable, invalid, untrusted, or does
@@ -53,8 +54,9 @@ a signed `FAILED` Test Result for the affected obligations.
 - A workflow artifact named `release-evidence` containing the maintained suite
   declaration and binding registry, the complete computed Test Matrix for the
   tagged source revision, fresh run-specific bindings, the `SUITE-001` run
-  record when produced, and `execution-provenance.dsse.json` binding the
-  revision, suite declaration, matrix, and run-record bytes.
+  record when produced, and `execution-provenance.dsse.json`, the signed
+  Sigstore bundle binding the revision, suite declaration, matrix, and
+  run-record bytes.
 - A call to the shared Engineering Assurance workflow with
   `evidence_artifact` equal to `release-evidence`.
 
@@ -69,13 +71,13 @@ a signed `FAILED` Test Result for the affected obligations.
   Run-specific bindings, matrix, provenance, and records SHALL remain only in
   that artifact and SHALL NOT be committed.
 - The Quoin tag-attestation workflow SHALL use
-  `application/vnd.agent-ix.execution-provenance.v2+json` as the version-2 DSSE
-  payload type.
+  `application/vnd.agent-ix.execution-provenance.v2+json` as the in-toto
+  statement's `predicateType`.
 - The Quoin tag-attestation workflow SHALL include exactly `version`,
   `sourceRevision`, `suiteDeclarationsSha256`, `testMatrix`, and `runs` in the
-  DSSE payload.
-- The Quoin tag-attestation workflow SHALL set `version` to `2` in the DSSE
-  payload.
+  statement predicate.
+- The Quoin tag-attestation workflow SHALL set `version` to `2` in the
+  statement predicate.
 - The Quoin tag-attestation workflow SHALL set `sourceRevision` to the full
   resolved commit for the signed tag.
 - The Quoin tag-attestation workflow SHALL set `suiteDeclarationsSha256` to the
@@ -88,8 +90,9 @@ a signed `FAILED` Test Result for the affected obligations.
   the lowercase SHA-256 digest of the exact run-record bytes.
 - The Quoin tag-attestation workflow SHALL set an expected run's `sha256` to
   `null` when that run record was not produced.
-- The source release workflow identity SHALL sign the DSSE payload through the
-  configured OIDC trust path.
+- The source release workflow identity SHALL sign the statement through the
+  configured GitHub OIDC and Sigstore trust path. The retained file SHALL be
+  the complete JSON Sigstore bundle emitted by the signing action.
 - The Quoin tag-attestation workflow SHALL identify the signed tag name in the
   `release-evidence` artifact.
 - The Quoin tag-attestation workflow SHALL identify the resolved commit checked
@@ -145,7 +148,7 @@ a signed `FAILED` Test Result for the affected obligations.
 | FR-186-AC-4 | After a tag-attestation run, the uploaded artifact contains the maintained suite declaration and binding registry, any available fresh run-specific bindings and run record, and no generated run-specific bindings or records are committed to the repository. | Test |
 | FR-186-AC-5 | A workflow test confirms that the artifact provenance identifies the signed tag, its resolved source commit, and the producing workflow run, and that each identifies the source and run represented by the uploaded bindings and run record. | Test |
 | FR-186-AC-6 | A consumer integration test confirms that absent evidence, invalid or untrusted provenance, a subject or revision mismatch, or evidence stale for the current signed-tag workflow produces no Test Result and no release attestation. With valid authenticated provenance, a missing required binding or symbol, an expected run declared absent by signed null digest, or a failed required criterion produces a signed `FAILED` Test Result for the affected obligations and does not authorize a passing release attestation. | Test |
-| FR-186-AC-7 | A workflow test confirms that `release-evidence` contains the version-2 DSSE envelope with the exact payload type and fields, suite-declaration digest, and complete matrix from the tagged commit; a Quire matrix comparison detects an omitted active obligation even with a valid signature. | Test |
+| FR-186-AC-7 | A workflow test confirms that `release-evidence` contains the signed Sigstore bundle whose DSSE envelope carries an in-toto Statement v1 with the exact execution-provenance predicate type and fields, suite-declaration digest, and complete matrix from the tagged commit; a Quire matrix comparison detects an omitted active obligation even with a valid signature. | Test |
 | FR-186-AC-8 | A workflow test confirms that an expected run with no record is represented by a signed null digest, while a non-null digest without its referenced bytes is refused as an integrity failure under Quoin FR-185. Present run records must match their digests. With valid provenance, a signed null digest and absent bindings or symbols produce a signed `FAILED` Test Result for affected obligations; invalid provenance produces no Test Result. | Test |
 
 ## Dependencies

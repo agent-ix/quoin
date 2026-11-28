@@ -73,17 +73,30 @@ fn write_provenance(
         }],
         "runs": runs,
     });
-    let envelope = json!({
-        "payloadType": "application/vnd.agent-ix.execution-provenance.v2+json",
-        "payload": base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            payload.to_string(),
-        ),
-        "signatures": [{"sig": "AAAA"}],
-    });
+    let envelope = github_bundle(payload);
     let path = evidence.parent().expect("parent").join("provenance.json");
     fs::write(&path, envelope.to_string()).expect("provenance written");
     path
+}
+
+fn github_bundle(predicate: Value) -> Value {
+    let statement = json!({
+        "_type": "https://in-toto.io/Statement/v1",
+        "subject": [{"name":"artifact","digest":{"sha256":"a".repeat(64)}}],
+        "predicateType": "application/vnd.agent-ix.execution-provenance.v2+json",
+        "predicate": predicate,
+    });
+    json!({
+        "dsseEnvelope": {
+            "payloadType": "application/vnd.in-toto+json",
+            "payload": base64::Engine::encode(
+                &base64::engine::general_purpose::STANDARD,
+                statement.to_string(),
+            ),
+            "signatures": [{"sig": "AAAA"}],
+        },
+        "verificationMaterial": {}
+    })
 }
 
 /// The default scenario's population, written down independently of the bindings.
@@ -783,19 +796,7 @@ fn tc_1792_104_a_run_record_must_be_for_the_suite_that_names_it() {
             "runs": runs,
         });
         let path = root.path().join("lying.json");
-        fs::write(
-            &path,
-            json!({
-                "payloadType": "application/vnd.agent-ix.execution-provenance.v2+json",
-                "payload": base64::Engine::encode(
-                    &base64::engine::general_purpose::STANDARD,
-                    payload.to_string(),
-                ),
-                "signatures": [{"sig": "AAAA"}],
-            })
-            .to_string(),
-        )
-        .expect("envelope");
+        fs::write(&path, github_bundle(payload).to_string()).expect("envelope");
         path
     };
     // Control: the record listed under its own suite exports.
