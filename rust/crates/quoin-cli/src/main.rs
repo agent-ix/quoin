@@ -447,6 +447,7 @@ fn trim_graph_rendering(mut response: Response) -> Response {
     response
 }
 
+#[implements("FR-102-CON-3")]
 fn command() -> Command {
     Command::new("quoin")
         .about("Quoin assurance tooling")

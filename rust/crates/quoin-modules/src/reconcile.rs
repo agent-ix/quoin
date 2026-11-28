@@ -55,6 +55,7 @@ impl ReconcileReport {
 /// already processed keep their effect, matching the oracle's fail-fast loop.
 #[implements("FR-099-AC-11")]
 #[implements("FR-212-AC-8")]
+#[implements("NFR-001-M-2")]
 pub fn reconcile(
     manifest: &MarketplaceManifest,
     installer: &ModuleInstaller<'_>,
