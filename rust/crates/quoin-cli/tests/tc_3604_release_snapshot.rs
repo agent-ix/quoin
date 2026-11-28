@@ -724,7 +724,7 @@ fn the_snapshot_reader_requires_both_members_and_refuses_dirty_or_unordered_valu
     let refusal = |document: &Value| parse(document).unwrap_err().to_string();
     let full = json!({
         "protocol":"quoin.release-snapshot/v1",
-        "tool_identity":{"name":"quoin","version":"0.31.1"},
+        "tool_identity":{"name":"quoin","version":"0.31.2"},
         "clean_tree_precondition":"not_verified",
         "as_of":"2026-11-01T00:00:00Z",
         "baseline_commit":BASE,

@@ -3177,7 +3177,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-anomaly"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quoin-evidence",
@@ -3190,7 +3190,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-assurance"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "engineering-assurance",
  "ix-trace-rs",
@@ -3209,7 +3209,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-auditor"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "proptest",
@@ -3230,7 +3230,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-catalog"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quoin-semantic",
@@ -3243,7 +3243,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-change-assurance"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "engineering-assurance",
  "ix-trace-rs",
@@ -3256,7 +3256,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-cli"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "base64 0.22.1",
  "clap",
@@ -3303,7 +3303,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-combinatorial"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "proptest",
@@ -3315,7 +3315,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-completeness"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quoin-yaml",
@@ -3328,7 +3328,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-config"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "engineering-assurance",
  "ix-trace-rs",
@@ -3342,7 +3342,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-core"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "engineering-assurance",
  "ix-cli-kit",
@@ -3375,7 +3375,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-delivery"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "flate2",
  "ix-trace-rs",
@@ -3392,7 +3392,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-dossier"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
@@ -3415,7 +3415,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "base64 0.22.1",
  "filament-analyze",
@@ -3434,7 +3434,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-evidence-types"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -3442,7 +3442,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-finding-types"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "quoin-evidence",
  "schemars 1.2.2",
@@ -3452,7 +3452,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-graph-analysis"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quoin-evidence",
@@ -3466,7 +3466,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jev"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "async-trait",
  "engineering-assurance",
@@ -3492,7 +3492,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-jsonschema"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "jsonschema 0.56.0",
@@ -3503,7 +3503,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "engineering-assurance",
  "ix-trace-rs",
@@ -3520,7 +3520,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-measurement-graph"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quoin-graph-analysis",
@@ -3535,7 +3535,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-modules"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "flate2",
  "gix",
@@ -3557,7 +3557,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quire-fixtures",
@@ -3577,7 +3577,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-quire-types"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "schemars 1.2.2",
  "serde",
@@ -3586,7 +3586,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-risk-advice"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quoin-anomaly",
@@ -3599,7 +3599,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-semantic"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "quire-fixtures",
@@ -3614,7 +3614,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-soup"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "clap",
  "ix-cli-kit",
@@ -3636,7 +3636,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-store"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "engineering-assurance",
  "ix-trace-rs",
@@ -3649,7 +3649,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-suite-trace"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-cli-kit",
  "ix-trace-rs",
@@ -3663,7 +3663,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-validators"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "regex",
@@ -3676,7 +3676,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-workflow-check"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "serde_json",
@@ -3686,7 +3686,7 @@ dependencies = [
 
 [[package]]
 name = "quoin-yaml"
-version = "0.31.1"
+version = "0.31.2"
 dependencies = [
  "ix-trace-rs",
  "saphyr",
