@@ -80,7 +80,7 @@ base64 = "=0.22.1"
 packageurl = "=0.7.1"
 quire-fixtures = { git = "https://github.com/agent-ix/quire-rs", rev = "5796c39854aca9a26b8ed0130141dc734988c090" }
 ix-trace-rs = { git = "https://github.com/agent-ix/ix-trace-rs", branch = "main" }
-filament-analyze = { git = "https://github.com/agent-ix/filament-analyze", branch = "main" }
+filament-analyze = { git = "https://github.com/agent-ix/filament-analyze", rev = "686b5889eeabbca37363e22a33566c351a9e9ca5" }
 filament-contract-model = { git = "https://github.com/agent-ix/filament-contract-ir", branch = "main", version = "=0.1.0" }
 quire-canonical = { git = "https://github.com/agent-ix/quire-canonical", branch = "main", features = ["serde_json"] }
 ix-cli-kit = { git = "https://github.com/agent-ix/ix-cli-kit", branch = "main" }

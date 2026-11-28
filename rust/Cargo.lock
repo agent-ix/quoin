@@ -640,11 +640,12 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 [[package]]
 name = "filament-analyze"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e2a8d1b2b2ad4ff3ed80201dac1b6c91457e6d3d"
+source = "git+https://github.com/agent-ix/filament-analyze?rev=686b5889eeabbca37363e22a33566c351a9e9ca5#686b5889eeabbca37363e22a33566c351a9e9ca5"
 dependencies = [
  "filament-analyze-method-contract",
  "filament-contract-model",
  "ix-cli-kit",
+ "ix-trace-rs",
  "jsonschema 0.17.1",
  "libc",
  "serde",
@@ -655,7 +656,7 @@ dependencies = [
 [[package]]
 name = "filament-analyze-method-contract"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/filament-analyze?branch=main#e2a8d1b2b2ad4ff3ed80201dac1b6c91457e6d3d"
+source = "git+https://github.com/agent-ix/filament-analyze?rev=686b5889eeabbca37363e22a33566c351a9e9ca5#686b5889eeabbca37363e22a33566c351a9e9ca5"
 
 [[package]]
 name = "filament-contract-model"
