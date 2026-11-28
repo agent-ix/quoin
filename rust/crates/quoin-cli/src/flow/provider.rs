@@ -1676,7 +1676,7 @@ struct ClaimSpan {
 
 struct AnalysisTools<'a> {
     status: &'a Path,
-    runner: &'a dyn AnalysisRunner,
+    runner: Box<dyn AnalysisRunner>,
     z3: &'a Path,
     cvc5: &'a Path,
 }
@@ -1697,7 +1697,7 @@ trait AnalysisRunner {
 }
 
 #[cfg(test)]
-impl AnalysisRunner for Path {
+impl AnalysisRunner for PathBuf {
     fn run(&self, invocation: &AnalysisInvocation<'_>) -> Result<i32, String> {
         let output = ProcessCommand::new(self)
             .args([
@@ -1784,7 +1784,7 @@ fn analysis_consistent_with_approved(
         context,
         &AnalysisTools {
             status: &status,
-            runner: &runner,
+            runner: Box::new(runner),
             z3: &z3,
             cvc5: &cvc5,
         },
@@ -2000,7 +2000,7 @@ fn run_analysis_modes(
         producer,
         mode: "consistency",
     };
-    let run = run_analysis(tools.runner, &invocation)?;
+    let run = run_analysis(tools.runner.as_ref(), &invocation)?;
     reports.push(run.path.clone());
     if run.status == "refuted" {
         return Err(fail_with_details(
@@ -2016,7 +2016,7 @@ fn run_analysis_modes(
             mode: "contradiction",
             ..invocation
         };
-        let run = run_analysis(tools.runner, &invocation)?;
+        let run = run_analysis(tools.runner.as_ref(), &invocation)?;
         reports.push(run.path.clone());
         if run.status == "satisfied" {
             return Err(fail_with_details(
@@ -2044,7 +2044,7 @@ fn run_analysis_modes(
                 mode: "redundancy",
                 ..invocation
             };
-            let run = run_analysis(tools.runner, &invocation)?;
+            let run = run_analysis(tools.runner.as_ref(), &invocation)?;
             reports.push(run.path.clone());
             if run.status == "satisfied" {
                 classification = "redundant";

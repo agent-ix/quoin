@@ -1830,7 +1830,7 @@ fn analysis_tools<'a>(
 ) -> AnalysisTools<'a> {
     AnalysisTools {
         status,
-        runner: analyzer,
+        runner: Box::new(analyzer.to_path_buf()),
         z3,
         cvc5,
     }
