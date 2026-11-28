@@ -23,7 +23,11 @@ figure SHALL come from a measurement rather than an estimate.
 ## Scope
 
 - Applies to: `quoin completeness`, `quoin advise`, `quoin evidence audit`,
-  `quoin matrix` — the commands whose cost grows with bundle size.
+  `quoin matrix` — the commands whose cost grows with bundle size. For the
+  document-pass metric, the population is the complete canonical path set of
+  requirement and evidence documents selected for those roots by the existing
+  `quire.coverage` document-selection rules. Policy files, catalog metadata and
+  evidence-store records are separate inputs, not members of this population.
 - Operational context: a CI gate and an interactive terminal run.
 - Excluded: `quire-rs` engine time, which the engine's own NFRs govern.
 
@@ -49,14 +53,28 @@ design change, not a tuning question.
 | Metric                                                        | Target | Threshold | Method |
 | ------------------------------------------------------------- | ------ | --------- | ------ |
 | Wall-clock for a bundle walk over 250 documents               | < 2s   | < 5s      | Test   |
-| Full passes over the document set per command invocation      | 1      | 1         | Test   |
+| Full passes over the selected module document set per invocation (NFR-011-M-2) | 1 | 1 | Test |
 
 ## Verification
 
 A generated bundle of 250 documents is walked by each bundle-scale command, and
-the elapsed time asserted against the threshold. The pass count is asserted by
-counting reads rather than inferred from the timing, so a regression from one
-pass to two is caught even on hardware fast enough to stay inside the budget.
+the elapsed time asserted against the threshold. For NFR-011-M-2, one invocation
+scoped document snapshot owns the selected module document set. Its loader reads
+each selected document's complete contents once and shares those contents with
+the command's consumers; directory enumeration, metadata checks, and evidence
+store reads are not document reads for this metric. All four commands, including
+`quoin evidence audit`, use this same snapshot because the audit obtains its
+obligations from module coverage before joining them to the evidence store. A
+zero-read audit therefore fails the metric rather than being treated as a
+corpus-independent exception.
+
+Tests instrument the snapshot loader at the full-document read boundary. For
+each command, they compare the loaded path set with the path set selected by the
+existing `quire.coverage` rules and assert exactly one complete-content read per
+selected path. The invocation-scoped snapshot is passed to coverage, advice,
+matrix, and audit consumers so they cannot independently reopen a selected
+document. The tests fail if a selected path is omitted, read more than once, or
+read by a consumer outside the snapshot.
 
 **Not met at the time of writing** — no such measurement exists. Stated ahead of
 the implementation; the gap is `agent-ix/quoin#133`.
