@@ -41,7 +41,17 @@ fn find_program(name: &str) -> Option<PathBuf> {
 }
 
 fn verify(repository: &Path, allowed_signers: &Path, verifier: &Path) -> Value {
-    let output = Command::new(env!("CARGO_BIN_EXE_quoin"))
+    let output = invoke(repository, allowed_signers, verifier);
+    assert!(
+        output.status.success(),
+        "sign-off verifier failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("rendered sign-off facts are JSON")
+}
+
+fn invoke(repository: &Path, allowed_signers: &Path, verifier: &Path) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_quoin"))
         .args(["validation", "report", "--verify-signoff", "--repo"])
         .arg(repository)
         .arg("--allowed-signers")
@@ -49,13 +59,7 @@ fn verify(repository: &Path, allowed_signers: &Path, verifier: &Path) -> Value {
         .arg("--engineering-assurance")
         .arg(verifier)
         .output()
-        .expect("sign-off verification command runs");
-    assert!(
-        output.status.success(),
-        "sign-off verifier failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    serde_json::from_slice(&output.stdout).expect("rendered sign-off facts are JSON")
+        .expect("sign-off verification command runs")
 }
 
 #[trace("FR-218-AC-4", "FR-218-AC-5")]
@@ -380,5 +384,97 @@ fn signoff_interprets_engineering_assurance_results() {
     assert_eq!(
         verify(&repository, &allowed_signers, &verifier)["reason"],
         "signature_invalid"
+    );
+
+    std::fs::write(
+        &result_path,
+        r#"{"protocol":"wrong/v1","kind":"commit","status":"signed_valid"}"#,
+    )
+    .expect("wrong-protocol response is written");
+    let wrong_protocol = invoke(&repository, &allowed_signers, &verifier);
+    assert!(!wrong_protocol.status.success());
+    assert!(
+        String::from_utf8_lossy(&wrong_protocol.stderr).contains("unsupported signature result")
+    );
+
+    std::fs::write(
+        &result_path,
+        r#"{"protocol":"engineering-assurance.signature-verify-result/v1","kind":"commit","status":"signed_valid"}"#,
+    )
+    .expect("incomplete response is written");
+    let incomplete = verify(&repository, &allowed_signers, &verifier);
+    assert_eq!(incomplete["status"], "not_accepted");
+    assert_eq!(incomplete["reason"], "signer_unmapped");
+
+    std::fs::write(&result_path, "not-json\n").expect("malformed response is written");
+    let malformed = invoke(&repository, &allowed_signers, &verifier);
+    assert!(!malformed.status.success());
+    assert!(String::from_utf8_lossy(&malformed.stderr).contains("invalid signature-verify result"));
+}
+
+#[cfg(unix)]
+#[trace("FR-218-AC-4")]
+#[test]
+fn signoff_sends_the_exact_versioned_request_to_engineering_assurance() {
+    let temp = tempfile::tempdir().expect("temporary root");
+    let repository = temp.path().join("repo");
+    std::fs::create_dir_all(&repository).expect("repository directory");
+    git(&repository, &["init", "--quiet"]);
+    git(&repository, &["config", "user.name", "Quality Person"]);
+    git(
+        &repository,
+        &["config", "user.email", "quality@example.test"],
+    );
+    std::fs::write(repository.join("validation-report.md"), "# Report\n").expect("report written");
+    std::fs::write(
+        repository.join("validation-report.json"),
+        r#"{"ratedBy":"quality"}"#,
+    )
+    .expect("report JSON written");
+    git(&repository, &["add", "."]);
+    git(&repository, &["commit", "-m", "Validation report"]);
+
+    let allowed_signers = temp.path().join("allowed_signers");
+    std::fs::write(&allowed_signers, "quality ssh-ed25519 AAAA\n")
+        .expect("allowed signers written");
+    let request_path = temp.path().join("request.json");
+    let verifier = temp.path().join("engineering-assurance");
+    std::fs::write(
+        &verifier,
+        format!(
+            "#!/bin/sh\ncat > '{}'\nprintf '%s\\n' '{{\"protocol\":\"engineering-assurance.signature-verify-result/v1\",\"kind\":\"commit\",\"status\":\"signed_valid\",\"signer\":{{\"mapping\":\"mapped\",\"principal\":\"quality\"}},\"signed_off_meaning\":{{\"values\":[\"tool-validation-accepted\"]}}}}'\n",
+            request_path.display()
+        ),
+    )
+    .expect("verifier shim written");
+    std::fs::set_permissions(&verifier, std::fs::Permissions::from_mode(0o755))
+        .expect("verifier shim made executable");
+
+    let accepted = verify(&repository, &allowed_signers, &verifier);
+    assert_eq!(accepted["status"], "accepted");
+
+    let request: Value = serde_json::from_slice(
+        &std::fs::read(&request_path).expect("request sent to Engineering Assurance is retained"),
+    )
+    .expect("request parses as JSON");
+    let revision = String::from_utf8(
+        git(
+            &repository,
+            &["log", "-1", "--format=%H", "--", "validation-report.md"],
+        )
+        .stdout,
+    )
+    .expect("report commit id is UTF-8")
+    .trim()
+    .to_owned();
+    assert_eq!(
+        request,
+        serde_json::json!({
+            "protocol": "engineering-assurance.signature-verify-request/v1",
+            "repository": repository.canonicalize().expect("repository path resolves"),
+            "revision": revision,
+            "kind": "commit",
+            "allowed_signers": allowed_signers,
+        })
     );
 }
