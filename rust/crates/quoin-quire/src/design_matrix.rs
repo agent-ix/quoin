@@ -79,6 +79,7 @@ mod tests {
             .join("tests")
             .join("fixtures")
             .join("repo");
+        let canonical_repository = repository.canonicalize().expect("canonical repository");
         let request = Request {
             scope: ScopeRoot::open(&repository).expect("fixture scope"),
             modules: ModuleSelection::Closed(vec![
@@ -87,7 +88,6 @@ mod tests {
         };
         let mut passes = 0;
         let mut documents = Vec::new();
-        let canonical_repository = repository.canonicalize().expect("canonical repository");
         let _outcome = compute_with_spec_loader(&request, |root| {
             passes += 1;
             let spec = quire_rs::Spec::from_path(root);
