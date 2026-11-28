@@ -48,9 +48,9 @@ config over a scratch crate whose `Cargo.lock` lists the fictional `fictional-wi
 dependencies. It holds four components: three carry a purl, one is identified by name and version.
 
 `differential-report-v2/` holds `filament.differential-report/v2` documents for the
-`differential-report` adapter (FR-151, TC-001). The accepted reports except one are captures written by `filament-analyze run-package` at
-`agent-ix/filament-analyze` `e17fbf0f6c593d32ce2555420d615c5dd862e8ef`, with the obsolete unavailable-only
-`pgm01Envelope` member removed to match the current v2 report contract. The capture used
+`differential-report` adapter (FR-151, TC-001). The accepted reports except one are unedited,
+byte-exact captures written by `filament-analyze run-package` at
+`agent-ix/filament-analyze` `e17fbf0f6c593d32ce2555420d615c5dd862e8ef`. The capture used
 `engineering-assurance producer-execute` 0.8.2, the version pinned by this Quoin main, and
 deterministic local shell stubs for the solver executables because Z3 and cvc5 are not
 installed: `agreement-satisfied`, `agreement-refuted`, `disagreement`, `inconclusive-unknown`,
