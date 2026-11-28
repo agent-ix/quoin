@@ -74,7 +74,7 @@ mod tests {
 
     #[trace("NFR-011-M-2")]
     #[test]
-    fn matrix_loads_its_selected_documents_in_one_spec_pass() {
+    fn matrix_loads_its_selected_paths_in_one_spec_invocation() {
         let repository = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("tests")
             .join("fixtures")
@@ -86,10 +86,10 @@ mod tests {
                 ModuleRoot::open(repository).expect("fixture module"),
             ]),
         };
-        let mut passes = 0;
+        let mut loader_invocations = 0;
         let mut documents = Vec::new();
         let _outcome = compute_with_spec_loader(&request, |root| {
-            passes += 1;
+            loader_invocations += 1;
             let spec = quire_rs::Spec::from_path(root);
             documents.extend(spec.documents().iter().map(|document| {
                 document
@@ -104,7 +104,10 @@ mod tests {
         })
         .expect("matrix computation");
 
-        assert_eq!(passes, 1, "matrix has one selected-document load pass");
+        assert_eq!(
+            loader_invocations, 1,
+            "matrix invokes the selected-document loader once"
+        );
         documents.sort();
         assert_eq!(
             documents,

@@ -43,14 +43,14 @@ pub struct Outcome {
     pub notices: Vec<Notice>,
 }
 
-/// One full-content read made while Quire loads the selected document set.
+/// One selected-document result projected from Quire's loaded `Spec`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DocumentRead {
     /// Canonical path of the selected document.
     pub path: std::path::PathBuf,
-    /// Verbatim text when the read succeeded.
+    /// Verbatim text exposed by the loaded document, when present.
     pub content: Option<String>,
-    /// Read or UTF-8 failure when the document could not be loaded.
+    /// Quire's load diagnostic when the document could not be loaded.
     pub error: Option<String>,
 }
 

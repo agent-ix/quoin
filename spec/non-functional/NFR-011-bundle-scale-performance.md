@@ -24,7 +24,7 @@ figure SHALL come from a measurement rather than an estimate.
 
 - Applies to: `quoin completeness`, `quoin advise`, `quoin evidence audit`,
   `quoin matrix` — the commands whose cost grows with bundle size. For the
-  document-pass metric, the population is the complete canonical path set of
+  loader-invocation metric, the population is the complete canonical path set of
   requirement and evidence documents selected for those roots by the existing
   `quire.coverage` document-selection rules. Policy files, catalog metadata and
   evidence-store records are separate inputs, not members of this population.
@@ -58,19 +58,21 @@ design change, not a tuning question.
 | Metric                                                        | Target | Threshold | Method |
 | ------------------------------------------------------------- | ------ | --------- | ------ |
 | Wall-clock for a bundle walk over 250 documents               | < 2s   | < 5s      | Test   |
-| Full passes over the selected module document set per invocation (NFR-011-M-2) | 1 | 1 | Test |
+| Quire `Spec` loader invocations over the selected module-document set per command invocation (NFR-011-M-2) | 1 | 1 | Test |
 
 ## Verification
 
 A generated bundle of 250 documents is walked by each bundle-scale command, and
-the elapsed time asserted against the threshold. For NFR-011-M-2, one invocation
-scoped document snapshot owns the selected module document set. Its loader reads
-each selected document's complete contents once and shares those contents with
-the command's consumers; directory enumeration, metadata checks, and evidence
-store reads are not document reads for this metric. The same selected-document
-population applies to all four commands. Evidence audit includes its coverage
-obligations before joining them to the evidence store, so its document reads are
-part of the metric; a zero-read audit is not a corpus-independent exception.
+the elapsed time asserted against the threshold. For NFR-011-M-2, each command
+invocation loads one Quire `Spec` for its selected module-document set and reuses
+that returned document set across its consumers. The metric counts Quoin's
+loader invocations and checks the canonical selected path set exposed by the
+`Spec`; it does not count filesystem syscalls, bytes, or reads performed inside
+the `Spec::from_path` constructor. Quoin makes no claim about that constructor's
+per-file filesystem behavior. The same selected-document population applies to
+all four commands. Evidence audit includes its coverage obligations before
+joining them to the evidence store, so its selected set remains part of this
+metric; a zero-loader audit is not a corpus-independent exception.
 
 The selected population is command-specific only through its repository and
 module roots: `advise` uses its `--repo` and `--module` roots; evidence audit
@@ -80,39 +82,34 @@ Each command's exact path set is the canonical set Quire selects for coverage
 under those inputs. Evidence-store records and matrix run observations are not
 members of that set.
 
-Quoin's host read boundary is Quire's repository loader, exposed through
-`quire_rs::Spec::from_path` and its loaded-document view. At the Quire revision
-pinned by Quoin (`12bacfb04838cd335f756f41a218862a0844c567`),
-`Spec::from_path` delegates to `load_repo`; `load_repo_with` discovers Markdown
-files and `parse_one` performs one `read_to_string` for each discovered file. A
-loaded document retains that complete text in `raw()`, and `body()` is
-parsed lazily from the retained text without another filesystem read. Quire's
-`corpus::spec::tests::every_query_avoids_corpus_filesystem_reads_after_construction`
-checks that queries after construction do not access corpus files. Quoin's
-matrix test checks that it calls this loader once and that the returned Spec's
-canonical relative document paths equal the fixture's exact selected set; it
-does not instrument the loader's filesystem syscalls. Completeness returns its
+Quoin's boundary is the public Quire `Spec` API: `Spec::from_path` constructs a
+corpus and `Spec::documents()` exposes the selected loaded-document set.
+NFR-011-M-2 guarantees one Quoin loader invocation over the exact canonical
+path set selected by Quire's coverage rules, followed by reuse of that returned
+`Spec` or snapshot by command consumers. It does not specify or test how many
+filesystem syscalls the Quire constructor performs. Completeness returns its
 loaded snapshot to the CLI, which also reuses it for the overlap with its
-`--bundle` corpus. Matrix reuses one Quire `Spec` for coverage and design-matrix
+`--bundle` corpus. Matrix passes one Quire `Spec` to coverage and design-matrix
 computation. Advise and evidence audit still need to adopt and test an
 invocation-scoped snapshot.
 
 Tests compare the selected path set with the existing `quire.coverage` rules.
-Snapshot-backed routes assert one complete-content read per selected path and
-that consumers do not reopen selected documents. Matrix asserts one Quire
-`Spec` loader pass over the exact canonical path set and reuses that parsed set
-for coverage and design-matrix computation. The exact-once filesystem-read
-claim for matrix depends on the pinned Quire loader implementation above; its
-single-loader-pass test alone does not measure file syscalls. Tests fail if a
-selected path is omitted or a route performs an additional document load.
+Snapshot-backed routes assert that the snapshot contains the selected canonical
+paths and that command consumers reuse it rather than reopening selected paths.
+Matrix asserts one `Spec` loader invocation, the exact canonical selected path
+set returned by that `Spec`, and reuse for coverage and design-matrix
+computation. These tests observe Quoin's loader boundary and consumer behavior;
+they do not observe filesystem syscalls inside Quire's constructor. Tests fail
+if a selected path is omitted, a command invokes its loader more than once, or
+a consumer reopens a selected path.
 
 **Implementation status:** completeness reuses the selected snapshot, including
-documents that overlap its `--bundle` corpus. Matrix loads Quire's selected
-document set once and reuses that `Spec` for coverage and design-matrix
-computation; a traced test asserts one loader pass over the exact fixture
-selection. Advise and evidence audit remain open and NFR-011-M-2 is not met
-until those routes use and test the shared snapshot boundary. The 250-document
-timing measurements also remain open. The gap is `agent-ix/quoin#133`.
+documents that overlap its `--bundle` corpus. Matrix loads one Quire `Spec` and
+reuses it for coverage and design-matrix computation; a traced test asserts one
+loader invocation and the exact canonical fixture path set. Advise and evidence
+audit remain open and NFR-011-M-2 is not met until those routes use and test the
+shared snapshot boundary. The 250-document timing measurements also remain
+open. The gap is `agent-ix/quoin#133`.
 
 ## Dependencies
 
