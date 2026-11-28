@@ -58,11 +58,13 @@ plausible default would conceal missing records and mislead its reviewer.
 | NFR-041-AC-1 | A fixture with absent method, support, safety-impact, policy, decider and release-verdict values renders `not stated`, `unknown` or the relevant named gap in all six documents; no output supplies a plausible value. | Test |
 | NFR-041-AC-2 | Inspection of the six generated report shapes finds no new score, percentage, rank, software-class, risk-acceptability or release-verdict member. The policy's source `outside_acceptable` field is allowed only as a verbatim policy field. | Inspection |
 | NFR-041-AC-3 | Changing a source-authored meaning or policy region string changes the corresponding output by the same bytes and changes no other source value. | Test |
-| NFR-041-AC-4 | A `not_released` EA result remains `not_released` in both Markdown and JSON; a risk with no decision never becomes `accepted` or `acceptable`. | Test |
+| NFR-041-AC-4 | A `not_released` EA result remains `not_released` in `DOS-REL.md`; the `--json` report identifies `DOS-REL` and reports its document completeness status and gaps without presenting a second release-verdict value. A risk with no decision never becomes `accepted` or `acceptable`. | Test |
 
 ## Verification
 
 Fixture tests compare source data with each generated document and JSON report.
+The JSON report's `status` is the document completeness status defined by FR-191;
+release status remains in the generated `DOS-REL.md` source projection.
 Inspection of the dossier output models checks that no forbidden derived field
 is introduced.
 
