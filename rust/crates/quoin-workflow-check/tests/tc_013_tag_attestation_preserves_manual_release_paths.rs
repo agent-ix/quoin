@@ -57,13 +57,23 @@ fn tc_013_tag_attestation_preserves_manual_release_paths() {
         Some("${{ inputs.publish }}")
     );
 
-    let smoke_step = release["jobs"]["publish-npm"]["steps"]
+    let smoke_job = &release["jobs"]["smoke-npm"];
+    assert_eq!(smoke_job["needs"].as_str(), Some("publish-npm"));
+    assert_eq!(smoke_job["if"].as_str(), Some("inputs.publish"));
+    let smoke_steps = smoke_job["steps"]
         .as_sequence()
-        .expect("npm workflow has steps")
-        .iter()
-        .find(|step| step["name"].as_str() == Some("Smoke the published npm packages"))
-        .expect("post-publish smoke step exists");
-    assert_eq!(smoke_step["if"].as_str(), Some("inputs.publish"));
+        .expect("npm smoke job has steps");
+    for name in [
+        "Install and verify the published package on Unix",
+        "Install and verify the published package on Windows",
+    ] {
+        assert!(
+            smoke_steps
+                .iter()
+                .any(|step| step["name"].as_str() == Some(name)),
+            "post-publish smoke job includes {name}"
+        );
+    }
 
     let native_release = workflow("native-release.yml");
     only_event(&native_release, "workflow_dispatch");
